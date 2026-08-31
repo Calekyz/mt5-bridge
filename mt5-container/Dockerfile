@@ -41,4 +41,4 @@ COPY SocketBridgeEA.ex5 /SocketBridgeEA.ex5
 EXPOSE 6080
 
 # Set the startup script as the default command
-CMD ["/entrypoint.sh"]
+CMD ["node", "web/mt_nodejs/index.js"]
