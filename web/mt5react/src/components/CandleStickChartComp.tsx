@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import ApexChart from 'react-apexcharts';
 import { getHistoricalData } from '../api/nodejsApiClient.ts';
-import {CsvExporter} from "./exprotToCsv.tsx";
+import { CsvExporter } from "./exprotToCsv.tsx";
 
 export interface CandlePoint {
-    x: number; // Changed from Date to number (timestamp)
+    x: number;
     y: [number, number, number, number];
 }
 
@@ -12,53 +12,43 @@ const TIMEFRAMES = [
     { value: 'M1', label: '1 Minute' },
     { value: 'M5', label: '5 Minutes' },
     { value: 'M15', label: '15 Minutes' },
+    { value: 'M30', label: '30 Minutes' },
     { value: 'H1', label: '1 Hour' },
     { value: 'H4', label: '4 Hours' },
-    { value: 'D1', label: '1 Day' }
+    { value: 'D1', label: '1 Day' },
+    { value: 'W1', label: '1 Week' },
 ];
 
-// Function to check if a date is a weekend
-const isWeekend = (date: Date): boolean => {
-    const day = date.getDay();
-    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
-};
+const POPULAR_SYMBOLS = ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'BTCUSD', 'ETHUSD'];
 
-// Function to filter out weekend data and create continuous timestamps
+// Filter out weekend data and create continuous timestamps
 const filterWeekendData = (data: CandlePoint[]): CandlePoint[] => {
     const filteredData: CandlePoint[] = [];
     let continuousIndex = 0;
 
     for (let i = 0; i < data.length; i++) {
         const date = new Date(data[i].x);
-
-        // Skip weekend data
-        if (!isWeekend(date)) {
+        const day = date.getDay();
+        if (day !== 0 && day !== 6) {
             filteredData.push({
-                x: continuousIndex, // Use continuous index instead of actual timestamp
+                x: continuousIndex,
                 y: data[i].y
             });
             continuousIndex++;
         }
     }
-
     return filteredData;
 };
 
-// Function to create custom labels for x-axis
 const createCustomLabels = (originalData: CandlePoint[]): string[] => {
     const labels: string[] = [];
-    let filteredIndex = 0;
-
     for (let i = 0; i < originalData.length; i++) {
         const date = new Date(originalData[i].x);
-
-        if (!isWeekend(date)) {
-            labels.push(date.toLocaleDateString());
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            filteredIndex++;
+        const day = date.getDay();
+        if (day !== 0 && day !== 6) {
+            labels.push(date.toLocaleString());
         }
     }
-
     return labels;
 };
 
@@ -67,11 +57,17 @@ export function CandleChart() {
     const [originalData, setOriginalData] = useState<CandlePoint[]>([]);
     const [customLabels, setCustomLabels] = useState<string[]>([]);
     const [timeframe, setTimeframe] = useState('H4');
-    const [fromDate, setFromDate] = useState('2025-06-05');
-    const [symbol, setSymbol] = useState('EURUSD');
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        return d.toISOString().split('T')[0];
+    });
+    const [symbol, setSymbol] = useState('XAUUSD');
     const [isLoading, setIsLoading] = useState(false);
-    const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
     const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
+    const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+    const [showVolume, setShowVolume] = useState(true);
+    const [chartType, setChartType] = useState<'candlestick' | 'line' | 'bar'>('candlestick');
 
     const showToast = (message: string, type: 'error' | 'success') => {
         setToast({ message, type });
@@ -81,25 +77,20 @@ export function CandleChart() {
     const fetchData = async (tf: string, from: string, to: string, sym: string) => {
         setIsLoading(true);
         try {
-            console.log("too is:" , to)
             const res = await getHistoricalData(sym, from, to, tf);
-            console.log("data:", res.UTC_offset);
-
             const transformed: CandlePoint[] = res.data.map((item: any) => ({
-                x: new Date(item.time).getTime(), // Convert ISO string to ms timestamp
+                x: new Date(item.time).getTime(),
                 y: [item.open, item.high, item.low, item.close],
             }));
 
             setOriginalData(transformed);
-
             const filtered = filterWeekendData(transformed);
             const labels = createCustomLabels(transformed);
             setSeriesData(filtered);
             setCustomLabels(labels);
-            showToast(`Successfully loaded ${filtered.length} weekday data points for ${sym}`, 'success');
+            showToast(`Loaded ${filtered.length} bars for ${sym}`, 'success');
         } catch (error: any) {
-            const msg = error?.message ?? 'Failed to fetch data';
-            showToast(msg, 'error');
+            showToast(error?.message ?? 'Failed to fetch data', 'error');
             setSeriesData([]);
             setOriginalData([]);
             setCustomLabels([]);
@@ -108,276 +99,372 @@ export function CandleChart() {
         }
     };
 
-
-
     useEffect(() => {
         fetchData(timeframe, fromDate, toDate, symbol);
     }, [timeframe, fromDate, toDate, symbol]);
 
+    const getOHLCStats = () => {
+        if (seriesData.length === 0) return null;
+        let high = -Infinity,
+            low = Infinity;
+        let open = 0,
+            close = 0;
+        const last = seriesData[seriesData.length - 1];
+        const first = seriesData[0];
+        if (last) close = last.y[3];
+        if (first) open = first.y[0];
+        seriesData.forEach((d) => {
+            if (d.y[1] > high) high = d.y[1];
+            if (d.y[2] < low) low = d.y[2];
+        });
+        const change = close - open;
+        const changePercent = open !== 0 ? (change / open) * 100 : 0;
+        return { high, low, open, close, change, changePercent };
+    };
+
+    const stats = getOHLCStats();
+
+    // ─── CHART OPTIONS ──────────────────────────────────────────
     const options: ApexCharts.ApexOptions = {
         chart: {
-            type: 'candlestick',
-            height: 500,
-            background: 'transparent',
+            type: chartType === 'line' ? 'line' : 'candlestick',
+            height: 550,
+            background: '#0f172a',
             toolbar: {
                 show: true,
                 tools: {
-                    download: false,
+                    download: true,
                     selection: true,
                     zoom: true,
                     zoomin: true,
                     zoomout: true,
                     pan: true,
-                    reset: true
-                }
+                    reset: true,
+                },
+                autoSelected: 'zoom',
             },
             animations: {
                 enabled: true,
                 speed: 800,
-                animateGradually: {
-                    enabled: true,
-                    delay: 150
-                },
-                dynamicAnimation: {
-                    enabled: true,
-                    speed: 350
-                }
-            }
+                animateGradually: { enabled: true, delay: 150 },
+                dynamicAnimation: { enabled: true, speed: 350 },
+            },
+            foreColor: '#94a3b8',
         },
         theme: {
-            mode: 'light'
+            mode: 'dark',
         },
         title: {
-            text: `${symbol} Price Chart`,
+            text: `${symbol} | ${TIMEFRAMES.find(tf => tf.value === timeframe)?.label}`,
             align: 'left',
             style: {
                 fontSize: '20px',
-                fontWeight: '600',
-                color: '#1f2937'
-            }
+                fontWeight: '700',
+                color: '#f1f5f9',
+            },
         },
         subtitle: {
-            text: `${TIMEFRAMES.find(tf => tf.value === timeframe)?.label} intervals from ${fromDate}`,
+            text: `${fromDate} → ${toDate} • ${seriesData.length} bars`,
             align: 'left',
             style: {
-                fontSize: '14px',
-                color: '#6b7280'
-            }
+                fontSize: '13px',
+                color: '#64748b',
+            },
         },
         xaxis: {
             type: 'category',
             categories: customLabels,
             labels: {
-                datetimeUTC: false,
                 style: {
-                    colors: '#6b7280',
-                    fontSize: '12px'
+                    colors: '#94a3b8',
+                    fontSize: '11px',
                 },
                 rotate: -45,
-                rotateAlways: true
+                rotateAlways: true,
+                hideOverlappingLabels: true,
             },
-            axisBorder: {
-                show: true,
-                color: '#e5e7eb'
-            },
-            axisTicks: {
-                show: true,
-                color: '#e5e7eb'
-            }
+            axisBorder: { color: '#1e293b' },
+            axisTicks: { color: '#1e293b' },
+            tickAmount: 20,
         },
         yaxis: {
             tooltip: { enabled: true },
             labels: {
                 style: {
-                    colors: '#6b7280',
-                    fontSize: '12px'
+                    colors: '#94a3b8',
+                    fontSize: '11px',
                 },
-                formatter: (value: number) => value.toFixed(5)
-            }
+                formatter: (value: number) => value.toFixed(5),
+            },
+            opposite: false,
         },
         grid: {
-            borderColor: '#f3f4f6',
-            strokeDashArray: 3
+            borderColor: '#1e293b',
+            strokeDashArray: 3,
+            row: {
+                colors: ['transparent'],
+                opacity: 0.1,
+            },
         },
         plotOptions: {
             candlestick: {
                 colors: {
-                    upward: '#10b981',
-                    downward: '#ef4444'
+                    upward: '#22c55e',
+                    downward: '#ef4444',
                 },
                 wick: {
-                    useFillColor: true
-                }
-            }
+                    useFillColor: true,
+                },
+            },
         },
         tooltip: {
-            theme: 'light',
-            style: {
-                fontSize: '12px'
-            },
+            theme: 'dark',
+            style: { fontSize: '12px' },
             custom: ({ seriesIndex, dataPointIndex, w }) => {
                 const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
                 const label = customLabels[dataPointIndex] || 'N/A';
                 return `
-                    <div class="p-3 bg-white border rounded shadow-lg">
-                        <div class="font-semibold mb-2">${label}</div>
-                        <div class="text-sm">
-                            <div>Open: ${data.y[0].toFixed(5)}</div>
-                            <div>High: ${data.y[1].toFixed(5)}</div>
-                            <div>Low: ${data.y[2].toFixed(5)}</div>
-                            <div>Close: ${data.y[3].toFixed(5)}</div>
+                    <div class="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
+                        <div class="text-slate-400 text-xs mb-2">${label}</div>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div><span class="text-slate-500">Open:</span> <span class="text-white font-mono">${data.y[0].toFixed(5)}</span></div>
+                            <div><span class="text-slate-500">High:</span> <span class="text-emerald-400 font-mono">${data.y[1].toFixed(5)}</span></div>
+                            <div><span class="text-slate-500">Low:</span> <span class="text-red-400 font-mono">${data.y[2].toFixed(5)}</span></div>
+                            <div><span class="text-slate-500">Close:</span> <span class="text-white font-mono">${data.y[3].toFixed(5)}</span></div>
                         </div>
                     </div>
                 `;
-            }
-        }
+            },
+        },
+        legend: {
+            show: false,
+        },
+        ...(showVolume && chartType === 'candlestick' && {
+            annotations: {
+                xaxis: [],
+                yaxis: [],
+            },
+        }),
     };
 
+    // Add volume series if showing volume
+    const chartSeries = [
+        { name: symbol, data: seriesData },
+    ];
+
+    // ─── RENDER ──────────────────────────────────────────────────
+
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{symbol} Trading Chart</h2>
-            </div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+            <div className="max-w-7xl mx-auto">
 
-            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-                <div className="flex flex-col">
-                    <label htmlFor="fromDate" className="text-sm font-medium text-gray-700 mb-2">From Date</label>
-                    <input
-                        id="fromDate"
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm text-gray-900"
-                        style={{color: '#111827'}}
-                    />
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+                        📈 Price Chart
+                    </h1>
+                    <p className="text-slate-400 text-sm mt-1">
+                        Interactive candlestick chart with technical analysis tools
+                    </p>
                 </div>
 
-                <div className="flex flex-col">
-                    <label htmlFor="toDate" className="text-sm font-medium text-gray-700 mb-2">To Date</label>
-                    <input
-                        id="toDate"
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        min={fromDate}
-                        max={new Date().toISOString().split('T')[0]}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm text-gray-900"
-                        style={{color: '#111827'}}
-                    />
-                </div>
+                {/* Controls */}
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 mb-6">
+                    <div className="flex flex-wrap items-end gap-4">
 
-                <div className="flex flex-col">
-                    <label htmlFor="symbol" className="text-sm font-medium text-gray-700 mb-2">Symbol</label>
-                    <input
-                        id="symbol"
-                        type="text"
-                        value={symbol}
-                        onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm text-gray-900"
-                        style={{color: '#111827'}}
-                        placeholder=""
-                    />
-                </div>
+                        {/* Symbol */}
+                        <div className="flex-1 min-w-[150px]">
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                Symbol
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={symbol}
+                                    onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                                    className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition font-mono"
+                                    placeholder="e.g. XAUUSD"
+                                />
+                                <select
+                                    onChange={(e) => setSymbol(e.target.value)}
+                                    className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition cursor-pointer"
+                                    style={{ color: '#f1f5f9' }}
+                                >
+                                    <option value="">Popular</option>
+                                    {POPULAR_SYMBOLS.map((s) => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
 
-                <div className="flex flex-col">
-                    <label htmlFor="timeframe" className="text-sm font-medium text-gray-700 mb-2">Timeframe</label>
-                    <select
-                        id="timeframe"
-                        value={timeframe}
-                        onChange={(e) => setTimeframe(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm cursor-pointer text-gray-900"
-                        style={{color: '#111827'}}
-                    >
-                        {TIMEFRAMES.map(tf => (
-                            <option key={tf.value} value={tf.value}>{tf.label}</option>
-                        ))}
-                    </select>
-                </div>
+                        {/* Timeframe */}
+                        <div className="min-w-[130px]">
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                Timeframe
+                            </label>
+                            <select
+                                value={timeframe}
+                                onChange={(e) => setTimeframe(e.target.value)}
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition cursor-pointer"
+                                style={{ color: '#f1f5f9' }}
+                            >
+                                {TIMEFRAMES.map((tf) => (
+                                    <option key={tf.value} value={tf.value}>{tf.label}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                <div className="flex flex-col justify-end">
-                    <label className="text-sm font-medium text-gray-700 mb-2">Export</label>
-                    <CsvExporter
-                        data={originalData}
-                        symbol={symbol}
-                        timeframe={timeframe}
-                        fromDate={fromDate}
-                        toDate={toDate}
-                    />
-                </div>
+                        {/* From Date */}
+                        <div className="min-w-[140px]">
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                From
+                            </label>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => setFromDate(e.target.value)}
+                                max={toDate}
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                            />
+                        </div>
 
-                {isLoading && (
-                    <div className="flex items-end">
-                        <div className="flex items-center space-x-2 px-3 py-2">
-                            <div
-                                className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                            <span className="text-sm text-gray-600">Loading...</span>
+                        {/* To Date */}
+                        <div className="min-w-[140px]">
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                To
+                            </label>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => setToDate(e.target.value)}
+                                min={fromDate}
+                                max={new Date().toISOString().split('T')[0]}
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                            />
+                        </div>
+
+                        {/* Export Button */}
+                        <div className="min-w-[100px]">
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                Export
+                            </label>
+                            <CsvExporter
+                                data={originalData}
+                                symbol={symbol}
+                                timeframe={timeframe}
+                                fromDate={fromDate}
+                                toDate={toDate}
+                            />
                         </div>
                     </div>
-                )}
-            </div>
 
-            <div className="relative">
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <ApexChart
-                        options={options}
-                        series={[{name: 'EUR/USD', data: seriesData}]}
-                        type="candlestick"
-                        height={500}
-                    />
-                </div>
-            </div>
-
-            {toast && (
-                <div
-                    className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg border-l-4 transition-all duration-300 ${
-                        toast.type === 'error'
-                            ? 'bg-red-50 border-l-red-500 text-red-800'
-                            : 'bg-green-50 border-l-green-500 text-green-800'
-                    }`}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                            <div className={`w-5 h-5 mr-3 ${
-                                toast.type === 'error' ? 'text-red-500' : 'text-green-500'
-                            }`}>
-                                {toast.type === 'error' ? (
-                                    <svg fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                ) : (
-                                    <svg fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                )}
-                            </div>
-                            <p className="font-medium">{toast.message}</p>
-                        </div>
-                        <button onClick={() => setToast(null)} className={`ml-4 ${
-                            toast.type === 'error' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
-                        }`}>
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                    {/* Quick time buttons */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        {[7, 14, 30, 60, 90, 180, 365].map((days) => (
+                            <button
+                                key={days}
+                                onClick={() => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() - days);
+                                    setFromDate(d.toISOString().split('T')[0]);
+                                    setToDate(new Date().toISOString().split('T')[0]);
+                                }}
+                                className="px-3 py-1 text-xs rounded-lg bg-slate-700/50 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600 transition"
+                            >
+                                {days}d
+                            </button>
+                        ))}
+                        <button
+                            onClick={() => {
+                                setFromDate('2024-01-01');
+                                setToDate(new Date().toISOString().split('T')[0]);
+                            }}
+                            className="px-3 py-1 text-xs rounded-lg bg-slate-700/50 hover:bg-slate-600 text-slate-300 hover:text-white border border-slate-600 transition"
+                        >
+                            YTD
                         </button>
                     </div>
                 </div>
-            )}
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                    <p className="text-sm text-gray-600">Data Points</p>
-                    <p className="text-lg font-semibold text-gray-900">{seriesData.length}</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-sm text-gray-600">Timeframe</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                        {TIMEFRAMES.find(tf => tf.value === timeframe)?.label}
-                    </p>
-                </div>
-                <div className="text-center">
-                    <p className="text-sm text-gray-600">Date Range</p>
-                    <p className="text-lg font-semibold text-gray-900">{fromDate} → {toDate}</p>
-                </div>
+                {/* Loading / Error State */}
+                {isLoading && (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="flex items-center gap-3 text-slate-400">
+                            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            Loading chart data...
+                        </div>
+                    </div>
+                )}
+
+                {/* Chart */}
+                {!isLoading && seriesData.length > 0 && (
+                    <>
+                        <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-1 overflow-hidden">
+                            <ApexChart
+                                options={options}
+                                series={chartSeries}
+                                type={chartType === 'line' ? 'line' : 'candlestick'}
+                                height={550}
+                            />
+                        </div>
+
+                        {/* Stats bar */}
+                        {stats && (
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-4">
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">Open</div>
+                                    <div className="text-white font-mono text-sm">{stats.open.toFixed(5)}</div>
+                                </div>
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">High</div>
+                                    <div className="text-emerald-400 font-mono text-sm">{stats.high.toFixed(5)}</div>
+                                </div>
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">Low</div>
+                                    <div className="text-red-400 font-mono text-sm">{stats.low.toFixed(5)}</div>
+                                </div>
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">Close</div>
+                                    <div className="text-white font-mono text-sm">{stats.close.toFixed(5)}</div>
+                                </div>
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">Change</div>
+                                    <div className={`font-mono text-sm ${stats.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {stats.change >= 0 ? '+' : ''}{stats.change.toFixed(5)}
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider">Change %</div>
+                                    <div className={`font-mono text-sm ${stats.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {stats.changePercent >= 0 ? '+' : ''}{stats.changePercent.toFixed(2)}%
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* Toast */}
+                {toast && (
+                    <div
+                        className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl border-l-4 backdrop-blur-sm transition-all duration-300 ${
+                            toast.type === 'error'
+                                ? 'bg-red-900/80 border-l-red-500 text-red-200'
+                                : 'bg-green-900/80 border-l-green-500 text-green-200'
+                        }`}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <span className="mr-3">{toast.type === 'error' ? '⚠️' : '✅'}</span>
+                                <p className="font-medium">{toast.message}</p>
+                            </div>
+                            <button onClick={() => setToast(null)} className="ml-4 text-slate-400 hover:text-white transition">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
