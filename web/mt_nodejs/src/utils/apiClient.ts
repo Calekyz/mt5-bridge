@@ -1,8 +1,11 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { HttpError } from './HttpError';
 
+const host = process.env.MT5_HOST || 'localhost';
+const port = process.env.MT5_PORT || '8890';
+
 const api = axios.create({
-    baseURL: 'http://mt5:8890/v1',
+    baseURL: `http://${host}:${port}/v1`,
 });
 
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
@@ -37,7 +40,6 @@ export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
             if (status === 401) {
                 throw new HttpError(401, 'Unauthorized access to external API.', data);
             }
-
 
             // Default: forward external error with extracted message
             throw new HttpError(status, detailMessage, data);
