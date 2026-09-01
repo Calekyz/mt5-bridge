@@ -30,7 +30,7 @@ export interface Order {
     volume_initial: number;
     price_current: number;
     profit: number;
-    type?: number;          // 0 = BUY, 1 = SELL (added for correct direction display)
+    type: string;          // <-- ADDED: "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
 }
 
 export interface OrderResponse {
