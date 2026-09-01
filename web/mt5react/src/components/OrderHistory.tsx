@@ -556,7 +556,7 @@ const OrderHistory: React.FC = () => {
                                             color: 'rgba(255,255,255,0.8)',
                                             fontWeight: '600'
                                         }}>
-                                            {order.open_price !== undefined ? order.open_price.toFixed(5) : "0.00000"}
+                                            {order.price_open !== undefined ? order.price_open.toFixed(5) : "0.00000"}
                                         </td>
                                         <td style={{
                                             padding: '16px',
