@@ -5,10 +5,10 @@ export interface Account {
     name: string;
     equity: number;
     balance: number;
-    leverage?: number;      // <-- added
-    server?: string;        // <-- added
-    currency?: string;      // <-- added (optional)
-    trade_mode?: number;    // <-- added (optional)
+    leverage?: number;
+    server?: string;
+    currency?: string;
+    trade_mode?: number;
 }
 
 export interface OrderRequest {
@@ -21,7 +21,7 @@ export interface OrderRequest {
     comment?: string;
 }
 
-export interface Order{
+export interface Order {
     price_open: number;
     ticket: number;
     symbol: string;
@@ -47,7 +47,7 @@ export interface OrderHistoryResponse {
     data: Order[];
 }
 
-
+// ─── ACCOUNT ──────────────────────────────────────────────
 export async function getAccount(): Promise<Account> {
     const res = await fetch(`${BASE_URL}/account`);
     console.log('Fetching account info from:', `${BASE_URL}/account`);
@@ -59,90 +59,75 @@ export async function getAccount(): Promise<Account> {
     return res.json();
 }
 
+// ─── ORDER PLACEMENT ──────────────────────────────────────
 export async function placeOrder(order: OrderRequest): Promise<void> {
     const res = await fetch(`${BASE_URL}/order`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
     });
     if (!res.ok) {
         const errorData = await res.json();
         console.error(`Failed to place order: ${res.status} ${res.statusText}`, errorData);
-
         const detail =
             errorData.error?.details ??
             errorData.error?.message ??
             `Unknown error (status: ${res.status})`;
-
         throw new Error(detail);
     }
 }
+
+// ─── CLOSE ORDER ──────────────────────────────────────────
 export async function closeOrder(ticket: number): Promise<void> {
     const res = await fetch(`${BASE_URL}/order/close`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticket }),
     });
-
     if (!res.ok) {
         const errorData = await res.json();
         console.error(`Failed to close order ${ticket}: ${res.status} ${res.statusText}`, errorData);
-
         const detail =
             errorData.error?.details ??
             errorData.error?.message ??
             `Unknown error (status: ${res.status})`;
-
         throw new Error(detail);
     }
 }
 
+// ─── LIST ORDERS ──────────────────────────────────────────
 export async function getOrders(): Promise<OrderResponse> {
     const res = await fetch(`${BASE_URL}/order/list`);
-
     if (!res.ok) {
         let errorMessage = `Failed to fetch orders: ${res.status} ${res.statusText}`;
-
         const errorData = await res.json();
         errorMessage = errorData?.details || errorMessage;
-
         console.error(errorMessage);
         throw new Error(errorMessage);
     }
-
     return res.json();
 }
 
-
+// ─── ORDER HISTORY ────────────────────────────────────────
 export async function getOrderHistory(fromDate: string, toDate: string): Promise<OrderHistoryResponse> {
     const queryParams = new URLSearchParams({
         mode: "positions",
         from_date: fromDate,
         to_date: toDate,
     });
-
     const res = await fetch(`${BASE_URL}/history/orders?${queryParams.toString()}`);
-
     if (!res.ok) {
         let errorMessage = `Failed to fetch order history: ${res.status} ${res.statusText}`;
-
         const errorData = await res.json();
         errorMessage = errorData?.details || errorMessage;
-
         console.error(errorMessage);
         throw new Error(errorMessage);
     }
-
     console.log(`orders:`, res);
     return res.json();
 }
 
-
-
+// ─── HISTORICAL PRICES ──────────────────────────────────
 export interface Rate {
     time: number;
     open: number;
@@ -161,46 +146,31 @@ export interface HistoricalData {
     data: Rate[];
 }
 
-
 export async function getHistoricalData(
     symbol: string,
     from_date: string,
     to_date?: string,
     time_frame?: string
 ): Promise<HistoricalData> {
-    const params: Record<string, string> = {
-        symbol,
-        from_date,
-    };
-
-    if (to_date) {
-        params.to_date = to_date;
-    }
-
-    if (time_frame) {
-        params.time_frame = time_frame;
-    }
-
+    const params: Record<string, string> = { symbol, from_date };
+    if (to_date) params.to_date = to_date;
+    if (time_frame) params.time_frame = time_frame;
     const query = new URLSearchParams(params);
     console.log('fetching url:', `${BASE_URL}/history/prices?${query.toString()}`);
-
     const res = await fetch(`${BASE_URL}/history/prices?${query.toString()}`, {
         method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        }
+        headers: { "Content-Type": "application/json" }
     });
-
     if (!res.ok) {
         let errorMessage = '';
         const errorData = await res.json();
         errorMessage = errorData?.details || `Failed to fetch historical data`;
         throw new Error(errorMessage);
     }
-
     return res.json();
 }
 
+// ─── REAL‑TIME QUOTE ──────────────────────────────────────
 export interface Quote {
     symbol: string;
     bid: number;
@@ -213,17 +183,45 @@ export interface Quote {
 export async function getQuote(symbol: string): Promise<Quote> {
     const res = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}`, {
         method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        }
+        headers: { "Content-Type": "application/json" }
     });
-
     if (!res.ok) {
         let errorMessage = '';
         const errorData = await res.json();
         errorMessage = errorData?.details || `Failed to fetch quote for ${symbol}`;
         throw new Error(errorMessage);
     }
-
     return res.json();
+}
+
+// ─── SYMBOLS (auto‑complete) ─────────────────────────────
+// Common symbols – used as fallback if /symbols endpoint fails
+const FALLBACK_SYMBOLS = [
+    "XAUUSD", "XAUUSD.m", "XAUUSDd", "XAUUSD.pro", "GOLD", "GOLD.m",
+    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD",
+    "BTCUSD", "ETHUSD", "USDCHF", "EURGBP", "EURJPY", "GBPJPY",
+    "AUDJPY", "CADJPY", "NZDJPY", "EURCAD", "GBPCAD", "EURAUD",
+    "AUDCAD", "AUDNZD", "NZDCAD", "CHFJPY"
+];
+
+export async function getSymbols(): Promise<string[]> {
+    try {
+        const res = await fetch(`${BASE_URL}/symbols`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        if (!res.ok) {
+            console.warn(`Symbols endpoint returned ${res.status}, using fallback list`);
+            return FALLBACK_SYMBOLS;
+        }
+        const data = await res.json();
+        // If response is an array, use it; otherwise fallback
+        if (Array.isArray(data) && data.length > 0) {
+            return data;
+        }
+        return FALLBACK_SYMBOLS;
+    } catch (error) {
+        console.warn('Failed to fetch symbols from EA, using fallback list:', error);
+        return FALLBACK_SYMBOLS;
+    }
 }
