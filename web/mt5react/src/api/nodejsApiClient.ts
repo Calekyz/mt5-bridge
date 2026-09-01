@@ -5,6 +5,10 @@ export interface Account {
     name: string;
     equity: number;
     balance: number;
+    leverage?: number;      // <-- added
+    server?: string;        // <-- added
+    currency?: string;      // <-- added (optional)
+    trade_mode?: number;    // <-- added (optional)
 }
 
 export interface OrderRequest {
@@ -26,7 +30,6 @@ export interface Order{
     volume_initial: number;
     price_current: number;
     profit: number;
-
 }
 
 export interface OrderResponse {
@@ -205,7 +208,6 @@ export interface Quote {
     flags: number;
     time: string;
     volume: number;
-
 }
 
 export async function getQuote(symbol: string): Promise<Quote> {
@@ -215,7 +217,6 @@ export async function getQuote(symbol: string): Promise<Quote> {
             "Content-Type": "application/json",
         }
     });
-
 
     if (!res.ok) {
         let errorMessage = '';
