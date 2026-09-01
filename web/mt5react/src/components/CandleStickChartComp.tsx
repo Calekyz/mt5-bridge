@@ -21,7 +21,6 @@ const TIMEFRAMES = [
 
 const POPULAR_SYMBOLS = ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'BTCUSD', 'ETHUSD'];
 
-// Filter out weekend data and create continuous timestamps
 const filterWeekendData = (data: CandlePoint[]): CandlePoint[] => {
     const filteredData: CandlePoint[] = [];
     let continuousIndex = 0;
@@ -65,8 +64,6 @@ export function CandleChart() {
     const [isLoading, setIsLoading] = useState(false);
     const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
     const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
-    const [showVolume, setShowVolume] = useState(true);   // ✅ USED in chart options
-    const [chartType, setChartType] = useState<'candlestick' | 'line' | 'bar'>('candlestick'); // ✅ USED
 
     const showToast = (message: string, type: 'error' | 'success') => {
         setToast({ message, type });
@@ -123,10 +120,9 @@ export function CandleChart() {
 
     const stats = getOHLCStats();
 
-    // ─── CHART OPTIONS ──────────────────────────────────────────
     const options: ApexCharts.ApexOptions = {
         chart: {
-            type: chartType === 'line' ? 'line' : 'candlestick',
+            type: 'candlestick',
             height: 550,
             background: '#0f172a',
             toolbar: {
@@ -238,22 +234,14 @@ export function CandleChart() {
         legend: {
             show: false,
         },
-        ...(showVolume && chartType === 'candlestick' && {
-            annotations: {
-                xaxis: [],
-                yaxis: [],
-            },
-        }),
     };
 
     const chartSeries = [{ name: symbol, data: seriesData }];
 
-    // ─── RENDER ──────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-7xl mx-auto">
 
-                {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
                         📈 Price Chart
@@ -263,11 +251,9 @@ export function CandleChart() {
                     </p>
                 </div>
 
-                {/* Controls */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 mb-6">
                     <div className="flex flex-wrap items-end gap-4">
 
-                        {/* Symbol */}
                         <div className="flex-1 min-w-[150px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Symbol
@@ -293,7 +279,6 @@ export function CandleChart() {
                             </div>
                         </div>
 
-                        {/* Timeframe */}
                         <div className="min-w-[130px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Timeframe
@@ -310,7 +295,6 @@ export function CandleChart() {
                             </select>
                         </div>
 
-                        {/* From Date */}
                         <div className="min-w-[140px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 From
@@ -324,7 +308,6 @@ export function CandleChart() {
                             />
                         </div>
 
-                        {/* To Date */}
                         <div className="min-w-[140px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 To
@@ -339,7 +322,6 @@ export function CandleChart() {
                             />
                         </div>
 
-                        {/* Export Button */}
                         <div className="min-w-[100px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Export
@@ -354,7 +336,6 @@ export function CandleChart() {
                         </div>
                     </div>
 
-                    {/* Quick time buttons */}
                     <div className="flex flex-wrap gap-2 mt-4">
                         {[7, 14, 30, 60, 90, 180, 365].map((days) => (
                             <button
@@ -382,7 +363,6 @@ export function CandleChart() {
                     </div>
                 </div>
 
-                {/* Loading / Error State */}
                 {isLoading && (
                     <div className="flex items-center justify-center py-20">
                         <div className="flex items-center gap-3 text-slate-400">
@@ -392,19 +372,17 @@ export function CandleChart() {
                     </div>
                 )}
 
-                {/* Chart */}
                 {!isLoading && seriesData.length > 0 && (
                     <>
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-1 overflow-hidden">
                             <ApexChart
                                 options={options}
                                 series={chartSeries}
-                                type={chartType === 'line' ? 'line' : 'candlestick'}
+                                type="candlestick"
                                 height={550}
                             />
                         </div>
 
-                        {/* Stats bar */}
                         {stats && (
                             <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-4">
                                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 text-center">
@@ -440,7 +418,6 @@ export function CandleChart() {
                     </>
                 )}
 
-                {/* Toast */}
                 {toast && (
                     <div
                         className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl border-l-4 backdrop-blur-sm transition-all duration-300 ${
