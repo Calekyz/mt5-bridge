@@ -37,6 +37,17 @@ export const OrdersList: React.FC = () => {
         }
     };
 
+    // Helper to get BUY/SELL from the API's type field
+    const getOrderType = (order: any) => {
+        if (order.type) {
+            // The API returns strings like "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+            return order.type === "POSITION_TYPE_BUY" ? "BUY" : "SELL";
+        }
+        // Fallback for older API versions (should not happen now)
+        console.warn("Order type missing, using price fallback");
+        return order.price_current >= order.price_open ? "BUY" : "SELL";
+    };
+
     if (loading && !orders) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -55,17 +66,6 @@ export const OrdersList: React.FC = () => {
 
     const opened = orders?.opened || [];
     const pending = orders?.pending || [];
-
-    // Helper to get order direction from type
-    const getOrderType = (order: any) => {
-        // If type exists, use it: 0 = BUY, 1 = SELL
-        if (order.type !== undefined) {
-            return order.type === 0 ? "BUY" : "SELL";
-        }
-        // Fallback: if price_current > price_open, it's likely a BUY
-        // But this is not reliable! Better to fix the API.
-        return order.price_current >= order.price_open ? "BUY" : "SELL";
-    };
 
     return (
         <div className="w-full max-w-6xl mx-auto">
