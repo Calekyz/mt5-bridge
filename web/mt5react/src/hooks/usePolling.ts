@@ -9,7 +9,7 @@ export function usePolling(callback: () => void, delay: number) {
 
   useEffect(() => {
     const tick = () => savedCallback.current();
-    tick(); // call immediately on mount
+    tick();
     const id = setInterval(tick, delay);
     return () => clearInterval(id);
   }, [delay]);
