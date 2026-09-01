@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, AlertTriangle, Target, Activity } from 'lucide-react';
-import {getQuote, placeOrder} from "../api/nodejsApiClient";
-import {toast} from "react-toastify";
+import { TrendingUp, DollarSign, AlertTriangle, Target, Activity, Search, X } from 'lucide-react';
+import { getQuote, placeOrder, getSymbols } from "../api/nodejsApiClient";
+import { toast } from "react-toastify";
 
 interface OrderRequest {
     symbol: string;
@@ -37,9 +37,44 @@ const OrderRequestForm: React.FC = () => {
     const [loadingQuote, setLoadingQuote] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
 
-    // Fetch quote when symbol changes
+    // ─── SYMBOLS AUTO‑COMPLETE ──────────────────────────
+    const [symbols, setSymbols] = useState<string[]>([]);
+    const [filteredSymbols, setFilteredSymbols] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loadingSymbols, setLoadingSymbols] = useState(true);
+
+    // Fetch symbols on mount
     useEffect(() => {
-        if (formData.symbol.length >= 3) {
+        const loadSymbols = async () => {
+            try {
+                const data = await getSymbols();
+                setSymbols(data);
+                setFilteredSymbols(data);
+            } catch (error) {
+                console.error('Failed to load symbols:', error);
+            } finally {
+                setLoadingSymbols(false);
+            }
+        };
+        loadSymbols();
+    }, []);
+
+    // Filter symbols as user types
+    useEffect(() => {
+        const input = formData.symbol.toUpperCase();
+        if (input.length === 0) {
+            setFilteredSymbols(symbols.slice(0, 20));
+            return;
+        }
+        const filtered = symbols
+            .filter(s => s.toUpperCase().includes(input))
+            .slice(0, 20);
+        setFilteredSymbols(filtered);
+    }, [formData.symbol, symbols]);
+
+    // ─── QUOTE FETCH ──────────────────────────────────────
+    useEffect(() => {
+        if (formData.symbol.length >= 2) {
             fetchQuote();
         } else {
             setQuote(null);
@@ -48,7 +83,7 @@ const OrderRequestForm: React.FC = () => {
     }, [formData.symbol]);
 
     const fetchQuote = async () => {
-        if (!formData.symbol || formData.symbol.length < 3) return;
+        if (!formData.symbol || formData.symbol.length < 2) return;
 
         setLoadingQuote(true);
         setQuoteError(null);
@@ -64,6 +99,7 @@ const OrderRequestForm: React.FC = () => {
         }
     };
 
+    // ─── HANDLERS ──────────────────────────────────────────
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
@@ -73,12 +109,21 @@ const OrderRequestForm: React.FC = () => {
                 ? value === "" ? undefined : parseFloat(value)
                 : value,
         }));
+        // Show suggestions when typing
+        if (name === "symbol") {
+            setShowSuggestions(true);
+        }
+    };
+
+    const handleSymbolSelect = (symbol: string) => {
+        setFormData(prev => ({ ...prev, symbol }));
+        setShowSuggestions(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            formData.symbol = formData.symbol.toUpperCase()
+            formData.symbol = formData.symbol.toUpperCase();
             console.log("Placing order with data:", formData);
             await placeOrder(formData);
             toast.success("Order placed successfully!");
@@ -119,21 +164,60 @@ const OrderRequestForm: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Symbol and Volume Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                         <label className="text-xs font-semibold text-blue-200 flex items-center gap-2">
                             <DollarSign className="w-3 h-3 text-blue-400" />
                             Trading Symbol
+                            {loadingSymbols && (
+                                <span className="text-xs text-blue-400 animate-pulse">Loading...</span>
+                            )}
                         </label>
-                        <input
-                            type="text"
-                            name="symbol"
-                            placeholder="e.g. EURUSD"
-                            value={formData.symbol}
-                            onChange={handleChange}
-                            required
-                            minLength={3}
-                            className="w-full px-4 py-3 rounded-xl border border-blue-700/50 bg-slate-800/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-400 font-mono uppercase shadow-inner"
-                        />
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="symbol"
+                                placeholder="e.g. XAUUSD"
+                                value={formData.symbol}
+                                onChange={handleChange}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => {
+                                    // Delay to allow click on suggestion
+                                    setTimeout(() => setShowSuggestions(false), 200);
+                                }}
+                                required
+                                minLength={2}
+                                className="w-full px-4 py-3 rounded-xl border border-blue-700/50 bg-slate-800/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-400 font-mono uppercase shadow-inner pr-10"
+                            />
+                            {formData.symbol && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, symbol: "" }))}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                            {showSuggestions && filteredSymbols.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-blue-700/50 rounded-xl shadow-2xl max-h-48 overflow-y-auto backdrop-blur-sm">
+                                    {filteredSymbols.map((s) => (
+                                        <button
+                                            key={s}
+                                            type="button"
+                                            onClick={() => handleSymbolSelect(s)}
+                                            className="w-full text-left px-4 py-2 hover:bg-blue-600/30 text-white text-sm font-mono transition-colors flex items-center gap-2"
+                                        >
+                                            <Search className="w-3 h-3 text-blue-400" />
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        {filteredSymbols.length === 0 && formData.symbol.length > 0 && !loadingSymbols && (
+                            <p className="text-xs text-yellow-400 mt-1">
+                                No matching symbols found. Try typing more or check Market Watch.
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
@@ -153,7 +237,7 @@ const OrderRequestForm: React.FC = () => {
                 </div>
 
                 {/* Live Price Display */}
-                {formData.symbol.length >= 3 && (
+                {formData.symbol.length >= 2 && (
                     <div className="bg-gradient-to-r from-emerald-900/30 to-blue-900/30 rounded-xl p-4 border border-emerald-700/30 backdrop-blur-sm">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="p-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg">
@@ -199,16 +283,16 @@ const OrderRequestForm: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={fetchQuote}
-                                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline"
+                                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
                                 >
-                                    Retry
+                                    🔄 Retry Quote
                                 </button>
                             </div>
                         )}
 
                         {loadingQuote && (
                             <div className="text-center py-4">
-                                <p className="text-blue-300 text-sm">Loading price data...</p>
+                                <p className="text-blue-300 text-sm animate-pulse">Loading price data...</p>
                             </div>
                         )}
                     </div>
