@@ -1,5 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
+// ─── ACCOUNT ──────────────────────────────────────────────
 export interface Account {
     login: number;
     name: string;
@@ -11,6 +12,7 @@ export interface Account {
     trade_mode?: number;
 }
 
+// ─── ORDER REQUEST ────────────────────────────────────────
 export interface OrderRequest {
     symbol: string;
     volume: number;
@@ -21,6 +23,7 @@ export interface OrderRequest {
     comment?: string;
 }
 
+// ─── OPEN ORDER (from /order/list) ──────────────────────
 export interface Order {
     price_open: number;
     ticket: number;
@@ -30,7 +33,7 @@ export interface Order {
     volume_initial: number;
     price_current: number;
     profit: number;
-    type: string;          // <-- ADDED: "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+    type: string;          // "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
 }
 
 export interface OrderResponse {
@@ -40,15 +43,42 @@ export interface OrderResponse {
     pending: Order[];
 }
 
+// ─── HISTORY ORDER (from /history/orders?mode=positions) ──
+export interface HistoryOrder {
+    symbol: string;
+    open_time: number;
+    ticket: number;
+    type: string;                     // "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+    volume: number;
+    open_price: number;
+    sl_price: number;
+    sl_pips: number;
+    tp_price: number;
+    tp_pips: number;
+    close_price: number;
+    close_time: number;
+    duration: number;                 // in seconds
+    swap: number;
+    commission: number;
+    profit: number;
+    net_profit: number;
+    pip_profit: number;
+    initiating_order_type: string;
+    initiated_by_pending_order: boolean;
+    comment: string;
+    magic: number;
+}
+
 export interface OrderHistoryResponse {
     message: string;
     orderCount: number;
     from_date: number;
     to_date: number;
-    data: Order[];
+    data: HistoryOrder[];   // uses the rich history type
 }
 
-// ─── ACCOUNT ──────────────────────────────────────────────
+// ─── API FUNCTIONS ──────────────────────────────────────
+
 export async function getAccount(): Promise<Account> {
     const res = await fetch(`${BASE_URL}/account`);
     console.log('Fetching account info from:', `${BASE_URL}/account`);
@@ -60,7 +90,6 @@ export async function getAccount(): Promise<Account> {
     return res.json();
 }
 
-// ─── ORDER PLACEMENT ──────────────────────────────────────
 export async function placeOrder(order: OrderRequest): Promise<void> {
     const res = await fetch(`${BASE_URL}/order`, {
         method: "POST",
@@ -78,7 +107,6 @@ export async function placeOrder(order: OrderRequest): Promise<void> {
     }
 }
 
-// ─── CLOSE ORDER ──────────────────────────────────────────
 export async function closeOrder(ticket: number): Promise<void> {
     const res = await fetch(`${BASE_URL}/order/close`, {
         method: "POST",
@@ -96,7 +124,6 @@ export async function closeOrder(ticket: number): Promise<void> {
     }
 }
 
-// ─── LIST ORDERS ──────────────────────────────────────────
 export async function getOrders(): Promise<OrderResponse> {
     const res = await fetch(`${BASE_URL}/order/list`);
     if (!res.ok) {
@@ -109,7 +136,6 @@ export async function getOrders(): Promise<OrderResponse> {
     return res.json();
 }
 
-// ─── ORDER HISTORY ────────────────────────────────────────
 export async function getOrderHistory(fromDate: string, toDate: string): Promise<OrderHistoryResponse> {
     const queryParams = new URLSearchParams({
         mode: "positions",
