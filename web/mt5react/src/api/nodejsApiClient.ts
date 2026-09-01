@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8891/v1'; // your Express server port
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 export interface Account {
     login: number;
@@ -226,9 +226,3 @@ export async function getQuote(symbol: string): Promise<Quote> {
 
     return res.json();
 }
-
-
-
-
-
-
