@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, AlertTriangle, Target, Activity, Search, X } from 'lucide-react';
+import { TrendingUp, DollarSign, AlertTriangle, Target, Activity, Search, X, Info } from 'lucide-react';
 import { getQuote, placeOrder, getSymbols } from "../api/nodejsApiClient";
 import { toast } from "react-toastify";
 
@@ -42,6 +42,7 @@ const OrderRequestForm: React.FC = () => {
     const [filteredSymbols, setFilteredSymbols] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [loadingSymbols, setLoadingSymbols] = useState(true);
+    const [symbolsSet, setSymbolsSet] = useState<Set<string>>(new Set());
 
     // Fetch symbols on mount
     useEffect(() => {
@@ -49,7 +50,7 @@ const OrderRequestForm: React.FC = () => {
             try {
                 const data = await getSymbols();
                 setSymbols(data);
-                setFilteredSymbols(data);
+                setSymbolsSet(new Set(data.map(s => s.toUpperCase())));
             } catch (error) {
                 console.error('Failed to load symbols:', error);
             } finally {
@@ -73,23 +74,37 @@ const OrderRequestForm: React.FC = () => {
     }, [formData.symbol, symbols]);
 
     // ─── QUOTE FETCH ──────────────────────────────────────
+    // Only fetch if the symbol is valid (exists in the symbols list)
+    const isSymbolValid = () => {
+        if (!formData.symbol) return false;
+        return symbolsSet.has(formData.symbol.toUpperCase());
+    };
+
     useEffect(() => {
-        if (formData.symbol.length >= 2) {
+        if (formData.symbol.length >= 2 && isSymbolValid()) {
             fetchQuote();
+        } else if (formData.symbol.length >= 2 && !isSymbolValid()) {
+            setQuote(null);
+            setQuoteError(`Symbol "${formData.symbol}" not recognized. Please select from the dropdown.`);
         } else {
             setQuote(null);
             setQuoteError(null);
         }
-    }, [formData.symbol]);
+    }, [formData.symbol, symbolsSet]);
 
     const fetchQuote = async () => {
         if (!formData.symbol || formData.symbol.length < 2) return;
+        if (!isSymbolValid()) {
+            setQuoteError(`Symbol "${formData.symbol}" not recognized. Please select from the dropdown.`);
+            return;
+        }
 
         setLoadingQuote(true);
         setQuoteError(null);
 
         try {
-            const quoteData = await getQuote(formData.symbol.toUpperCase());
+            // Use the symbol as-is (preserve case, e.g., XAUUSD.m)
+            const quoteData = await getQuote(formData.symbol);
             setQuote(quoteData);
         } catch (error) {
             setQuoteError(error instanceof Error ? error.message : "Failed to fetch quote");
@@ -109,21 +124,27 @@ const OrderRequestForm: React.FC = () => {
                 ? value === "" ? undefined : parseFloat(value)
                 : value,
         }));
-        // Show suggestions when typing
         if (name === "symbol") {
             setShowSuggestions(true);
+            // Clear any previous quote error when user types
+            setQuoteError(null);
         }
     };
 
     const handleSymbolSelect = (symbol: string) => {
         setFormData(prev => ({ ...prev, symbol }));
         setShowSuggestions(false);
+        setQuoteError(null); // Clear error on selection
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isSymbolValid()) {
+            toast.error("Please select a valid symbol from the dropdown.");
+            return;
+        }
         try {
-            formData.symbol = formData.symbol.toUpperCase();
+            // Use the symbol as-is (preserve case)
             console.log("Placing order with data:", formData);
             await placeOrder(formData);
             toast.success("Order placed successfully!");
@@ -181,12 +202,15 @@ const OrderRequestForm: React.FC = () => {
                                 onChange={handleChange}
                                 onFocus={() => setShowSuggestions(true)}
                                 onBlur={() => {
-                                    // Delay to allow click on suggestion
                                     setTimeout(() => setShowSuggestions(false), 200);
                                 }}
                                 required
                                 minLength={2}
-                                className="w-full px-4 py-3 rounded-xl border border-blue-700/50 bg-slate-800/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-400 font-mono uppercase shadow-inner pr-10"
+                                className={`w-full px-4 py-3 rounded-xl border ${
+                                    formData.symbol && !isSymbolValid() && formData.symbol.length >= 2
+                                        ? 'border-red-500/70 bg-red-900/20'
+                                        : 'border-blue-700/50 bg-slate-800/80'
+                                } backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-400 font-mono uppercase shadow-inner pr-10`}
                             />
                             {formData.symbol && (
                                 <button
@@ -213,6 +237,12 @@ const OrderRequestForm: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                        {formData.symbol && !isSymbolValid() && formData.symbol.length >= 2 && (
+                            <p className="text-xs text-red-400 flex items-center gap-1 mt-1">
+                                <Info className="w-3 h-3" />
+                                Symbol not recognized. Please select from the dropdown.
+                            </p>
+                        )}
                         {filteredSymbols.length === 0 && formData.symbol.length > 0 && !loadingSymbols && (
                             <p className="text-xs text-yellow-400 mt-1">
                                 No matching symbols found. Try typing more or check Market Watch.
@@ -280,13 +310,17 @@ const OrderRequestForm: React.FC = () => {
                         {quoteError && (
                             <div className="text-center py-4">
                                 <p className="text-red-400 text-sm">{quoteError}</p>
-                                <button
-                                    type="button"
-                                    onClick={fetchQuote}
-                                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
-                                >
-                                    🔄 Retry Quote
-                                </button>
+                                {quoteError.includes("not recognized") ? (
+                                    <p className="text-xs text-blue-300 mt-2">Please select a symbol from the dropdown.</p>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={fetchQuote}
+                                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
+                                    >
+                                        🔄 Retry Quote
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -391,11 +425,21 @@ const OrderRequestForm: React.FC = () => {
                 <div className="pt-4">
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] shadow-xl hover:shadow-blue-500/25 flex items-center justify-center gap-2"
+                        disabled={!isSymbolValid()}
+                        className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] shadow-xl flex items-center justify-center gap-2 ${
+                            isSymbolValid()
+                                ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 hover:shadow-blue-500/25 text-white'
+                                : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        }`}
                     >
                         <TrendingUp className="w-5 h-5" />
                         Execute Trade Order
                     </button>
+                    {!isSymbolValid() && formData.symbol.length >= 2 && (
+                        <p className="text-xs text-red-400 text-center mt-2">
+                            Please select a valid symbol from the dropdown.
+                        </p>
+                    )}
                 </div>
 
                 {/* Order Summary */}
