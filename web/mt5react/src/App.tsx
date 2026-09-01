@@ -4,8 +4,9 @@ import OrderRequest from "./components/OrderRequest";
 import { OrdersList } from "./components/OrderList";
 import { ToastContainer } from "react-toastify";
 import OrderHistory from "./components/OrderHistory.tsx";
-import {CandleChart} from "./components/CandleStickChartComp.tsx";
-import WsStreaming from "./components/WsStreaming.tsx"; // import your WS streaming component
+import { CandleChart } from "./components/CandleStickChartComp.tsx";
+import WsStreaming from "./components/WsStreaming.tsx";
+import { PipnexTradingSystem } from "./components/PipnexTradingSystem"; // NEW
 
 function App() {
     return (
@@ -44,12 +45,18 @@ function App() {
                     >
                         Chart
                     </Link>
-                    {/* New WebSocket Streaming tab */}
                     <Link
                         to="/ws"
                         className="block py-3 px-4 rounded hover:bg-gray-700 transition-colors"
                     >
                         WS Streaming
+                    </Link>
+                    {/* NEW STRATEGIES LINK */}
+                    <Link
+                        to="/strategies"
+                        className="block py-3 px-4 rounded hover:bg-gray-700 transition-colors"
+                    >
+                        🚀 Strategies
                     </Link>
                 </nav>
 
@@ -70,8 +77,9 @@ function App() {
                             } />
                             <Route path="/history" element={<OrderHistory />} />
                             <Route path="/chart" element={<CandleChart />} />
-                            {/* New route for WS streaming */}
                             <Route path="/ws" element={<WsStreaming />} />
+                            {/* NEW STRATEGIES ROUTE */}
+                            <Route path="/strategies" element={<PipnexTradingSystem />} />
                         </Routes>
                     </div>
                 </main>
