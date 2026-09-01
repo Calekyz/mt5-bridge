@@ -56,6 +56,17 @@ export const OrdersList: React.FC = () => {
     const opened = orders?.opened || [];
     const pending = orders?.pending || [];
 
+    // Helper to get order direction from type
+    const getOrderType = (order: any) => {
+        // If type exists, use it: 0 = BUY, 1 = SELL
+        if (order.type !== undefined) {
+            return order.type === 0 ? "BUY" : "SELL";
+        }
+        // Fallback: if price_current > price_open, it's likely a BUY
+        // But this is not reliable! Better to fix the API.
+        return order.price_current >= order.price_open ? "BUY" : "SELL";
+    };
+
     return (
         <div className="w-full max-w-6xl mx-auto">
             <div className="bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
@@ -90,28 +101,33 @@ export const OrdersList: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {opened.map((order) => (
-                                    <tr key={order.ticket} className="border-t border-gray-700 hover:bg-gray-700/30 transition">
-                                        <td className="px-4 py-3 text-white font-mono">#{order.ticket}</td>
-                                        <td className="px-4 py-3 text-white font-bold">{order.symbol}</td>
-                                        <td className="px-4 py-3 text-white">{order.price_open < order.price_current ? "BUY" : "SELL"}</td>
-                                        <td className="px-4 py-3 text-white">{order.volume}</td>
-                                        <td className="px-4 py-3 text-white">{order.price_open.toFixed(5)}</td>
-                                        <td className="px-4 py-3 text-white">{order.price_current.toFixed(5)}</td>
-                                        <td className={`px-4 py-3 font-bold ${order.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                                            ${order.profit.toFixed(2)}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <button
-                                                onClick={() => handleClose(order.ticket)}
-                                                disabled={closing === order.ticket}
-                                                className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white px-4 py-1 rounded-lg text-sm font-semibold transition"
-                                            >
-                                                {closing === order.ticket ? "Closing..." : "Close"}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {opened.map((order) => {
+                                    const orderType = getOrderType(order);
+                                    return (
+                                        <tr key={order.ticket} className="border-t border-gray-700 hover:bg-gray-700/30 transition">
+                                            <td className="px-4 py-3 text-white font-mono">#{order.ticket}</td>
+                                            <td className="px-4 py-3 text-white font-bold">{order.symbol}</td>
+                                            <td className={`px-4 py-3 font-bold ${orderType === "BUY" ? "text-green-400" : "text-red-400"}`}>
+                                                {orderType}
+                                            </td>
+                                            <td className="px-4 py-3 text-white">{order.volume}</td>
+                                            <td className="px-4 py-3 text-white">{order.price_open.toFixed(5)}</td>
+                                            <td className="px-4 py-3 text-white">{order.price_current.toFixed(5)}</td>
+                                            <td className={`px-4 py-3 font-bold ${order.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                                                ${order.profit.toFixed(2)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <button
+                                                    onClick={() => handleClose(order.ticket)}
+                                                    disabled={closing === order.ticket}
+                                                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white px-4 py-1 rounded-lg text-sm font-semibold transition"
+                                                >
+                                                    {closing === order.ticket ? "Closing..." : "Close"}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
