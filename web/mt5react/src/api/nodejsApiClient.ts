@@ -30,6 +30,7 @@ export interface Order {
     volume_initial: number;
     price_current: number;
     profit: number;
+    type?: number;          // 0 = BUY, 1 = SELL (added for correct direction display)
 }
 
 export interface OrderResponse {
@@ -195,7 +196,6 @@ export async function getQuote(symbol: string): Promise<Quote> {
 }
 
 // ─── SYMBOLS (auto‑complete) ─────────────────────────────
-// Common symbols – used as fallback if /symbols endpoint fails
 const FALLBACK_SYMBOLS = [
     "XAUUSD", "XAUUSD.m", "XAUUSDd", "XAUUSD.pro", "GOLD", "GOLD.m",
     "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD",
@@ -215,7 +215,6 @@ export async function getSymbols(): Promise<string[]> {
             return FALLBACK_SYMBOLS;
         }
         const data = await res.json();
-        // If response is an array, use it; otherwise fallback
         if (Array.isArray(data) && data.length > 0) {
             return data;
         }
