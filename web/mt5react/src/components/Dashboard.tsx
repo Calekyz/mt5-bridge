@@ -4,7 +4,7 @@ import { AccountStats } from './AccountStats';
 import { StrategySettings } from './StrategySettings';
 import { Loader2, Power, PowerOff, AlertCircle } from 'lucide-react';
 
-type Strategy = 'pipnex' | 'newspro' | 'nova';
+type Strategy = 'pipnex' | 'nova';
 
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
@@ -18,11 +18,8 @@ export const Dashboard: React.FC = () => {
         setIsToggling(true);
         setCommandError(null);
         try {
-            // First, send strategy selection
             await sendCommand('Master_Strategy', selectedStrategy);
-            // Then send settings (convert to JSON)
             await sendCommand('Master_Settings', JSON.stringify(settings));
-            // Toggle enable/disable
             const newState = !isRunning;
             await sendCommand('Master_Enabled', newState ? 1 : 0);
             setIsRunning(newState);
@@ -33,7 +30,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // When strategy changes, reset settings to defaults
     useEffect(() => {
         setSettings({});
     }, [selectedStrategy]);
@@ -41,7 +37,6 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-6xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         📊 Trading Dashboard
@@ -52,7 +47,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Account Stats */}
                 {loading ? (
                     <div className="flex justify-center py-8">
                         <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
@@ -72,12 +66,11 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                {/* Strategy Selector */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                         <label className="text-slate-300 font-medium text-sm">Select Strategy:</label>
                         <div className="flex flex-wrap gap-2">
-                            {(['pipnex', 'newspro', 'nova'] as Strategy[]).map((s) => (
+                            {(['pipnex', 'nova'] as Strategy[]).map((s) => (
                                 <button
                                     key={s}
                                     onClick={() => setSelectedStrategy(s)}
@@ -87,14 +80,13 @@ export const Dashboard: React.FC = () => {
                                             : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                                     }`}
                                 >
-                                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                                    {s === 'pipnex' ? 'PipNex' : 'NOVA'}
                                 </button>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Strategy Settings */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6">
                     <StrategySettings
                         strategy={selectedStrategy}
@@ -103,16 +95,13 @@ export const Dashboard: React.FC = () => {
                     />
                 </div>
 
-                {/* Start/Stop & Status */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <span className="text-slate-400 text-sm">Status:</span>
                         <span className={`font-semibold ${isRunning ? 'text-green-400' : 'text-red-400'}`}>
                             {isRunning ? 'Running' : 'Stopped'}
                         </span>
-                        {isRunning && (
-                            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        )}
+                        {isRunning && <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>}
                     </div>
                     <button
                         onClick={handleStartStop}
