@@ -11,7 +11,7 @@ interface StrategySetting {
 }
 
 interface StrategySettingsProps {
-    strategy: 'pipnex' | 'newspro' | 'nova';
+    strategy: 'pipnex' | 'nova';
     onSettingsChange: (settings: Record<string, any>) => void;
     initialSettings?: Record<string, any>;
 }
@@ -26,17 +26,6 @@ const STRATEGY_DEFS: Record<string, { label: string; settings: StrategySetting[]
             { key: 'maxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0, default: 0.50 },
             { key: 'maxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
             { key: 'martingale', label: 'Martingale', type: 'checkbox', default: false },
-        ],
-    },
-    newspro: {
-        label: 'NewsPro MX4',
-        settings: [
-            { key: 'lotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
-            { key: 'entryDistance', label: 'Entry Distance (pts)', type: 'number', step: 1, min: 1, default: 50 },
-            { key: 'stepDistance', label: 'Step Distance (pts)', type: 'number', step: 1, min: 1, default: 25 },
-            { key: 'trailingStop', label: 'Trailing Stop (pts)', type: 'number', step: 1, min: 0, default: 20 },
-            { key: 'trailingPending', label: 'Trailing Pending (pts)', type: 'number', step: 1, min: 0, default: 50 },
-            { key: 'numberOfOrders', label: 'Number of Orders', type: 'number', step: 1, min: 1, default: 1 },
         ],
     },
     nova: {
