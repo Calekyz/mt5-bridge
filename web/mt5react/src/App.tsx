@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 import { useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -37,7 +37,6 @@ function App() {
         setIsAuthenticated(false);
     };
 
-    // Define navigation items
     const navItems = [
         { path: "/", label: "Home", icon: Home },
         { path: "/orders", label: "Orders", icon: FileText },
@@ -71,7 +70,7 @@ function App() {
                             </button>
                         </header>
 
-                        {/* Main Content (scrollable) */}
+                        {/* Main Content */}
                         <main className="flex-1 mt-14 mb-16 overflow-y-auto p-4">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
@@ -110,7 +109,6 @@ function App() {
                             })}
                         </nav>
 
-                        {/* Toast container */}
                         <ToastContainer
                             style={{ width: "400px", height: "100px" }}
                             position="top-right"
@@ -124,7 +122,6 @@ function App() {
                         />
                     </>
                 ) : (
-                    // Login page – no header/nav
                     <>
                         <LoginPage onLogin={handleLogin} />
                         <ToastContainer
