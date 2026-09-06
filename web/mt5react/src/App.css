@@ -1,3 +1,4 @@
+/* Trade form – remains centered on its own page, not affecting the main layout */
 .trade-form {
   max-width: 500px;
   margin: 40px auto;
