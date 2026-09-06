@@ -14,25 +14,37 @@ interface Strategy {
         losingTrades: number;
         winRate: number;
         dailyProfit?: number;
-        uptime?: number; // seconds
+        uptime?: number;
     };
 }
 
 type StrategyMap = Record<string, Strategy>;
 
-// EA definitions for UI – only PipNex and NOVA
-const EA_DEFS = {
+// EA definitions – only PipNex and NOVA
+const EA_DEFS: Record<string, {
+    label: string;
+    icon: string;
+    description: string;
+    settings: {
+        key: string;
+        label: string;
+        type: 'number' | 'checkbox';
+        step?: number;
+        min?: number;
+        default?: any;
+    }[];
+}> = {
     pipnex: {
         label: 'PipNex Algo',
         icon: '📈',
         description: 'Scalper grid with martingale',
         settings: [
-            { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01 },
-            { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1 },
-            { key: 'CloseProfit', label: 'Close Profit ($)', type: 'number', step: 0.05, min: 0 },
-            { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0 },
-            { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1 },
-            { key: 'Martingale', label: 'Martingale', type: 'checkbox' },
+            { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
+            { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
+            { key: 'CloseProfit', label: 'Close Profit ($)', type: 'number', step: 0.05, min: 0, default: 2.0 },
+            { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0, default: 0.50 },
+            { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
+            { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
         ],
     },
     nova: {
@@ -40,10 +52,10 @@ const EA_DEFS = {
         icon: '🤖',
         description: 'Swing trading with Fibonacci levels',
         settings: [
-            { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01 },
-            { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1 },
-            { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1 },
-            { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1 },
+            { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.05 },
+            { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1, default: 30 },
+            { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1, default: 3.0 },
+            { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
         ],
     },
 };
@@ -60,11 +72,11 @@ export const PipnexTradingSystem: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
             const data = await res.json();
-            // Enhance with stats (simulate for now – later we can fetch from EA)
+            // Enhance with stats (simulate for now)
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
                 enhanced[id] = {
-                    ...strategy,
+                    ...(strategy as Strategy),
                     stats: {
                         totalTrades: Math.floor(Math.random() * 50) + 5,
                         winningTrades: Math.floor(Math.random() * 30) + 2,
@@ -72,7 +84,7 @@ export const PipnexTradingSystem: React.FC = () => {
                         winRate: +(Math.random() * 30 + 50).toFixed(1),
                         dailyProfit: +(Math.random() * 200 - 50).toFixed(2),
                         uptime: Math.floor(Math.random() * 3600) + 600,
-                    }
+                    },
                 };
             }
             setStrategies(enhanced);
@@ -126,13 +138,12 @@ export const PipnexTradingSystem: React.FC = () => {
         }
     };
 
-    // ---- Recommended settings based on account balance ----
-    const getRecommendedLot = (balance: number) => {
-        // Risk 1% per trade, assume SL = 50 pips, pip value ~ $1 per lot for XAUUSD
-        const riskAmount = balance * 0.01;
-        // Assuming 50 pips SL, lot size = risk / (50 * pip_value)
-        // For simplicity, return 0.01 per $1000 balance
-        return Math.round((balance / 1000) * 0.01 * 100) / 100;
+    // Recommended lot size based on balance (1% risk)
+    const getRecommendedLot = (balance: number): number => {
+        // Example: 1% of balance / 50 (assumed stop loss in pips) * pip value
+        // Simplified: 0.01 lot per $1000
+        const lot = (balance / 1000) * 0.01;
+        return Math.round(lot * 100) / 100;
     };
 
     if (loading || accountLoading) {
@@ -272,8 +283,8 @@ export const PipnexTradingSystem: React.FC = () => {
                                                     </div>
                                                     <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                                                         <div className="text-xs text-slate-400">Daily P&L</div>
-                                                        <div className={`text-lg font-bold ${stats.dailyProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                            ${stats.dailyProfit?.toFixed(2) || '0.00'}
+                                                        <div className={`text-lg font-bold ${(stats.dailyProfit ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                            ${(stats.dailyProfit ?? 0).toFixed(2)}
                                                         </div>
                                                     </div>
                                                 </div>
