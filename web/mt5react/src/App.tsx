@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { 
@@ -17,6 +17,7 @@ import {
 // ---- Components ----
 import { LoginPage } from "./components/LoginPage";
 import { Dashboard } from "./components/Dashboard";
+import { Loader } from "./components/Loader";
 import AccountInfo from "./components/AccountInfo";
 import OrderRequest from "./components/OrderRequest";
 import { OrdersList } from "./components/OrderList";
@@ -25,15 +26,55 @@ import { CandleChart } from "./components/CandleStickChartComp";
 import WsStreaming from "./components/WsStreaming";
 import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
 
+// ---- Auth helpers ----
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+
+function getToken(): string | null {
+    return localStorage.getItem('token');
+}
+
+function clearToken() {
+    localStorage.removeItem('token');
+}
+
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
 
-    const handleLogin = (data: { login: string; password: string; server: string }) => {
-        console.log("Login data:", data);
+    // Check token on mount
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            setAuthChecked(true);
+            return;
+        }
+
+        // Verify token with backend
+        fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => {
+            if (res.ok) {
+                setIsAuthenticated(true);
+            } else {
+                clearToken();
+            }
+        })
+        .catch(() => {
+            clearToken();
+        })
+        .finally(() => {
+            setAuthChecked(true);
+        });
+    }, []);
+
+    const handleLogin = (data: { token: string; user: any }) => {
+        localStorage.setItem('token', data.token);
         setIsAuthenticated(true);
     };
 
     const handleLogout = () => {
+        clearToken();
         setIsAuthenticated(false);
     };
 
@@ -47,6 +88,11 @@ function App() {
         { path: "/ws", label: "WS", icon: Zap },
         { path: "/strategies", label: "Strategies", icon: Settings },
     ];
+
+    // ─── SHOW LOADER ──────────────────────────────────────────
+    if (!authChecked) {
+        return <Loader />;
+    }
 
     return (
         <Router>
@@ -66,7 +112,7 @@ function App() {
                         <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-b border-gray-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img 
-                                    src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
+                                    src="/logo.png" 
                                     alt="PipTrader AI Logo" 
                                     className="h-8 w-auto"
                                 />
@@ -136,20 +182,7 @@ function App() {
                         />
                     </>
                 ) : (
-                    <>
-                        <LoginPage onLogin={handleLogin} />
-                        <ToastContainer
-                            style={{ width: "400px", height: "100px" }}
-                            position="top-right"
-                            autoClose={3000}
-                            hideProgressBar={false}
-                            newestOnTop
-                            closeOnClick
-                            pauseOnHover
-                            draggable
-                            theme="dark"
-                        />
-                    </>
+                    <LoginPage onLogin={handleLogin} />
                 )}
             </div>
         </Router>
