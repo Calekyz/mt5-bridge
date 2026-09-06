@@ -74,8 +74,6 @@ export const PipnexTradingSystem: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
-
-    // Local state for input values (to allow typing on mobile)
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({});
 
     const fetchStatus = async () => {
@@ -108,7 +106,7 @@ export const PipnexTradingSystem: React.FC = () => {
                 };
             }
             setStrategies(enhanced);
-            // Initialize local inputs with current values
+            // Initialize local inputs
             const inputs: Record<string, Record<string, string>> = {};
             for (const [id, strat] of Object.entries(enhanced)) {
                 inputs[id] = {};
@@ -154,7 +152,8 @@ export const PipnexTradingSystem: React.FC = () => {
         }
     };
 
-    const updateSetting = async (id: string, key: string, value: number) => {
+    // updateSetting now accepts number | boolean
+    const updateSetting = async (id: string, key: string, value: number | boolean) => {
         setSaving(id);
         try {
             const res = await fetch(`${API_URL}/strategies/${id}/settings`, {
@@ -174,7 +173,6 @@ export const PipnexTradingSystem: React.FC = () => {
     };
 
     const handleInputChange = (id: string, key: string, rawValue: string) => {
-        // Update local state immediately so the user sees what they type
         setLocalInputs(prev => ({
             ...prev,
             [id]: {
@@ -188,10 +186,8 @@ export const PipnexTradingSystem: React.FC = () => {
         const raw = localInputs[id]?.[key] || '';
         const num = parseFloat(raw);
         if (!isNaN(num)) {
-            // Only update if it's a valid number
             updateSetting(id, key, num);
         } else {
-            // If invalid, revert to the last known good value
             const strategy = strategies[id];
             const def = EA_DEFS[id];
             const setting = def?.settings.find(s => s.key === key);
@@ -206,6 +202,18 @@ export const PipnexTradingSystem: React.FC = () => {
                 }));
             }
         }
+    };
+
+    const handleCheckboxChange = (id: string, key: string, checked: boolean) => {
+        updateSetting(id, key, checked);
+        // Also update local state to reflect the checkbox state (optional)
+        setLocalInputs(prev => ({
+            ...prev,
+            [id]: {
+                ...prev[id],
+                [key]: String(checked),
+            },
+        }));
     };
 
     const getRecommendedLot = (balance: number): number => {
@@ -462,15 +470,7 @@ export const PipnexTradingSystem: React.FC = () => {
                                                                     checked={!!checked}
                                                                     onChange={(e) => {
                                                                         const val = e.target.checked;
-                                                                        // Update local for consistency
-                                                                        setLocalInputs(prev => ({
-                                                                            ...prev,
-                                                                            [id]: {
-                                                                                ...prev[id],
-                                                                                [setting.key]: String(val),
-                                                                            },
-                                                                        }));
-                                                                        updateSetting(id, setting.key, val);
+                                                                        handleCheckboxChange(id, setting.key, val);
                                                                     }}
                                                                     className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                                                 />
