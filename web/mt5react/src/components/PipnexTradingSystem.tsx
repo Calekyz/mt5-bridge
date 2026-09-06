@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
 import { 
-    Loader2, TrendingUp, TrendingDown, 
+    Loader2, TrendingUp, 
     AlertCircle, RefreshCw, BarChart3, Calendar, 
     Clock, Activity, Zap, Shield, DollarSign, 
     Award, Target, PieChart, Layers 
