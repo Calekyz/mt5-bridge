@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
 import { 
     Loader2, TrendingUp, 
-    AlertCircle, RefreshCw, BarChart3, Calendar, 
-    Clock, Activity, Zap, Shield, DollarSign, 
-    Award, Target, PieChart, Layers 
+    AlertCircle, RefreshCw, 
+    Activity, Zap, Shield, 
+    Award, PieChart 
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -77,7 +77,6 @@ export const PipnexTradingSystem: React.FC = () => {
     const [strategies, setStrategies] = useState<StrategyMap>({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({});
 
     const fetchStatus = async () => {
         setRefreshing(true);
@@ -114,21 +113,6 @@ export const PipnexTradingSystem: React.FC = () => {
                 };
             }
             setStrategies(enhanced);
-            // Init local inputs
-            const inputs: Record<string, Record<string, string>> = {};
-            for (const [id, strat] of Object.entries(enhanced)) {
-                inputs[id] = {};
-                const def = EA_DEFS[id];
-                if (def) {
-                    for (const setting of def.settings) {
-                        if (setting.type === 'number') {
-                            const val = strat.settings?.[setting.key] ?? setting.default;
-                            inputs[id][setting.key] = String(val);
-                        }
-                    }
-                }
-            }
-            setLocalInputs(inputs);
         } catch (err) {
             console.error('Failed to fetch strategies:', err);
         } finally {
@@ -150,7 +134,7 @@ export const PipnexTradingSystem: React.FC = () => {
     const getOverallStats = () => {
         let totalTrades = 0, winningTrades = 0, losingTrades = 0, totalProfit = 0;
         let activeCount = 0;
-        for (const [id, strategy] of Object.entries(strategies)) {
+        for (const strategy of Object.values(strategies)) {
             if (strategy.enabled && strategy.stats) {
                 activeCount++;
                 totalTrades += strategy.stats.totalTrades || 0;
