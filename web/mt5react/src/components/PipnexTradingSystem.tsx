@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
-import { AccountStats } from './AccountStats';
 import { 
-    Loader2, TrendingUp, TrendingDown, Target, Clock, 
+    Loader2, TrendingUp, TrendingDown, 
     AlertCircle, RefreshCw, BarChart3, Calendar, 
-    Activity, Zap, Shield, DollarSign 
+    Clock, Activity, Zap, Shield, DollarSign 
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -82,7 +81,7 @@ export const PipnexTradingSystem: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
             const data = await res.json();
-            // Enhance with realistic stats (simulated for demo – replace with real data later)
+            // Enhance with realistic stats (simulated – replace with real data later)
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
                 const base = strategy as Strategy;
