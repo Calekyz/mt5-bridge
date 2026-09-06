@@ -2,20 +2,45 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginPageProps {
-    onLogin: (data: { login: string; password: string; server: string }) => void;
+    onLogin: (data: { token: string; user: any }) => void;
     isLoading?: boolean;
     error?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error }) => {
-    const [login, setLogin] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [server, setServer] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onLogin({ login, password, server });
+        setLoading(true);
+        setLocalError(null);
+
+        try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Login failed');
+            }
+
+            const data = await res.json();
+            onLogin({ token: data.token, user: data.user });
+        } catch (err: any) {
+            setLocalError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -35,7 +60,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     <div className="text-center mb-6 sm:mb-8">
                         <div className="flex justify-center mb-4">
                             <img 
-                                src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
+                                src="/logo.png" 
                                 alt="PipTrader AI Logo" 
                                 className="h-20 w-auto"
                             />
@@ -44,20 +69,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             PipTrader AI
                         </h1>
                         <p className="text-slate-400 text-sm mt-2 font-light">
-                            Connect to your MT5 account
+                            Connect to your trading account
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Login
+                                Email
                             </label>
                             <input
-                                type="text"
-                                value={login}
-                                onChange={(e) => setLogin(e.target.value)}
-                                placeholder="e.g. 123456"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 required
                             />
@@ -96,23 +121,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 onChange={(e) => setServer(e.target.value)}
                                 placeholder="e.g. Broker-Server.com"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
-                                required
                             />
                         </div>
 
-                        {error && (
+                        {(localError || error) && (
                             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-xl p-3 animate-pulse">
                                 <AlertCircle size={18} className="flex-shrink-0" />
-                                <span>{error}</span>
+                                <span>{localError || error}</span>
                             </div>
                         )}
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={loading || isLoading}
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                         >
-                            {isLoading ? (
+                            {loading || isLoading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                     Connecting...
