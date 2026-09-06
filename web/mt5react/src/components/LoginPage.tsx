@@ -19,17 +19,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 relative overflow-hidden">
-            {/* Decorative gradient blobs */}
-            <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-
+        <div 
+            className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
+            style={{
+                backgroundImage: `url('https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed'
+            }}
+        >
             <div className="w-full max-w-md relative z-10">
-                <div className="bg-slate-800/60 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
+                <div className="bg-slate-800/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
                     {/* Logo / Brand */}
                     <div className="text-center mb-6 sm:mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-600/20 mb-4">
-                            <span className="text-3xl">📊</span>
+                        <div className="flex justify-center mb-4">
+                            <img 
+                                src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
+                                alt="PipTrader AI Logo" 
+                                className="h-20 w-auto"
+                            />
                         </div>
                         <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                             PipTrader AI
