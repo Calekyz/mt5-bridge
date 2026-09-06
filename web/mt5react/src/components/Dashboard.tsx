@@ -3,40 +3,74 @@ import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
 import { StrategySettings } from './StrategySettings';
 import { Loader2, Power, PowerOff, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
-type Strategy = 'pipnex' | 'nova';
+type StrategyType = 'pipnex' | 'nova';
 
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
-    const [selectedStrategy, setSelectedStrategy] = useState<Strategy>('pipnex');
-    const [settings, setSettings] = useState<Record<string, any>>({});
-    const [isRunning, setIsRunning] = useState(false);
-    const [isToggling, setIsToggling] = useState(false);
+    const [pipnexEnabled, setPipnexEnabled] = useState(false);
+    const [novaEnabled, setNovaEnabled] = useState(false);
+    const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>({});
+    const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
+    const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
 
-    const handleStartStop = async () => {
-        setIsToggling(true);
+    // Ensure Master_Enabled is 1 when either strategy is on
+    useEffect(() => {
+        const anyEnabled = pipnexEnabled || novaEnabled;
+        sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
+    }, [pipnexEnabled, novaEnabled]);
+
+    const toggleStrategy = async (type: StrategyType, enable: boolean) => {
+        setIsToggling(type);
         setCommandError(null);
         try {
-            await sendCommand('Master_Strategy', selectedStrategy);
-            await sendCommand('Master_Settings', JSON.stringify(settings));
-            const newState = !isRunning;
-            await sendCommand('Master_Enabled', newState ? 1 : 0);
-            setIsRunning(newState);
+            const varName = type === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
+            await sendCommand(varName, enable ? 1 : 0);
+            if (type === 'pipnex') {
+                setPipnexEnabled(enable);
+                // Apply current settings if enabling
+                if (enable) {
+                    for (const [key, value] of Object.entries(pipnexSettings)) {
+                        await sendCommand(`PipNex_${key}`, value);
+                    }
+                }
+            } else {
+                setNovaEnabled(enable);
+                if (enable) {
+                    for (const [key, value] of Object.entries(novaSettings)) {
+                        await sendCommand(`Nova_${key}`, value);
+                    }
+                }
+            }
+            toast.success(`${type === 'pipnex' ? 'PipNex' : 'NOVA'} ${enable ? 'started' : 'stopped'}`);
         } catch (err: any) {
             setCommandError(err.message || 'Failed to toggle strategy');
+            toast.error(`Failed to ${enable ? 'start' : 'stop'} ${type}`);
         } finally {
-            setIsToggling(false);
+            setIsToggling(null);
         }
     };
 
-    useEffect(() => {
-        setSettings({});
-    }, [selectedStrategy]);
+    const updateSetting = async (type: StrategyType, key: string, value: any) => {
+        try {
+            const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
+            await sendCommand(`${prefix}${key}`, value);
+            if (type === 'pipnex') {
+                setPipnexSettings(prev => ({ ...prev, [key]: value }));
+            } else {
+                setNovaSettings(prev => ({ ...prev, [key]: value }));
+            }
+            toast.success(`${key} updated to ${value}`);
+        } catch (err: any) {
+            toast.error(`Failed to update ${key}`);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         📊 Trading Dashboard
@@ -66,73 +100,155 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <label className="text-slate-300 font-medium text-sm">Select Strategy:</label>
-                        <div className="flex flex-wrap gap-2">
-                            {(['pipnex', 'nova'] as Strategy[]).map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => setSelectedStrategy(s)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                                        selectedStrategy === s
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                            : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-                                    }`}
-                                >
-                                    {s === 'pipnex' ? 'PipNex' : 'NOVA'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6">
-                    <StrategySettings
-                        strategy={selectedStrategy}
-                        onSettingsChange={setSettings}
-                        initialSettings={settings}
-                    />
-                </div>
-
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <span className="text-slate-400 text-sm">Status:</span>
-                        <span className={`font-semibold ${isRunning ? 'text-green-400' : 'text-red-400'}`}>
-                            {isRunning ? 'Running' : 'Stopped'}
-                        </span>
-                        {isRunning && <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>}
-                    </div>
-                    <button
-                        onClick={handleStartStop}
-                        disabled={isToggling}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
-                            isRunning
-                                ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20'
-                                : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20'
-                        }`}
-                    >
-                        {isToggling ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : isRunning ? (
-                            <>
-                                <PowerOff size={18} /> Stop
-                            </>
-                        ) : (
-                            <>
-                                <Power size={18} /> Start
-                            </>
-                        )}
-                    </button>
-                </div>
-
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={16} />
                         <span>{commandError}</span>
                     </div>
                 )}
+
+                {/* Strategy Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* PipNex Card */}
+                    <StrategyCard
+                        type="pipnex"
+                        label="PipNex Algo"
+                        icon="📈"
+                        description="Scalper grid with martingale"
+                        enabled={pipnexEnabled}
+                        settings={pipnexSettings}
+                        onToggle={toggleStrategy}
+                        onUpdateSetting={updateSetting}
+                        isToggling={isToggling === 'pipnex'}
+                        settingsDef={PIPNEX_SETTINGS}
+                    />
+
+                    {/* NOVA Card */}
+                    <StrategyCard
+                        type="nova"
+                        label="NOVA EDGE AI"
+                        icon="🤖"
+                        description="Swing trading with Fibonacci levels"
+                        enabled={novaEnabled}
+                        settings={novaSettings}
+                        onToggle={toggleStrategy}
+                        onUpdateSetting={updateSetting}
+                        isToggling={isToggling === 'nova'}
+                        settingsDef={NOVA_SETTINGS}
+                    />
+                </div>
             </div>
+        </div>
+    );
+};
+
+// ---- Settings definitions ----
+const PIPNEX_SETTINGS = [
+    { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
+    { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
+    { key: 'CloseProfit', label: 'Close Profit ($)', type: 'number', step: 0.05, min: 0, default: 2.0 },
+    { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0, default: 0.50 },
+    { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
+    { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
+];
+
+const NOVA_SETTINGS = [
+    { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.05 },
+    { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1, default: 30 },
+    { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1, default: 3.0 },
+    { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
+];
+
+// ---- Strategy Card Component ----
+interface StrategyCardProps {
+    type: StrategyType;
+    label: string;
+    icon: string;
+    description: string;
+    enabled: boolean;
+    settings: Record<string, any>;
+    onToggle: (type: StrategyType, enable: boolean) => void;
+    onUpdateSetting: (type: StrategyType, key: string, value: any) => void;
+    isToggling: boolean;
+    settingsDef: any[];
+}
+
+const StrategyCard: React.FC<StrategyCardProps> = ({
+    type,
+    label,
+    icon,
+    description,
+    enabled,
+    settings,
+    onToggle,
+    onUpdateSetting,
+    isToggling,
+    settingsDef,
+}) => {
+    return (
+        <div className={`bg-slate-800/60 backdrop-blur-sm rounded-xl border p-6 transition-all ${enabled ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg' : 'border-slate-700/50 hover:border-slate-600'}`}>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    <span className="text-3xl">{icon}</span>
+                    <div>
+                        <h3 className="text-xl font-bold text-white">{label}</h3>
+                        <p className="text-slate-400 text-xs">{description}</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => onToggle(type, !enabled)}
+                    disabled={isToggling}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? 'bg-emerald-600' : 'bg-slate-600'} ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+            </div>
+
+            <div className="border-t border-slate-700/50 pt-4 mt-2">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Settings</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {settingsDef.map((setting) => {
+                        const value = settings[setting.key] ?? setting.default;
+                        const isBool = setting.type === 'checkbox';
+                        return (
+                            <div key={setting.key} className="flex flex-col">
+                                <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
+                                {isBool ? (
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={!!value}
+                                            onChange={(e) => onUpdateSetting(type, setting.key, e.target.checked)}
+                                            className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                                        />
+                                        <span className="text-sm text-slate-300">Enabled</span>
+                                    </label>
+                                ) : (
+                                    <input
+                                        type="number"
+                                        step={setting.step || 0.01}
+                                        min={setting.min}
+                                        max={setting.max}
+                                        value={value}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            if (!isNaN(val)) onUpdateSetting(type, setting.key, val);
+                                        }}
+                                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {enabled && (
+                <div className="mt-3 text-xs text-emerald-400/80 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Active
+                </div>
+            )}
         </div>
     );
 };
