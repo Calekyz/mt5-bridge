@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -69,6 +69,7 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         📊 Trading Dashboard
@@ -79,6 +80,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Account Stats */}
                 {loading ? (
                     <div className="flex justify-center py-8">
                         <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
@@ -98,6 +100,7 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
+                {/* Command Error */}
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={16} />
@@ -106,7 +109,7 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {/* Strategy Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* PipNex Card */}
                     <StrategyCard
                         type="pipnex"
@@ -140,7 +143,7 @@ export const Dashboard: React.FC = () => {
     );
 };
 
-// ---- Settings definitions ----
+// ---- Settings Definitions ----
 const PIPNEX_SETTINGS = [
     { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
@@ -184,27 +187,56 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     settingsDef,
 }) => {
     return (
-        <div className={`bg-slate-800/60 backdrop-blur-sm rounded-xl border p-6 transition-all ${enabled ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg' : 'border-slate-700/50 hover:border-slate-600'}`}>
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">{icon}</span>
-                    <div>
-                        <h3 className="text-xl font-bold text-white">{label}</h3>
-                        <p className="text-slate-400 text-xs">{description}</p>
+        <div className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
+            enabled ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg' : 'border-slate-700/50 hover:border-slate-600'
+        }`}>
+            {/* Card Header */}
+            <div className="p-6 border-b border-slate-700/50">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-3xl">{icon}</span>
+                        <div>
+                            <h3 className="text-xl font-bold text-white">{label}</h3>
+                            <p className="text-slate-400 text-xs">{description}</p>
+                        </div>
                     </div>
+                    {/* Big Start/Stop Button */}
+                    <button
+                        onClick={() => onToggle(type, !enabled)}
+                        disabled={isToggling}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                            enabled
+                                ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
+                        } ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {isToggling ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : enabled ? (
+                            <>
+                                <Square size={18} />
+                                Stop Algo
+                            </>
+                        ) : (
+                            <>
+                                <Play size={18} />
+                                Start Algo
+                            </>
+                        )}
+                    </button>
                 </div>
-                <button
-                    onClick={() => onToggle(type, !enabled)}
-                    disabled={isToggling}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? 'bg-emerald-600' : 'bg-slate-600'} ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
+                {enabled && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400/80">
+                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        Algorithm running
+                    </div>
+                )}
             </div>
 
-            <div className="border-t border-slate-700/50 pt-4 mt-2">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Settings</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Settings */}
+            <div className="p-6">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Parameters</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {settingsDef.map((setting) => {
                         const value = settings[setting.key] ?? setting.default;
                         const isBool = setting.type === 'checkbox';
@@ -240,13 +272,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                     })}
                 </div>
             </div>
-
-            {enabled && (
-                <div className="mt-3 text-xs text-emerald-400/80 flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Active
-                </div>
-            )}
         </div>
     );
 };
