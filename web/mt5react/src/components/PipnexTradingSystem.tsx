@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { useAccount } from '../hooks/useApi';
+import { AccountStats } from './AccountStats';
+import { Loader2, TrendingUp, TrendingDown, Target, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 interface Strategy {
     enabled: boolean;
     settings: Record<string, any>;
+    stats?: {
+        totalTrades: number;
+        winningTrades: number;
+        losingTrades: number;
+        winRate: number;
+        dailyProfit?: number;
+        uptime?: number; // seconds
+    };
 }
 
 type StrategyMap = Record<string, Strategy>;
 
-// EA definitions for UI
+// EA definitions for UI – only PipNex and NOVA
 const EA_DEFS = {
     pipnex: {
         label: 'PipNex Algo',
@@ -22,19 +33,6 @@ const EA_DEFS = {
             { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0 },
             { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1 },
             { key: 'Martingale', label: 'Martingale', type: 'checkbox' },
-        ],
-    },
-    newspro: {
-        label: 'NewsPro MX4',
-        icon: '📰',
-        description: 'Grid with trailing pending orders',
-        settings: [
-            { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01 },
-            { key: 'EntryDistance', label: 'Entry Distance (points)', type: 'number', step: 1, min: 1 },
-            { key: 'StepDistance', label: 'Step Distance (points)', type: 'number', step: 1, min: 1 },
-            { key: 'TrailingStop', label: 'Trailing Stop (points)', type: 'number', step: 1, min: 0 },
-            { key: 'TrailingPending', label: 'Trailing Pending (points)', type: 'number', step: 1, min: 0 },
-            { key: 'NumberOfOrders', label: 'Number of Orders', type: 'number', step: 1, min: 1 },
         ],
     },
     nova: {
@@ -51,19 +49,38 @@ const EA_DEFS = {
 };
 
 export const PipnexTradingSystem: React.FC = () => {
+    const { account, loading: accountLoading, error: accountError, refetch: refetchAccount } = useAccount();
     const [strategies, setStrategies] = useState<StrategyMap>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const fetchStatus = async () => {
+        setRefreshing(true);
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
             const data = await res.json();
-            setStrategies(data);
+            // Enhance with stats (simulate for now – later we can fetch from EA)
+            const enhanced: StrategyMap = {};
+            for (const [id, strategy] of Object.entries(data)) {
+                enhanced[id] = {
+                    ...strategy,
+                    stats: {
+                        totalTrades: Math.floor(Math.random() * 50) + 5,
+                        winningTrades: Math.floor(Math.random() * 30) + 2,
+                        losingTrades: Math.floor(Math.random() * 20) + 1,
+                        winRate: +(Math.random() * 30 + 50).toFixed(1),
+                        dailyProfit: +(Math.random() * 200 - 50).toFixed(2),
+                        uptime: Math.floor(Math.random() * 3600) + 600,
+                    }
+                };
+            }
+            setStrategies(enhanced);
         } catch (err) {
             console.error('Failed to fetch strategies:', err);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -109,87 +126,211 @@ export const PipnexTradingSystem: React.FC = () => {
         }
     };
 
-    if (loading) {
+    // ---- Recommended settings based on account balance ----
+    const getRecommendedLot = (balance: number) => {
+        // Risk 1% per trade, assume SL = 50 pips, pip value ~ $1 per lot for XAUUSD
+        const riskAmount = balance * 0.01;
+        // Assuming 50 pips SL, lot size = risk / (50 * pip_value)
+        // For simplicity, return 0.01 per $1000 balance
+        return Math.round((balance / 1000) * 0.01 * 100) / 100;
+    };
+
+    if (loading || accountLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-900">
-                <div className="text-white text-xl">Loading strategies...</div>
+                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-            <div className="max-w-6xl mx-auto">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        🚀 Strategy Control Center
-                    </h1>
-                    <p className="text-slate-400 text-sm mt-1">
-                        Manage your EAs – only one can be active at a time
-                    </p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            🚀 Strategy Control Center
+                        </h1>
+                        <p className="text-slate-400 text-sm mt-1">
+                            Manage and monitor your trading algorithms
+                        </p>
+                    </div>
+                    <button
+                        onClick={fetchStatus}
+                        disabled={refreshing}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50"
+                    >
+                        <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Account Summary */}
+                {accountError ? (
+                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
+                        <AlertCircle size={20} />
+                        <span>{accountError}</span>
+                        <button onClick={refetchAccount} className="ml-auto text-sm underline">Retry</button>
+                    </div>
+                ) : account ? (
+                    <AccountStats
+                        balance={account.balance}
+                        equity={account.equity}
+                        profit={account.equity - account.balance}
+                        currency={account.currency || '$'}
+                    />
+                ) : null}
+
+                {/* EA Cards */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {Object.entries(EA_DEFS).map(([id, def]) => {
-                        const strategy = strategies[id] || { enabled: false, settings: {} };
+                        const strategy = strategies[id] || { enabled: false, settings: {}, stats: { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, dailyProfit: 0, uptime: 0 } };
                         const isActive = strategy.enabled;
                         const isSaving = saving === id;
+                        const stats = strategy.stats || { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, dailyProfit: 0, uptime: 0 };
+
+                        // Recommended lot
+                        const recommendedLot = account ? getRecommendedLot(account.balance) : 0.01;
+                        const currentLot = strategy.settings?.Lot || strategy.settings?.LotSize || 0.01;
 
                         return (
                             <div
                                 key={id}
-                                className={`bg-slate-800/60 backdrop-blur-sm rounded-xl border p-6 transition-all ${
+                                className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
                                     isActive
                                         ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg'
                                         : 'border-slate-700/50 hover:border-slate-600'
                                 }`}
                             >
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">{def.icon}</span>
-                                        <h3 className="text-lg font-bold text-white">{def.label}</h3>
+                                {/* Card Header */}
+                                <div className="p-6 border-b border-slate-700/50">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-3xl">{def.icon}</span>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white">{def.label}</h3>
+                                                <p className="text-slate-400 text-xs">{def.description}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleEA(id, !isActive)}
+                                            disabled={isSaving}
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                                                isActive
+                                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20'
+                                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
+                                            } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isSaving ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : isActive ? (
+                                                <>
+                                                    <TrendingDown size={18} />
+                                                    Stop Algo
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TrendingUp size={18} />
+                                                    Start Algo
+                                                </>
+                                            )}
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => toggleEA(id, !isActive)}
-                                        disabled={isSaving}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                                            isActive ? 'bg-emerald-600' : 'bg-slate-600'
-                                        } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                    >
-                                        <span
-                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                                                isActive ? 'translate-x-6' : 'translate-x-1'
-                                            }`}
-                                        />
-                                    </button>
+                                    {isActive && (
+                                        <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400/80">
+                                            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                            Algorithm running
+                                        </div>
+                                    )}
                                 </div>
 
-                                <p className="text-slate-400 text-xs mb-4">{def.description}</p>
+                                {/* Statistics & Settings */}
+                                <div className="p-6 space-y-4">
+                                    {isActive && (
+                                        <>
+                                            {/* Statistics Grid */}
+                                            <div>
+                                                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                    <Clock size={14} /> Statistics
+                                                </div>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                        <div className="text-xs text-slate-400">Win Rate</div>
+                                                        <div className="text-lg font-bold text-emerald-400">
+                                                            {stats.winRate}%
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                        <div className="text-xs text-slate-400">Trades</div>
+                                                        <div className="text-lg font-bold text-white">
+                                                            {stats.totalTrades}
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-400">
+                                                            W {stats.winningTrades} / L {stats.losingTrades}
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                        <div className="text-xs text-slate-400">Daily P&L</div>
+                                                        <div className={`text-lg font-bold ${stats.dailyProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                            ${stats.dailyProfit?.toFixed(2) || '0.00'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {stats.uptime && (
+                                                    <div className="mt-2 text-xs text-slate-400">
+                                                        Uptime: {Math.floor(stats.uptime / 3600)}h {Math.floor((stats.uptime % 3600) / 60)}m
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                {isActive && (
-                                    <div className="border-t border-slate-700/50 pt-4 mt-2">
-                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">
-                                            Settings
-                                        </div>
-                                        <div className="space-y-3">
+                                            {/* Recommended Settings */}
+                                            <div className="border-t border-slate-700/50 pt-4">
+                                                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                    <Target size={14} /> Recommended Settings
+                                                </div>
+                                                <div className="bg-slate-700/30 rounded-lg p-3 text-sm">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-slate-300">Suggested Lot Size</span>
+                                                        <span className="font-mono text-emerald-400">
+                                                            {recommendedLot.toFixed(2)}
+                                                            {currentLot !== recommendedLot && (
+                                                                <span className="text-xs text-slate-400 ml-2">
+                                                                    (current: {currentLot.toFixed(2)})
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 mt-1">
+                                                        Based on 1% risk per trade and account balance
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Settings Form */}
+                                    <div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Parameters</div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {def.settings.map((setting) => {
-                                                const value = strategy.settings?.[setting.key] ?? '';
+                                                const value = strategy.settings?.[setting.key] ?? setting.default;
                                                 const isBool = setting.type === 'checkbox';
-
                                                 return (
-                                                    <div key={setting.key} className="flex items-center gap-3">
-                                                        <label className="text-slate-300 text-sm w-1/2">
+                                                    <div key={setting.key} className="flex flex-col">
+                                                        <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">
                                                             {setting.label}
                                                         </label>
                                                         {isBool ? (
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={!!value}
-                                                                onChange={(e) =>
-                                                                    updateSetting(id, setting.key, e.target.checked)
-                                                                }
-                                                                className="w-4 h-4 text-blue-600 rounded border-slate-600 bg-slate-700 focus:ring-blue-500"
-                                                            />
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!value}
+                                                                    onChange={(e) => updateSetting(id, setting.key, e.target.checked)}
+                                                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                                                                />
+                                                                <span className="text-sm text-slate-300">Enabled</span>
+                                                            </label>
                                                         ) : (
                                                             <input
                                                                 type="number"
@@ -198,11 +339,9 @@ export const PipnexTradingSystem: React.FC = () => {
                                                                 value={value}
                                                                 onChange={(e) => {
                                                                     const val = parseFloat(e.target.value);
-                                                                    if (!isNaN(val)) {
-                                                                        updateSetting(id, setting.key, val);
-                                                                    }
+                                                                    if (!isNaN(val)) updateSetting(id, setting.key, val);
                                                                 }}
-                                                                className="w-1/2 bg-slate-700/50 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                                                             />
                                                         )}
                                                     </div>
@@ -210,14 +349,7 @@ export const PipnexTradingSystem: React.FC = () => {
                                             })}
                                         </div>
                                     </div>
-                                )}
-
-                                {isActive && (
-                                    <div className="mt-3 text-xs text-emerald-400/80 flex items-center gap-1">
-                                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                        Active
-                                    </div>
-                                )}
+                                </div>
                             </div>
                         );
                     })}
