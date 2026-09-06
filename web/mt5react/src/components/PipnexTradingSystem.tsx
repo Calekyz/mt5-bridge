@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, TrendingUp, TrendingDown, Target, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { 
+    Loader2, TrendingUp, TrendingDown, Target, Clock, 
+    AlertCircle, RefreshCw, BarChart3, Calendar, 
+    Activity, Zap, Shield, DollarSign 
+} from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
@@ -15,6 +19,12 @@ interface Strategy {
         winRate: number;
         dailyProfit?: number;
         uptime?: number;
+        weeklyProfit?: number;
+        monthlyProfit?: number;
+        bestTrade?: number;
+        worstTrade?: number;
+        avgWin?: number;
+        avgLoss?: number;
     };
 }
 
@@ -72,18 +82,28 @@ export const PipnexTradingSystem: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
             const data = await res.json();
-            // Enhance with stats (simulate for now)
+            // Enhance with realistic stats (simulated for demo – replace with real data later)
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
+                const base = strategy as Strategy;
+                const total = Math.floor(Math.random() * 80) + 10;
+                const wins = Math.floor(total * (0.45 + Math.random() * 0.35));
+                const losses = total - wins;
                 enhanced[id] = {
-                    ...(strategy as Strategy),
+                    ...base,
                     stats: {
-                        totalTrades: Math.floor(Math.random() * 50) + 5,
-                        winningTrades: Math.floor(Math.random() * 30) + 2,
-                        losingTrades: Math.floor(Math.random() * 20) + 1,
-                        winRate: +(Math.random() * 30 + 50).toFixed(1),
-                        dailyProfit: +(Math.random() * 200 - 50).toFixed(2),
-                        uptime: Math.floor(Math.random() * 3600) + 600,
+                        totalTrades: total,
+                        winningTrades: wins,
+                        losingTrades: losses,
+                        winRate: +(wins / total * 100).toFixed(1),
+                        dailyProfit: +(Math.random() * 150 - 30).toFixed(2),
+                        weeklyProfit: +(Math.random() * 600 - 100).toFixed(2),
+                        monthlyProfit: +(Math.random() * 2000 - 300).toFixed(2),
+                        bestTrade: +(Math.random() * 50 + 5).toFixed(2),
+                        worstTrade: -(+Math.random() * 20 + 2).toFixed(2),
+                        avgWin: +(Math.random() * 20 + 3).toFixed(2),
+                        avgLoss: -(+Math.random() * 10 + 1).toFixed(2),
+                        uptime: Math.floor(Math.random() * 7200) + 1200,
                     },
                 };
             }
@@ -140,8 +160,6 @@ export const PipnexTradingSystem: React.FC = () => {
 
     // Recommended lot size based on balance (1% risk)
     const getRecommendedLot = (balance: number): number => {
-        // Example: 1% of balance / 50 (assumed stop loss in pips) * pip value
-        // Simplified: 0.01 lot per $1000
         const lot = (balance / 1000) * 0.01;
         return Math.round(lot * 100) / 100;
     };
@@ -161,10 +179,10 @@ export const PipnexTradingSystem: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            🚀 Strategy Control Center
+                            🧠 Strategy Control Center
                         </h1>
                         <p className="text-slate-400 text-sm mt-1">
-                            Manage and monitor your trading algorithms
+                            Deep performance monitoring and parameter tuning
                         </p>
                     </div>
                     <button
@@ -177,7 +195,7 @@ export const PipnexTradingSystem: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Account Summary */}
+                {/* Account Summary (minimal) */}
                 {accountError ? (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
                         <AlertCircle size={20} />
@@ -185,21 +203,31 @@ export const PipnexTradingSystem: React.FC = () => {
                         <button onClick={refetchAccount} className="ml-auto text-sm underline">Retry</button>
                     </div>
                 ) : account ? (
-                    <AccountStats
-                        balance={account.balance}
-                        equity={account.equity}
-                        profit={account.equity - account.balance}
-                        currency={account.currency || '$'}
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+                            <div className="text-xs text-slate-400">Balance</div>
+                            <div className="text-xl font-bold text-white">${account.balance.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+                            <div className="text-xs text-slate-400">Equity</div>
+                            <div className="text-xl font-bold text-white">${account.equity.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+                            <div className="text-xs text-slate-400">Profit</div>
+                            <div className={`text-xl font-bold ${(account.equity - account.balance) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                ${(account.equity - account.balance).toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
                 ) : null}
 
                 {/* EA Cards */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {Object.entries(EA_DEFS).map(([id, def]) => {
-                        const strategy = strategies[id] || { enabled: false, settings: {}, stats: { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, dailyProfit: 0, uptime: 0 } };
+                        const strategy = strategies[id] || { enabled: false, settings: {}, stats: undefined };
                         const isActive = strategy.enabled;
                         const isSaving = saving === id;
-                        const stats = strategy.stats || { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, dailyProfit: 0, uptime: 0 };
+                        const stats = strategy.stats || null;
 
                         // Recommended lot
                         const recommendedLot = account ? getRecommendedLot(account.balance) : 0.01;
@@ -256,49 +284,89 @@ export const PipnexTradingSystem: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* Statistics & Settings */}
-                                <div className="p-6 space-y-4">
-                                    {isActive && (
+                                {/* Body */}
+                                <div className="p-6 space-y-5">
+                                    {/* Performance Stats - only when active */}
+                                    {isActive && stats ? (
                                         <>
-                                            {/* Statistics Grid */}
-                                            <div>
-                                                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                                    <Clock size={14} /> Statistics
-                                                </div>
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                        <div className="text-xs text-slate-400">Win Rate</div>
-                                                        <div className="text-lg font-bold text-emerald-400">
-                                                            {stats.winRate}%
-                                                        </div>
+                                            {/* Key Metrics */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                    <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                                                        <Activity size={14} /> Win Rate
                                                     </div>
-                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                        <div className="text-xs text-slate-400">Trades</div>
-                                                        <div className="text-lg font-bold text-white">
-                                                            {stats.totalTrades}
-                                                        </div>
-                                                        <div className="text-[10px] text-slate-400">
-                                                            W {stats.winningTrades} / L {stats.losingTrades}
-                                                        </div>
-                                                    </div>
-                                                    <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                        <div className="text-xs text-slate-400">Daily P&L</div>
-                                                        <div className={`text-lg font-bold ${(stats.dailyProfit ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                            ${(stats.dailyProfit ?? 0).toFixed(2)}
-                                                        </div>
+                                                    <div className="text-lg font-bold text-emerald-400">
+                                                        {stats.winRate}%
                                                     </div>
                                                 </div>
-                                                {stats.uptime && (
-                                                    <div className="mt-2 text-xs text-slate-400">
-                                                        Uptime: {Math.floor(stats.uptime / 3600)}h {Math.floor((stats.uptime % 3600) / 60)}m
+                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                    <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                                                        <BarChart3 size={14} /> Trades
                                                     </div>
-                                                )}
+                                                    <div className="text-lg font-bold text-white">
+                                                        {stats.totalTrades}
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400">
+                                                        W {stats.winningTrades} / L {stats.losingTrades}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                    <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                                                        <Calendar size={14} /> Daily P&L
+                                                    </div>
+                                                    <div className={`text-lg font-bold ${stats.dailyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                        ${stats.dailyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                                    <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                                                        <Clock size={14} /> Uptime
+                                                    </div>
+                                                    <div className="text-lg font-bold text-white">
+                                                        {Math.floor(stats.uptime! / 3600)}h {Math.floor((stats.uptime! % 3600) / 60)}m
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Extended Stats (Weekly, Monthly, Best/Worst) */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
+                                                    <div className="text-xs text-slate-400">Weekly P&L</div>
+                                                    <div className={`text-sm font-bold ${stats.weeklyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                        ${stats.weeklyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
+                                                    <div className="text-xs text-slate-400">Monthly P&L</div>
+                                                    <div className={`text-sm font-bold ${stats.monthlyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                        ${stats.monthlyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
+                                                    <div className="text-xs text-slate-400">Best Trade</div>
+                                                    <div className="text-sm font-bold text-green-400">
+                                                        +${stats.bestTrade?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
+                                                    <div className="text-xs text-slate-400">Worst Trade</div>
+                                                    <div className="text-sm font-bold text-red-400">
+                                                        ${stats.worstTrade?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Avg Win/Loss */}
+                                            <div className="flex justify-between text-xs text-slate-400 bg-slate-700/20 rounded-lg px-3 py-2">
+                                                <span>Avg Win: <span className="text-green-400">+${stats.avgWin?.toFixed(2)}</span></span>
+                                                <span>Avg Loss: <span className="text-red-400">${stats.avgLoss?.toFixed(2)}</span></span>
+                                                <span>Risk/Reward: <span className="text-white">{(stats.avgWin! / Math.abs(stats.avgLoss!)).toFixed(2)}</span></span>
                                             </div>
 
                                             {/* Recommended Settings */}
                                             <div className="border-t border-slate-700/50 pt-4">
                                                 <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                                    <Target size={14} /> Recommended Settings
+                                                    <Shield size={14} /> Recommended Settings
                                                 </div>
                                                 <div className="bg-slate-700/30 rounded-lg p-3 text-sm">
                                                     <div className="flex justify-between items-center">
@@ -318,11 +386,19 @@ export const PipnexTradingSystem: React.FC = () => {
                                                 </div>
                                             </div>
                                         </>
+                                    ) : (
+                                        // If not active, show a placeholder
+                                        <div className="text-center py-6 text-slate-400">
+                                            <Zap size={32} className="mx-auto mb-2 opacity-30" />
+                                            <p className="text-sm">Start the algorithm to see performance metrics</p>
+                                        </div>
                                     )}
 
-                                    {/* Settings Form */}
+                                    {/* Parameters (always visible) */}
                                     <div>
-                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Parameters</div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                            <DollarSign size={14} /> Parameters
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {def.settings.map((setting) => {
                                                 const value = strategy.settings?.[setting.key] ?? setting.default;
