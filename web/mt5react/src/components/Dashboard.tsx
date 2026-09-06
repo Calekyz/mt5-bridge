@@ -15,6 +15,34 @@ export const Dashboard: React.FC = () => {
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
 
+    // Local input states for mobile-friendly typing
+    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
+        pipnex: {},
+        nova: {},
+    });
+
+    // Initialize local inputs when settings change
+    useEffect(() => {
+        const initLocal = (type: StrategyType) => {
+            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
+            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const inputs: Record<string, string> = {};
+            for (const def of defs) {
+                if (def.type === 'number') {
+                    const val = settings[def.key] ?? def.default;
+                    inputs[def.key] = String(val);
+                }
+            }
+            setLocalInputs(prev => ({
+                ...prev,
+                [type]: inputs,
+            }));
+        };
+        initLocal('pipnex');
+        initLocal('nova');
+    }, [pipnexSettings, novaSettings]);
+
+    // Ensure Master_Enabled is 1 when either strategy is on
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
@@ -50,7 +78,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const updateSetting = async (type: StrategyType, key: string, value: any) => {
+    const updateSetting = async (type: StrategyType, key: string, value: number) => {
         try {
             const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
             await sendCommand(`${prefix}${key}`, value);
@@ -65,10 +93,42 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
+        setLocalInputs(prev => ({
+            ...prev,
+            [type]: {
+                ...prev[type],
+                [key]: rawValue,
+            },
+        }));
+    };
+
+    const handleInputBlur = (type: StrategyType, key: string) => {
+        const raw = localInputs[type]?.[key] || '';
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+            updateSetting(type, key, num);
+        } else {
+            // Revert to last known good value
+            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
+            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const def = defs.find(d => d.key === key);
+            if (def) {
+                const currentVal = settings[key] ?? def.default;
+                setLocalInputs(prev => ({
+                    ...prev,
+                    [type]: {
+                        ...prev[type],
+                        [key]: String(currentVal),
+                    },
+                }));
+            }
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-6 md:px-8">
-            <div className="w-full space-y-6">
-                {/* Header */}
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         📊 Trading Dashboard
@@ -79,7 +139,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Account Stats */}
                 {loading ? (
                     <div className="flex justify-center py-8">
                         <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
@@ -99,7 +158,6 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                {/* Command Error */}
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={16} />
@@ -107,9 +165,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* Strategy Cards – Full width, responsive grid */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {/* PipNex Card */}
                     <StrategyCard
                         type="pipnex"
                         label="PipNex Algo"
@@ -117,13 +173,13 @@ export const Dashboard: React.FC = () => {
                         description="Scalper grid with martingale"
                         enabled={pipnexEnabled}
                         settings={pipnexSettings}
+                        localInputs={localInputs.pipnex}
                         onToggle={toggleStrategy}
-                        onUpdateSetting={updateSetting}
+                        onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur}
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS}
                     />
-
-                    {/* NOVA Card */}
                     <StrategyCard
                         type="nova"
                         label="NOVA EDGE AI"
@@ -131,8 +187,10 @@ export const Dashboard: React.FC = () => {
                         description="Swing trading with Fibonacci levels"
                         enabled={novaEnabled}
                         settings={novaSettings}
+                        localInputs={localInputs.nova}
                         onToggle={toggleStrategy}
-                        onUpdateSetting={updateSetting}
+                        onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur}
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS}
                     />
@@ -159,7 +217,7 @@ const NOVA_SETTINGS = [
     { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
 ];
 
-// ---- Strategy Card Component ----
+// ---- Strategy Card ----
 interface StrategyCardProps {
     type: StrategyType;
     label: string;
@@ -167,8 +225,10 @@ interface StrategyCardProps {
     description: string;
     enabled: boolean;
     settings: Record<string, any>;
+    localInputs: Record<string, string>;
     onToggle: (type: StrategyType, enable: boolean) => void;
-    onUpdateSetting: (type: StrategyType, key: string, value: any) => void;
+    onInputChange: (type: StrategyType, key: string, value: string) => void;
+    onInputBlur: (type: StrategyType, key: string) => void;
     isToggling: boolean;
     settingsDef: any[];
 }
@@ -180,8 +240,10 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     description,
     enabled,
     settings,
+    localInputs,
     onToggle,
-    onUpdateSetting,
+    onInputChange,
+    onInputBlur,
     isToggling,
     settingsDef,
 }) => {
@@ -189,7 +251,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
         <div className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
             enabled ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg' : 'border-slate-700/50 hover:border-slate-600'
         }`}>
-            {/* Card Header */}
             <div className="p-6 border-b border-slate-700/50">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -212,13 +273,11 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : enabled ? (
                             <>
-                                <Square size={18} />
-                                Stop Algo
+                                <Square size={18} /> Stop Algo
                             </>
                         ) : (
                             <>
-                                <Play size={18} />
-                                Start Algo
+                                <Play size={18} /> Start Algo
                             </>
                         )}
                     </button>
@@ -230,41 +289,50 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                     </div>
                 )}
             </div>
-
-            {/* Settings */}
             <div className="p-6">
                 <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Parameters</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {settingsDef.map((setting) => {
-                        const value = settings[setting.key] ?? setting.default;
                         const isBool = setting.type === 'checkbox';
-                        return (
-                            <div key={setting.key} className="flex flex-col">
-                                <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
-                                {isBool ? (
+                        const rawValue = localInputs[setting.key] ?? String(settings[setting.key] ?? setting.default);
+
+                        if (isBool) {
+                            return (
+                                <div key={setting.key} className="flex flex-col">
+                                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
-                                            checked={!!value}
-                                            onChange={(e) => onUpdateSetting(type, setting.key, e.target.checked)}
+                                            checked={!!settings[setting.key]}
+                                            onChange={(e) => {
+                                                const val = e.target.checked;
+                                                onInputChange(type, setting.key, String(val));
+                                                // Update via the parent's update logic
+                                                // We'll rely on the parent's handleInputBlur or direct update
+                                                // For checkbox, we update immediately
+                                                const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
+                                                sendCommand(`${prefix}${setting.key}`, val).catch(console.error);
+                                            }}
                                             className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                         />
                                         <span className="text-sm text-slate-300">Enabled</span>
                                     </label>
-                                ) : (
-                                    <input
-                                        type="number"
-                                        step={setting.step || 0.01}
-                                        min={setting.min}
-                                        max={setting.max}
-                                        value={value}
-                                        onChange={(e) => {
-                                            const val = parseFloat(e.target.value);
-                                            if (!isNaN(val)) onUpdateSetting(type, setting.key, val);
-                                        }}
-                                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                    />
-                                )}
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div key={setting.key} className="flex flex-col">
+                                <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={rawValue}
+                                    onChange={(e) => onInputChange(type, setting.key, e.target.value)}
+                                    onBlur={() => onInputBlur(type, setting.key)}
+                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                    placeholder={String(setting.default)}
+                                />
                             </div>
                         );
                     })}
