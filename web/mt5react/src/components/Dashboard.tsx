@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { StrategySettings } from './StrategySettings';
-import { Loader2, Power, PowerOff, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -30,7 +29,6 @@ export const Dashboard: React.FC = () => {
             await sendCommand(varName, enable ? 1 : 0);
             if (type === 'pipnex') {
                 setPipnexEnabled(enable);
-                // Apply current settings if enabling
                 if (enable) {
                     for (const [key, value] of Object.entries(pipnexSettings)) {
                         await sendCommand(`PipNex_${key}`, value);
