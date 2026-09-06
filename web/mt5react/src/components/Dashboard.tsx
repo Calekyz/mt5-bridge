@@ -15,7 +15,6 @@ export const Dashboard: React.FC = () => {
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
 
-    // Ensure Master_Enabled is 1 when either strategy is on
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
@@ -67,8 +66,8 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-6 md:px-8">
+            <div className="w-full space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -108,8 +107,8 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* Strategy Cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Strategy Cards – Full width, responsive grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {/* PipNex Card */}
                     <StrategyCard
                         type="pipnex"
@@ -192,7 +191,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
         }`}>
             {/* Card Header */}
             <div className="p-6 border-b border-slate-700/50">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <span className="text-3xl">{icon}</span>
                         <div>
@@ -200,7 +199,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             <p className="text-slate-400 text-xs">{description}</p>
                         </div>
                     </div>
-                    {/* Big Start/Stop Button */}
                     <button
                         onClick={() => onToggle(type, !enabled)}
                         disabled={isToggling}
