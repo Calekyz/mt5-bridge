@@ -34,9 +34,12 @@ export async function sendCommand(command: string, value: any) {
         const res = await fetch(`${API_URL}/global/set`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: command, value }),
+            body: JSON.stringify({ name: command, value: typeof value === 'boolean' ? (value ? 1 : 0) : value }),
         });
-        if (!res.ok) throw new Error('Failed to send command');
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Failed to send command: ${res.status} ${text}`);
+        }
         return await res.json();
     } catch (err) {
         console.error('Command error:', err);
