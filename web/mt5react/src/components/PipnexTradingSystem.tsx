@@ -29,7 +29,6 @@ interface Strategy {
 
 type StrategyMap = Record<string, Strategy>;
 
-// EA definitions – only PipNex and NOVA
 const EA_DEFS: Record<string, {
     label: string;
     icon: string;
@@ -76,12 +75,14 @@ export const PipnexTradingSystem: React.FC = () => {
     const [saving, setSaving] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
 
+    // Local state for input values (to allow typing on mobile)
+    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({});
+
     const fetchStatus = async () => {
         setRefreshing(true);
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
             const data = await res.json();
-            // Enhance with realistic stats (simulated – replace with real data later)
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
                 const base = strategy as Strategy;
@@ -107,6 +108,21 @@ export const PipnexTradingSystem: React.FC = () => {
                 };
             }
             setStrategies(enhanced);
+            // Initialize local inputs with current values
+            const inputs: Record<string, Record<string, string>> = {};
+            for (const [id, strat] of Object.entries(enhanced)) {
+                inputs[id] = {};
+                const def = EA_DEFS[id];
+                if (def) {
+                    for (const setting of def.settings) {
+                        if (setting.type === 'number') {
+                            const val = strat.settings?.[setting.key] ?? setting.default;
+                            inputs[id][setting.key] = String(val);
+                        }
+                    }
+                }
+            }
+            setLocalInputs(inputs);
         } catch (err) {
             console.error('Failed to fetch strategies:', err);
         } finally {
@@ -138,7 +154,7 @@ export const PipnexTradingSystem: React.FC = () => {
         }
     };
 
-    const updateSetting = async (id: string, key: string, value: any) => {
+    const updateSetting = async (id: string, key: string, value: number) => {
         setSaving(id);
         try {
             const res = await fetch(`${API_URL}/strategies/${id}/settings`, {
@@ -157,7 +173,41 @@ export const PipnexTradingSystem: React.FC = () => {
         }
     };
 
-    // Recommended lot size based on balance (1% risk)
+    const handleInputChange = (id: string, key: string, rawValue: string) => {
+        // Update local state immediately so the user sees what they type
+        setLocalInputs(prev => ({
+            ...prev,
+            [id]: {
+                ...prev[id],
+                [key]: rawValue,
+            },
+        }));
+    };
+
+    const handleInputBlur = (id: string, key: string) => {
+        const raw = localInputs[id]?.[key] || '';
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+            // Only update if it's a valid number
+            updateSetting(id, key, num);
+        } else {
+            // If invalid, revert to the last known good value
+            const strategy = strategies[id];
+            const def = EA_DEFS[id];
+            const setting = def?.settings.find(s => s.key === key);
+            if (setting) {
+                const currentVal = strategy?.settings?.[key] ?? setting.default;
+                setLocalInputs(prev => ({
+                    ...prev,
+                    [id]: {
+                        ...prev[id],
+                        [key]: String(currentVal),
+                    },
+                }));
+            }
+        }
+    };
+
     const getRecommendedLot = (balance: number): number => {
         const lot = (balance / 1000) * 0.01;
         return Math.round(lot * 100) / 100;
@@ -194,7 +244,7 @@ export const PipnexTradingSystem: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Account Summary (minimal) */}
+                {/* Account Summary */}
                 {accountError ? (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
                         <AlertCircle size={20} />
@@ -228,7 +278,6 @@ export const PipnexTradingSystem: React.FC = () => {
                         const isSaving = saving === id;
                         const stats = strategy.stats || null;
 
-                        // Recommended lot
                         const recommendedLot = account ? getRecommendedLot(account.balance) : 0.01;
                         const currentLot = strategy.settings?.Lot || strategy.settings?.LotSize || 0.01;
 
@@ -285,7 +334,6 @@ export const PipnexTradingSystem: React.FC = () => {
 
                                 {/* Body */}
                                 <div className="p-6 space-y-5">
-                                    {/* Performance Stats - only when active */}
                                     {isActive && stats ? (
                                         <>
                                             {/* Key Metrics */}
@@ -327,7 +375,7 @@ export const PipnexTradingSystem: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Extended Stats (Weekly, Monthly, Best/Worst) */}
+                                            {/* Extended Stats */}
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                 <div className="bg-slate-700/20 rounded-lg p-2 text-center">
                                                     <div className="text-xs text-slate-400">Weekly P&L</div>
@@ -355,7 +403,6 @@ export const PipnexTradingSystem: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Avg Win/Loss */}
                                             <div className="flex justify-between text-xs text-slate-400 bg-slate-700/20 rounded-lg px-3 py-2">
                                                 <span>Avg Win: <span className="text-green-400">+${stats.avgWin?.toFixed(2)}</span></span>
                                                 <span>Avg Loss: <span className="text-red-400">${stats.avgLoss?.toFixed(2)}</span></span>
@@ -386,50 +433,71 @@ export const PipnexTradingSystem: React.FC = () => {
                                             </div>
                                         </>
                                     ) : (
-                                        // If not active, show a placeholder
                                         <div className="text-center py-6 text-slate-400">
                                             <Zap size={32} className="mx-auto mb-2 opacity-30" />
                                             <p className="text-sm">Start the algorithm to see performance metrics</p>
                                         </div>
                                     )}
 
-                                    {/* Parameters (always visible) */}
+                                    {/* Parameters */}
                                     <div>
                                         <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                             <DollarSign size={14} /> Parameters
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {def.settings.map((setting) => {
-                                                const value = strategy.settings?.[setting.key] ?? setting.default;
                                                 const isBool = setting.type === 'checkbox';
+                                                const rawValue = localInputs[id]?.[setting.key] ?? String(strategy.settings?.[setting.key] ?? setting.default);
+                                                const checked = strategy.settings?.[setting.key] ?? setting.default;
+
+                                                if (isBool) {
+                                                    return (
+                                                        <div key={setting.key} className="flex flex-col">
+                                                            <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+                                                                {setting.label}
+                                                            </label>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!checked}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.checked;
+                                                                        // Update local for consistency
+                                                                        setLocalInputs(prev => ({
+                                                                            ...prev,
+                                                                            [id]: {
+                                                                                ...prev[id],
+                                                                                [setting.key]: String(val),
+                                                                            },
+                                                                        }));
+                                                                        updateSetting(id, setting.key, val);
+                                                                    }}
+                                                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                                                                />
+                                                                <span className="text-sm text-slate-300">Enabled</span>
+                                                            </label>
+                                                        </div>
+                                                    );
+                                                }
+
                                                 return (
                                                     <div key={setting.key} className="flex flex-col">
                                                         <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">
                                                             {setting.label}
                                                         </label>
-                                                        {isBool ? (
-                                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={!!value}
-                                                                    onChange={(e) => updateSetting(id, setting.key, e.target.checked)}
-                                                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
-                                                                />
-                                                                <span className="text-sm text-slate-300">Enabled</span>
-                                                            </label>
-                                                        ) : (
-                                                            <input
-                                                                type="number"
-                                                                step={setting.step || 0.01}
-                                                                min={setting.min || 0}
-                                                                value={value}
-                                                                onChange={(e) => {
-                                                                    const val = parseFloat(e.target.value);
-                                                                    if (!isNaN(val)) updateSetting(id, setting.key, val);
-                                                                }}
-                                                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                                            />
-                                                        )}
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={rawValue}
+                                                            onChange={(e) => {
+                                                                handleInputChange(id, setting.key, e.target.value);
+                                                            }}
+                                                            onBlur={() => {
+                                                                handleInputBlur(id, setting.key);
+                                                            }}
+                                                            className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                            placeholder={String(setting.default)}
+                                                        />
                                                     </div>
                                                 );
                                             })}
