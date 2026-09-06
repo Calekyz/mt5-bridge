@@ -19,20 +19,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 relative overflow-hidden">
+        <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 relative overflow-hidden">
             {/* Decorative gradient blobs */}
             <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
             <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="w-full max-w-md relative z-10">
-                <div className="bg-slate-800/60 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
+                <div className="bg-slate-800/60 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
                     {/* Logo / Brand */}
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-6 sm:mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-600/20 mb-4">
                             <span className="text-3xl">📊</span>
                         </div>
-                        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            Master Trading
+                        <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            PipTrader AI
                         </h1>
                         <p className="text-slate-400 text-sm mt-2 font-light">
                             Connect to your MT5 account
@@ -79,13 +79,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Server
+                                Broker Server
                             </label>
                             <input
                                 type="text"
                                 value={server}
                                 onChange={(e) => setServer(e.target.value)}
-                                placeholder="e.g. JustMarkets-Demo3"
+                                placeholder="e.g. Broker-Server.com"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 required
                             />
