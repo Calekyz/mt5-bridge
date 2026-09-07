@@ -99,8 +99,6 @@ function App() {
     ];
 
     // ─── SHOW LOADER until BOTH conditions are met ──────────
-    // 1) 4 seconds have passed (showLoader === false)
-    // 2) Auth check is complete (authChecked === true)
     if (!authChecked || showLoader) {
         return <Loader />;
     }
@@ -123,7 +121,7 @@ function App() {
                         <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-b border-gray-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img 
-                                    src="/logo.png" 
+                                    src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
                                     alt="PipTrader AI Logo" 
                                     className="h-8 w-auto"
                                 />
