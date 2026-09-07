@@ -10,6 +10,7 @@ interface LoginPageProps {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error }) => {
+    const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [server, setServer] = useState('');
@@ -23,17 +24,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setLocalError(null);
 
         try {
-            // For now, we send login as email (temporarily) – but later we'll change backend to accept MT5 login
-            // We'll send login, password, server as the credentials.
-            const res = await fetch(`${API_URL}/auth/login`, {
+            const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
+            const payload = mode === 'login' 
+                ? { email: login, password }
+                : { email: login, password };
+
+            const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: login, password, server }),
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Login failed');
+                throw new Error(data.error || (mode === 'login' ? 'Login failed' : 'Registration failed'));
             }
 
             const data = await res.json();
@@ -43,6 +47,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleMode = () => {
+        setMode(mode === 'login' ? 'signup' : 'login');
+        setLocalError(null);
     };
 
     return (
@@ -58,7 +67,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         >
             <div className="w-full max-w-md relative z-10">
                 <div className="bg-slate-800/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
-                    {/* Logo / Brand */}
+                    {/* Logo */}
                     <div className="text-center mb-6 sm:mb-8">
                         <div className="flex justify-center mb-4">
                             <img 
@@ -71,25 +80,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             PipTrader AI
                         </h1>
                         <p className="text-slate-400 text-sm mt-2 font-light">
-                            Connect to your MT5 account
+                            {mode === 'login' ? 'Connect to your MT5 account' : 'Create your trading account'}
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* Login / Email field */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Login
+                                {mode === 'login' ? 'Login' : 'Email'}
                             </label>
                             <input
-                                type="text"
+                                type={mode === 'login' ? 'text' : 'email'}
                                 value={login}
                                 onChange={(e) => setLogin(e.target.value)}
-                                placeholder="e.g. 123456"
+                                placeholder={mode === 'login' ? 'e.g. 123456' : 'you@example.com'}
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 required
                             />
                         </div>
 
+                        {/* Password */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Password
@@ -113,20 +124,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Broker Server
-                            </label>
-                            <input
-                                type="text"
-                                value={server}
-                                onChange={(e) => setServer(e.target.value)}
-                                placeholder="e.g. JustMarkets-Demo3"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
-                                required
-                            />
-                        </div>
+                        {/* Server field – only for login */}
+                        {mode === 'login' && (
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Broker Server
+                                </label>
+                                <input
+                                    type="text"
+                                    value={server}
+                                    onChange={(e) => setServer(e.target.value)}
+                                    placeholder="e.g. JustMarkets-Demo3"
+                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
+                                />
+                            </div>
+                        )}
 
+                        {/* Error message */}
                         {(localError || error) && (
                             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-xl p-3 animate-pulse">
                                 <AlertCircle size={18} className="flex-shrink-0" />
@@ -134,6 +148,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         )}
 
+                        {/* Submit button */}
                         <button
                             type="submit"
                             disabled={loading || isLoading}
@@ -142,17 +157,46 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             {loading || isLoading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Connecting...
+                                    {mode === 'login' ? 'Connecting...' : 'Creating account...'}
                                 </>
                             ) : (
-                                'Connect'
+                                mode === 'login' ? 'Connect' : 'Sign Up'
                             )}
                         </button>
 
-                        <div className="flex items-center justify-between text-xs text-slate-400 mt-2">
-                            <span className="hover:text-white cursor-pointer transition">Forgot password?</span>
-                            <span className="hover:text-white cursor-pointer transition">Create account</span>
+                        {/* Toggle between login and signup */}
+                        <div className="text-center text-xs text-slate-400 mt-2">
+                            {mode === 'login' ? (
+                                <>
+                                    Don't have an account?{' '}
+                                    <button
+                                        type="button"
+                                        onClick={toggleMode}
+                                        className="text-blue-400 hover:text-blue-300 underline transition font-semibold"
+                                    >
+                                        Sign Up
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    Already have an account?{' '}
+                                    <button
+                                        type="button"
+                                        onClick={toggleMode}
+                                        className="text-blue-400 hover:text-blue-300 underline transition font-semibold"
+                                    >
+                                        Login
+                                    </button>
+                                </>
+                            )}
                         </div>
+
+                        {/* Forgot password link – only on login */}
+                        {mode === 'login' && (
+                            <div className="text-center text-xs text-slate-500 mt-1">
+                                <span className="hover:text-white cursor-pointer transition">Forgot password?</span>
+                            </div>
+                        )}
                     </form>
 
                     <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-700/50 pt-4">
