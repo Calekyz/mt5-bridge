@@ -3,6 +3,7 @@ import cors from 'cors';
 import dataRoute from './routes/dataRoute';
 import authRoutes from './routes/auth';
 import strategiesRoutes from './routes/strategies';
+import adminRoutes from './routes/admin';
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/v1', dataRoute);
 app.use('/v1', authRoutes);
 app.use('/v1', strategiesRoutes);
+app.use('/v1', adminRoutes); // admin routes
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
