@@ -18,7 +18,6 @@ async function setGlobalVariable(name: string, value: any) {
 
 export async function restoreStrategyStates() {
     try {
-        // Get all active strategies across all users
         const result = await query(
             `SELECT s.*, a.login, a.server 
              FROM user_strategies s
@@ -40,7 +39,6 @@ export async function restoreStrategyStates() {
             console.log(`Restored ${strategy.ea_name} for user ${strategy.user_id}`);
         }
 
-        // Set Master_Enabled if any strategy is active
         if (result.rows.length > 0) {
             await setGlobalVariable('Master_Enabled', 1);
         }
