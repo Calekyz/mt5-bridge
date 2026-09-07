@@ -1,4 +1,5 @@
-import CryptoJS from 'crypto-js';
+// Use require to avoid TypeScript type issues on Render
+const CryptoJS = require('crypto-js');
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-encryption-key-change-this';
 
