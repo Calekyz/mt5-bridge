@@ -98,8 +98,10 @@ function App() {
         { path: "/strategies", label: "Strategies", icon: Settings },
     ];
 
-    // ─── SHOW LOADER (minimum 4 seconds) ──────────────────────
-    if (showLoader) {
+    // ─── SHOW LOADER until BOTH conditions are met ──────────
+    // 1) 4 seconds have passed (showLoader === false)
+    // 2) Auth check is complete (authChecked === true)
+    if (!authChecked || showLoader) {
         return <Loader />;
     }
 
