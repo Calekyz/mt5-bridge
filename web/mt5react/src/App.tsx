@@ -40,8 +40,18 @@ function clearToken() {
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
+    const [showLoader, setShowLoader] = useState(true);
 
-    // Check token on mount
+    // ─── Minimum load time (4 seconds) ──────────────────────
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowLoader(false);
+        }, 4000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // ─── Check token on mount ────────────────────────────────
     useEffect(() => {
         const token = getToken();
         if (!token) {
@@ -49,7 +59,6 @@ function App() {
             return;
         }
 
-        // Verify token with backend
         fetch(`${API_URL}/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -89,8 +98,8 @@ function App() {
         { path: "/strategies", label: "Strategies", icon: Settings },
     ];
 
-    // ─── SHOW LOADER ──────────────────────────────────────────
-    if (!authChecked) {
+    // ─── SHOW LOADER (minimum 4 seconds) ──────────────────────
+    if (showLoader) {
         return <Loader />;
     }
 
