@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+// Use require to avoid TypeScript type issues on Render
+const { Pool } = require('pg');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
