@@ -24,6 +24,7 @@ app.use((err: any, req: any, res: any, next: any) => {
     if (err instanceof HttpError) {
         res.status(err.statusCode).json({ error: { message: err.message, statusCode: err.statusCode } });
     } else {
+        console.error('Unhandled error:', err);
         res.status(500).json({ error: { message: 'Internal Server Error', statusCode: 500 } });
     }
 });
