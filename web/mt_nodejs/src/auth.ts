@@ -1,11 +1,11 @@
-import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
     user?: { id: number; email: string };
 }
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 export function generateToken(userId: number, email: string): string {
     return jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn: '7d' });
