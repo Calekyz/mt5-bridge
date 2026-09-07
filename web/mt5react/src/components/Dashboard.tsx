@@ -6,43 +6,43 @@ import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
 
+// ─── LocalStorage helpers ──────────────────────────────────
+function getStoredState(key: string, defaultValue: boolean): boolean {
+    const stored = localStorage.getItem(key);
+    if (stored === null) return defaultValue;
+    return stored === 'true';
+}
+
+function setStoredState(key: string, value: boolean) {
+    localStorage.setItem(key, String(value));
+}
+
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
-    const [pipnexEnabled, setPipnexEnabled] = useState(false);
-    const [novaEnabled, setNovaEnabled] = useState(false);
+
+    // ─── Persisted state ────────────────────────────────────
+    const [pipnexEnabled, setPipnexEnabled] = useState(() =>
+        getStoredState('pipnexEnabled', false)
+    );
+    const [novaEnabled, setNovaEnabled] = useState(() =>
+        getStoredState('novaEnabled', false)
+    );
+
     const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>({});
     const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
 
-    // Local input states for mobile-friendly typing
-    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
-        pipnex: {},
-        nova: {},
-    });
-
-    // Initialize local inputs when settings change
+    // ─── Save to localStorage whenever state changes ──────
     useEffect(() => {
-        const initLocal = (type: StrategyType) => {
-            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
-            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
-            const inputs: Record<string, string> = {};
-            for (const def of defs) {
-                if (def.type === 'number') {
-                    const val = settings[def.key] ?? def.default;
-                    inputs[def.key] = String(val);
-                }
-            }
-            setLocalInputs(prev => ({
-                ...prev,
-                [type]: inputs,
-            }));
-        };
-        initLocal('pipnex');
-        initLocal('nova');
-    }, [pipnexSettings, novaSettings]);
+        setStoredState('pipnexEnabled', pipnexEnabled);
+    }, [pipnexEnabled]);
 
-    // Ensure Master_Enabled is 1 when either strategy is on
+    useEffect(() => {
+        setStoredState('novaEnabled', novaEnabled);
+    }, [novaEnabled]);
+
+    // ─── Send Master_Enabled command when either changes ──
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
@@ -54,6 +54,7 @@ export const Dashboard: React.FC = () => {
         try {
             const varName = type === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
             await sendCommand(varName, enable ? 1 : 0);
+
             if (type === 'pipnex') {
                 setPipnexEnabled(enable);
                 if (enable) {
@@ -93,6 +94,32 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    // ─── Local input states for mobile-friendly typing ────
+    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
+        pipnex: {},
+        nova: {},
+    });
+
+    useEffect(() => {
+        const initLocal = (type: StrategyType) => {
+            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
+            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const inputs: Record<string, string> = {};
+            for (const def of defs) {
+                if (def.type === 'number') {
+                    const val = settings[def.key] ?? def.default;
+                    inputs[def.key] = String(val);
+                }
+            }
+            setLocalInputs(prev => ({
+                ...prev,
+                [type]: inputs,
+            }));
+        };
+        initLocal('pipnex');
+        initLocal('nova');
+    }, [pipnexSettings, novaSettings]);
+
     const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
         setLocalInputs(prev => ({
             ...prev,
@@ -109,7 +136,6 @@ export const Dashboard: React.FC = () => {
         if (!isNaN(num)) {
             updateSetting(type, key, num);
         } else {
-            // Revert to last known good value
             const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
             const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
             const def = defs.find(d => d.key === key);
@@ -123,6 +149,16 @@ export const Dashboard: React.FC = () => {
                     },
                 }));
             }
+        }
+    };
+
+    const handleCheckboxChange = (type: StrategyType, key: string, checked: boolean) => {
+        const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
+        sendCommand(`${prefix}${key}`, checked).catch(console.error);
+        if (type === 'pipnex') {
+            setPipnexSettings(prev => ({ ...prev, [key]: checked }));
+        } else {
+            setNovaSettings(prev => ({ ...prev, [key]: checked }));
         }
     };
 
@@ -177,6 +213,7 @@ export const Dashboard: React.FC = () => {
                         onToggle={toggleStrategy}
                         onInputChange={handleInputChange}
                         onInputBlur={handleInputBlur}
+                        onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS}
                     />
@@ -191,6 +228,7 @@ export const Dashboard: React.FC = () => {
                         onToggle={toggleStrategy}
                         onInputChange={handleInputChange}
                         onInputBlur={handleInputBlur}
+                        onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS}
                     />
@@ -229,6 +267,7 @@ interface StrategyCardProps {
     onToggle: (type: StrategyType, enable: boolean) => void;
     onInputChange: (type: StrategyType, key: string, value: string) => void;
     onInputBlur: (type: StrategyType, key: string) => void;
+    onCheckboxChange: (type: StrategyType, key: string, checked: boolean) => void;
     isToggling: boolean;
     settingsDef: any[];
 }
@@ -244,6 +283,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     onToggle,
     onInputChange,
     onInputBlur,
+    onCheckboxChange,
     isToggling,
     settingsDef,
 }) => {
@@ -304,15 +344,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                                         <input
                                             type="checkbox"
                                             checked={!!settings[setting.key]}
-                                            onChange={(e) => {
-                                                const val = e.target.checked;
-                                                onInputChange(type, setting.key, String(val));
-                                                // Update via the parent's update logic
-                                                // We'll rely on the parent's handleInputBlur or direct update
-                                                // For checkbox, we update immediately
-                                                const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
-                                                sendCommand(`${prefix}${setting.key}`, val).catch(console.error);
-                                            }}
+                                            onChange={(e) => onCheckboxChange(type, setting.key, e.target.checked)}
                                             className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                         />
                                         <span className="text-sm text-slate-300">Enabled</span>
