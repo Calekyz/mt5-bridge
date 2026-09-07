@@ -3,7 +3,7 @@ import cors from 'cors';
 import dataRoute from './routes/dataRoute';
 import authRoutes from './routes/auth';
 import strategiesRoutes from './routes/strategies';
-import adminRoutes from './routes/admin';
+import adminRoutes from './routes/admin'; // <-- must exist
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -14,11 +14,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── Mount routes ──────────────────────────────────────────
 app.use('/v1', dataRoute);
 app.use('/v1', authRoutes);
 app.use('/v1', strategiesRoutes);
-app.use('/v1', adminRoutes); // admin routes
+app.use('/v1', adminRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -34,6 +33,5 @@ app.use((err: any, req: any, res: any, next: any) => {
 const PORT = process.env.PORT || 8891;
 app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    // ─── Restore EA states on startup ──────────────────────
     await restoreStrategyStates();
 });
