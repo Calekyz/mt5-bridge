@@ -14,7 +14,7 @@ export const Loader: React.FC = () => {
                 {/* Center logo */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <img 
-                        src="/logo.png" 
+                        src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
                         alt="PipTrader AI" 
                         className="w-12 h-12 object-contain animate-pulse-soft"
                     />
