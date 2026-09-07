@@ -19,7 +19,7 @@ async function setGlobalVariable(name: string, value: any) {
     }
 }
 
-// ─── GET all strategies ──────────────────────────────────
+// ─── GET all strategies ────────────────────────────────────
 router.get('/strategies', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const result = await query(
@@ -56,7 +56,9 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
 
         const strategy = result.rows[0];
         const varName = strategy.ea_name === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
+
         await setGlobalVariable(varName, enabled ? 1 : 0);
+
         await query(
             'UPDATE user_strategies SET is_active = $1, updated_at = NOW() WHERE id = $2',
             [enabled, id]
