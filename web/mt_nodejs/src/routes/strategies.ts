@@ -8,7 +8,6 @@ const MT5_HOST = process.env.MT5_HOST || 'localhost';
 const MT5_PORT = process.env.MT5_PORT || '8890';
 const EA_BASE_URL = `http://${MT5_HOST}:${MT5_PORT}/v1`;
 
-// Helper to send global variable command to EA
 async function setGlobalVariable(name: string, value: any) {
     try {
         await axios.post(`${EA_BASE_URL}/global/set`, {
@@ -20,7 +19,7 @@ async function setGlobalVariable(name: string, value: any) {
     }
 }
 
-// ─── GET all strategies for current user ──────────────────
+// ─── GET all strategies ──────────────────────────────────
 router.get('/strategies', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const result = await query(
@@ -43,7 +42,6 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
     const { enabled } = req.body;
 
     try {
-        // Get the strategy and its account details
         const result = await query(
             `SELECT s.*, a.login, a.password, a.server 
              FROM user_strategies s
@@ -58,17 +56,12 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
 
         const strategy = result.rows[0];
         const varName = strategy.ea_name === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
-
-        // Send command to EA
         await setGlobalVariable(varName, enabled ? 1 : 0);
-
-        // Update database
         await query(
             'UPDATE user_strategies SET is_active = $1, updated_at = NOW() WHERE id = $2',
             [enabled, id]
         );
 
-        // If enabling, also apply settings
         if (enabled) {
             const settings = strategy.settings;
             const prefix = strategy.ea_name === 'pipnex' ? 'PipNex_' : 'Nova_';
@@ -77,11 +70,6 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
             }
         }
 
-        // Also update Master_Enabled based on any active strategy for this user
-        // (We'll keep Master_Enabled as an overall switch for all strategies)
-        // For multiple users, we need per‑user isolation – but EA runs on a single MT5.
-        // We'll handle this by storing user_id in the global variable.
-        // For simplicity, we use Master_Enabled as a global on/off.
         const activeCheck = await query(
             'SELECT COUNT(*) FROM user_strategies WHERE user_id = $1 AND is_active = true',
             [req.user!.id]
@@ -96,7 +84,7 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
     }
 });
 
-// ─── UPDATE strategy settings ────────────────────────────
+// ─── UPDATE settings ──────────────────────────────────────
 router.post('/strategies/:id/settings', authMiddleware, async (req: AuthRequest, res) => {
     const { id } = req.params;
     const updates = req.body;
@@ -119,7 +107,6 @@ router.post('/strategies/:id/settings', authMiddleware, async (req: AuthRequest,
             [newSettings, id]
         );
 
-        // If strategy is active, apply settings immediately
         if (strategy.is_active) {
             const prefix = strategy.ea_name === 'pipnex' ? 'PipNex_' : 'Nova_';
             for (const [key, value] of Object.entries(updates)) {
