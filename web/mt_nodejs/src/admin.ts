@@ -1,10 +1,11 @@
+// web/mt_nodejs/src/routes/admin.ts
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { query } from '../db';
+import { query } from '../db'; // correct import for db
 
 const router = Router();
 
-// ─── Admin middleware ──────────────────────────────────────
+// Admin middleware
 const ADMIN_KEY = process.env.ADMIN_KEY || 'admin-secret-key-change-this';
 
 function adminMiddleware(req: any, res: any, next: any) {
@@ -15,12 +16,9 @@ function adminMiddleware(req: any, res: any, next: any) {
     next();
 }
 
-// ─── GET all users ─────────────────────────────────────────
 router.get('/admin/users', adminMiddleware, async (req, res) => {
     try {
-        const result = await query(
-            'SELECT id, email, created_at FROM users ORDER BY id'
-        );
+        const result = await query('SELECT id, email, created_at FROM users ORDER BY id');
         res.json(result.rows);
     } catch (err) {
         console.error('Get users error:', err);
@@ -28,20 +26,16 @@ router.get('/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
-// ─── ADD a new user ────────────────────────────────────────
 router.post('/admin/users', adminMiddleware, async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password required' });
     }
-
     try {
-        // Check if user exists
         const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
         if (existing.rows.length > 0) {
             return res.status(409).json({ error: 'User already exists' });
         }
-
         const hashed = await bcrypt.hash(password, 10);
         const result = await query(
             'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at',
@@ -54,7 +48,6 @@ router.post('/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
-// ─── DELETE a user ─────────────────────────────────────────
 router.delete('/admin/users/:id', adminMiddleware, async (req, res) => {
     const { id } = req.params;
     try {
