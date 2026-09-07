@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { generateToken } from '../auth';
 import { query } from '../db';
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 // ─── REGISTER ──────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
