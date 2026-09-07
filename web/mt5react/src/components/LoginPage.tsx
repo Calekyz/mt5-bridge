@@ -60,7 +60,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     <div className="text-center mb-6 sm:mb-8">
                         <div className="flex justify-center mb-4">
                             <img 
-                                src="/logo.png" 
+                                src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
                                 alt="PipTrader AI Logo" 
                                 className="h-20 w-auto"
                             />
