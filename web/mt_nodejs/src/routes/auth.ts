@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { query } from '../db'; // we'll create this later, or use in-memory for now
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// Temporary in-memory user store (replace with database later)
-// For now, we'll store users in memory (lost on restart)
+// ─── TEMPORARY IN‑MEMORY USER STORE ──────────────────────
+// Later replace this with PostgreSQL or another database.
 const users: { id: number; email: string; password_hash: string; created_at: Date }[] = [];
 let userIdCounter = 1;
 
