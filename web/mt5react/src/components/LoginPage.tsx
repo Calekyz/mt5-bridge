@@ -10,7 +10,7 @@ interface LoginPageProps {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error }) => {
-    const [email, setEmail] = useState('');
+    const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [server, setServer] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -23,10 +23,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setLocalError(null);
 
         try {
+            // For now, we send login as email (temporarily) – but later we'll change backend to accept MT5 login
+            // We'll send login, password, server as the credentials.
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email: login, password, server }),
             });
 
             if (!res.ok) {
@@ -69,20 +71,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             PipTrader AI
                         </h1>
                         <p className="text-slate-400 text-sm mt-2 font-light">
-                            Connect to your trading account
+                            Connect to your MT5 account
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Email
+                                Login
                             </label>
                             <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
+                                type="text"
+                                value={login}
+                                onChange={(e) => setLogin(e.target.value)}
+                                placeholder="e.g. 123456"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 required
                             />
@@ -119,8 +121,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 type="text"
                                 value={server}
                                 onChange={(e) => setServer(e.target.value)}
-                                placeholder="e.g. Broker-Server.com"
+                                placeholder="e.g. JustMarkets-Demo3"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
+                                required
                             />
                         </div>
 
