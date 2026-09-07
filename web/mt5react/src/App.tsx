@@ -11,13 +11,15 @@ import {
     BarChart3, 
     Zap, 
     LogOut,
-    Settings
+    Settings,
+    Users
 } from "lucide-react";
 
 // ---- Components ----
 import { LoginPage } from "./components/LoginPage";
 import { Dashboard } from "./components/Dashboard";
 import { Loader } from "./components/Loader";
+import { AdminPanel } from "./components/AdminPanel";
 import AccountInfo from "./components/AccountInfo";
 import OrderRequest from "./components/OrderRequest";
 import { OrdersList } from "./components/OrderList";
@@ -96,6 +98,7 @@ function App() {
         { path: "/chart", label: "Chart", icon: BarChart3 },
         { path: "/ws", label: "WS", icon: Zap },
         { path: "/strategies", label: "Strategies", icon: Settings },
+        { path: "/admin", label: "Admin", icon: Users },
     ];
 
     // ─── SHOW LOADER until BOTH conditions are met ──────────
@@ -150,6 +153,7 @@ function App() {
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
                                 <Route path="/strategies" element={<PipnexTradingSystem />} />
+                                <Route path="/admin" element={<AdminPanel />} />
                             </Routes>
                         </main>
 
