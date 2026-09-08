@@ -12,7 +12,7 @@ import {
     Zap, 
     LogOut,
     Settings,
-    Users
+    Users          // <-- added for admin icon
 } from "lucide-react";
 
 // ---- Components ----
@@ -98,7 +98,7 @@ function App() {
         { path: "/chart", label: "Chart", icon: BarChart3 },
         { path: "/ws", label: "WS", icon: Zap },
         { path: "/strategies", label: "Strategies", icon: Settings },
-        { path: "/admin", label: "Admin", icon: Users },
+        { path: "/admin", label: "Admin", icon: Users },   // <-- admin nav item
     ];
 
     // ─── SHOW LOADER until BOTH conditions are met ──────────
@@ -153,7 +153,7 @@ function App() {
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
                                 <Route path="/strategies" element={<PipnexTradingSystem />} />
-                                <Route path="/admin" element={<AdminPanel />} />
+                                <Route path="/admin" element={<AdminPanel />} />   {/* admin route */}
                             </Routes>
                         </main>
 
