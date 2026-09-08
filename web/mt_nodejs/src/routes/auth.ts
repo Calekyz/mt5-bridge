@@ -7,14 +7,57 @@ import { generateToken } from '../auth';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// ─── REGISTER (with access key) ──────────────────────────
+// ─── REGISTER (email + password only) ────────────────────
 router.post('/auth/register', async (req, res) => {
-    const { email, password, access_key } = req.body;
-    if (!email || !password || !access_key) {
-        return res.status(400).json({ error: 'Email, password, and access key are required' });
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
     }
 
     try {
+        // Check if user exists
+        const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existing.rows.length > 0) {
+            return res.status(409).json({ error: 'Email already exists' });
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+        await query(
+            'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
+            [email, hashed, 'user']
+        );
+
+        // Return success message – the user will now need an access key to log in
+        res.status(201).json({ 
+            message: 'Account created. Please contact admin for an access key to log in.' 
+        });
+    } catch (err) {
+        console.error('Register error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// ─── LOGIN (requires access key) ──────────────────────────
+router.post('/auth/login', async (req, res) => {
+    const { email, password, access_key } = req.body;
+    if (!email || !password || !access_key) {
+        return res.status(400).json({ error: 'Email, password, and access key required' });
+    }
+
+    try {
+        // Find user
+        const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = userResult.rows[0];
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Verify password
+        const valid = await bcrypt.compare(password, user.password_hash);
+        if (!valid) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
         // Validate access key
         const keyResult = await query(
             'SELECT id FROM access_keys WHERE key_code = $1 AND used_by IS NULL',
@@ -24,62 +67,26 @@ router.post('/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Invalid or already used access key' });
         }
 
-        // Check if user exists
-        const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
-        if (existing.rows.length > 0) {
-            return res.status(409).json({ error: 'Email already exists' });
-        }
-
-        const hashed = await bcrypt.hash(password, 10);
-        const result = await query(
-            'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-            [email, hashed, 'user']
-        );
-        const user = result.rows[0];
-
-        // Mark key as used
+        // Mark key as used by this user
         await query(
             'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE key_code = $2',
             [user.id, access_key]
         );
 
+        // Generate token
         const token = generateToken(user.id, user.email);
-        res.status(201).json({ user: { id: user.id, email: user.email, role: user.role }, token });
-    } catch (err) {
-        console.error('Register error:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// ─── LOGIN ─────────────────────────────────────────────────
-router.post('/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password required' });
-    }
-
-    try {
-        const result = await query('SELECT * FROM users WHERE email = $1', [email]);
-        const user = result.rows[0];
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-
-        const valid = await bcrypt.compare(password, user.password_hash);
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-
-        const token = generateToken(user.id, user.email);
-        res.json({ user: { id: user.id, email: user.email, role: user.role }, token });
+        res.json({ 
+            user: { id: user.id, email: user.email, role: user.role }, 
+            token 
+        });
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// ─── VERIFY TOKEN ──────────────────────────────────────────
-router.get('/auth/me', async (req, res) => {
+// ─── VERIFY TOKEN (used for keep‑alive) ──────────────────
+router.get('/auth/verify', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'No token provided' });
@@ -88,12 +95,13 @@ router.get('/auth/me', async (req, res) => {
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
-        const result = await query('SELECT id, email, role, created_at FROM users WHERE id = $1', [decoded.id]);
+        const result = await query('SELECT id, email, role FROM users WHERE id = $1', [decoded.id]);
         const user = result.rows[0];
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        res.json({ user });
+        // Optionally refresh the token (or just return user)
+        res.json({ user, valid: true });
     } catch (err) {
         return res.status(401).json({ error: 'Invalid token' });
     }
