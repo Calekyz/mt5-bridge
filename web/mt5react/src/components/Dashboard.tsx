@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, CloudOff } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, CloudOff, Key } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -25,6 +25,9 @@ export const Dashboard: React.FC = () => {
     const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
+
+    // ✅ Read the access key from localStorage
+    const accessKey = localStorage.getItem('accessKey') || '';
 
     // ─── Load MT5 account from localStorage ───────────────────
     useEffect(() => {
@@ -193,9 +196,18 @@ export const Dashboard: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        📊 Trading Dashboard
-                    </h1>
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            📊 Trading Dashboard
+                        </h1>
+                        {/* ✅ Display the access key here */}
+                        {accessKey && (
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 bg-slate-700/30 px-3 py-1 rounded-full inline-flex">
+                                <Key size={14} className="text-blue-400" />
+                                <span>Key: <code className="font-mono text-slate-300">{accessKey}</code></span>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2 text-sm">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                         <span className="text-slate-300">Live (1s refresh)</span>
