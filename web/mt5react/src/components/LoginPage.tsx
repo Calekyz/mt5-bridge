@@ -11,23 +11,24 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error }) => {
     const [mode, setMode] = useState<'login' | 'signup'>('login');
-    const [login, setLogin] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [accessKey, setAccessKey] = useState('');
-    const [server, setServer] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [signupMessage, setSignupMessage] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setLocalError(null);
+        setSignupMessage(null);
 
         try {
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
-            const payload: any = { email: login, password };
-            if (mode === 'signup') {
+            const payload: any = { email, password };
+            if (mode === 'login') {
                 payload.access_key = accessKey;
             }
 
@@ -43,6 +44,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             }
 
             const data = await res.json();
+            if (mode === 'signup') {
+                // Show the message: "Account created. Contact admin for access key."
+                setSignupMessage(data.message || 'Account created. Please contact admin for an access key to log in.');
+                setLoading(false);
+                return;
+            }
+
+            // Login success
             onLogin({ token: data.token, user: data.user });
         } catch (err: any) {
             setLocalError(err.message);
@@ -54,6 +63,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const toggleMode = () => {
         setMode(mode === 'login' ? 'signup' : 'login');
         setLocalError(null);
+        setSignupMessage(null);
         setAccessKey('');
     };
 
@@ -82,20 +92,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             PipTrader AI
                         </h1>
                         <p className="text-slate-400 text-sm mt-2 font-light">
-                            {mode === 'login' ? 'Connect to your MT5 account' : 'Create your trading account'}
+                            {mode === 'login' ? 'Enter your credentials' : 'Create your trading account'}
                         </p>
                     </div>
+
+                    {signupMessage && (
+                        <div className="mb-4 p-4 bg-green-900/20 border border-green-500/30 rounded-xl text-green-400 text-sm text-center">
+                            {signupMessage}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                {mode === 'login' ? 'Login' : 'Email'}
+                                Email
                             </label>
                             <input
-                                type={mode === 'login' ? 'text' : 'email'}
-                                value={login}
-                                onChange={(e) => setLogin(e.target.value)}
-                                placeholder={mode === 'login' ? 'e.g. 123456' : 'you@example.com'}
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
                                 className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 required
                             />
@@ -124,7 +140,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         </div>
 
-                        {mode === 'signup' && (
+                        {mode === 'login' && (
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                                     Access Key
@@ -136,21 +152,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     placeholder="Enter your access key"
                                     className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                     required
-                                />
-                            </div>
-                        )}
-
-                        {mode === 'login' && (
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                    Broker Server
-                                </label>
-                                <input
-                                    type="text"
-                                    value={server}
-                                    onChange={(e) => setServer(e.target.value)}
-                                    placeholder="e.g. JustMarkets-Demo3"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
                                 />
                             </div>
                         )}
@@ -202,12 +203,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </>
                             )}
                         </div>
-
-                        {mode === 'login' && (
-                            <div className="text-center text-xs text-slate-500 mt-1">
-                                <span className="hover:text-white cursor-pointer transition">Forgot password?</span>
-                            </div>
-                        )}
                     </form>
 
                     <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-700/50 pt-4">
