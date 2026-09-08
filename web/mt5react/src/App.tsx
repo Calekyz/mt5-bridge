@@ -36,16 +36,13 @@ function App() {
     const [showLoader, setShowLoader] = useState(true);
     const [user, setUser] = useState<any>(null);
 
-    // ─── Minimum load time (4 seconds) ──────────────────────
+    // ─── Loader (4 seconds) ──────────────────────────────────
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowLoader(false);
-        }, 4000);
-
+        const timer = setTimeout(() => setShowLoader(false), 4000);
         return () => clearTimeout(timer);
     }, []);
 
-    // ─── Check token on mount ────────────────────────────────
+    // ─── Initial token check ──────────────────────────────────
     useEffect(() => {
         const token = getToken();
         if (!token) {
@@ -53,28 +50,49 @@ function App() {
             return;
         }
 
-        fetch(`${API_URL}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(res => {
-            if (res.ok) return res.json();
-            clearToken();
-            throw new Error('Invalid token');
-        })
-        .then(data => {
-            setUser(data.user);
-            setIsAuthenticated(true);
-        })
-        .catch(() => {
-            clearToken();
-            setIsAuthenticated(false);
-        })
-        .finally(() => {
-            setAuthChecked(true);
-        });
+        verifyToken(token);
     }, []);
 
-    // ─── Login / Logout handlers ────────────────────────────
+    // ─── Keep‑alive: verify every 10 seconds ─────────────────
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const interval = setInterval(() => {
+            const token = getToken();
+            if (!token) {
+                handleLogout();
+                return;
+            }
+            verifyToken(token);
+        }, 10000); // 10 seconds
+
+        return () => clearInterval(interval);
+    }, [isAuthenticated]);
+
+    // ─── Verify token helper ──────────────────────────────────
+    const verifyToken = async (token: string) => {
+        try {
+            const res = await fetch(`${API_URL}/auth/verify`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUser(data.user);
+                setIsAuthenticated(true);
+            } else {
+                clearToken();
+                setIsAuthenticated(false);
+                setUser(null);
+            }
+        } catch {
+            clearToken();
+            setIsAuthenticated(false);
+            setUser(null);
+        } finally {
+            setAuthChecked(true);
+        }
+    };
+
     const handleLogin = (data: { token: string; user: any }) => {
         localStorage.setItem('token', data.token);
         setUser(data.user);
@@ -87,10 +105,8 @@ function App() {
         setIsAuthenticated(false);
     };
 
-    // ─── Admin check ─────────────────────────────────────────
     const isAdmin = user?.email === 'caleborenge8@gmail.com';
 
-    // ─── Navigation items ────────────────────────────────────
     const navItems = [
         { path: "/", label: "Home", icon: Home },
         { path: "/orders", label: "Orders", icon: FileText },
@@ -105,7 +121,6 @@ function App() {
         navItems.push({ path: "/admin", label: "Admin", icon: Users });
     }
 
-    // ─── SHOW LOADER until BOTH conditions are met ──────────
     if (!authChecked || showLoader) {
         return <Loader />;
     }
@@ -124,7 +139,6 @@ function App() {
             >
                 {isAuthenticated ? (
                     <>
-                        {/* Top Header */}
                         <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-b border-gray-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img 
@@ -146,7 +160,6 @@ function App() {
                             </button>
                         </header>
 
-                        {/* Main Content */}
                         <main className="flex-1 mt-14 mb-16 overflow-y-auto p-4">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
@@ -164,7 +177,6 @@ function App() {
                             </Routes>
                         </main>
 
-                        {/* Bottom Navigation */}
                         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-t border-gray-700 flex justify-around items-center py-1 px-2 overflow-x-auto">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
