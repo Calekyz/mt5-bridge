@@ -1,92 +1,87 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import {closeSendOrder, fetchOrderList, postSendOrder, postTrackPrices} from '../../services/SocketBridgeApi';
+import { fetchOrderList, postSendOrder, closeSendOrder } from '../../services/SocketBridgeApi';
+import { query } from '../../db';
+import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-/**
- * @swagger
- * /order/list:
- *   get:
- *     summary: Get list of orders
- *     responses:
- *       200:
- *         description: Success
- */
-router.get('/order/list', async (req: Request, res: Response, next: NextFunction) => {
+// GET /order/list
+router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const orders = await fetchOrderList();
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked' });
+        }
+
+        const orders = await fetchOrderList({
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
+        });
         res.json(orders);
     } catch (error) {
         next(error);
     }
 });
 
-
-/**
- * @swagger
- * /order:
- *   post:
- *     summary: Send order
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               symbol:
- *                 type: string
- *                 example: "EURUSD"
- *               volume:
- *                 type: number
- *                 example: 0.1
- *               order_type:
- *                 type: string
- *                 example: "buy"
- *             required:
- *               - order_type
- *     responses:
- *       200:
- *         description: Success
- */
-router.post('/order', async (req: Request, res: Response, next: NextFunction) => {
+// POST /order
+router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked' });
+        }
+
         const body = req.body;
-        //validate later
-        const result = await postSendOrder(body);
+        const result = await postSendOrder({
+            ...body,
+            mt5: {
+                login: mt5Account.login,
+                password: mt5Account.password,
+                server: mt5Account.server,
+                port: mt5Account.mt5_port,
+            },
+        });
         res.json(result);
     } catch (error) {
         next(error);
     }
 });
 
-
-/**
- * @swagger
- * /order/close:
- *   post:
- *     summary: close order
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               ticket:
- *                 type: integer
- *                 example: 5144525742
- *             required:
- *               - ticket
- *     responses:
- *       200:
- *         description: Success
- */
-router.post('/order/close', async (req: Request, res: Response, next: NextFunction) => {
+// POST /order/close
+router.post('/order/close', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked' });
+        }
+
         const body = req.body;
-        //validate later
-        const result = await closeSendOrder(body);
+        const result = await closeSendOrder({
+            ...body,
+            mt5: {
+                login: mt5Account.login,
+                password: mt5Account.password,
+                server: mt5Account.server,
+                port: mt5Account.mt5_port,
+            },
+        });
         res.json(result);
     } catch (error) {
         next(error);
