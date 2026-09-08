@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, CloudOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
 
-// ─── LocalStorage helpers ──────────────────────────────────
 function getStoredState(key: string, defaultValue: boolean): boolean {
     const stored = localStorage.getItem(key);
     if (stored === null) return defaultValue;
@@ -19,21 +18,32 @@ function setStoredState(key: string, value: boolean) {
 
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
-
-    // ─── Persisted state ────────────────────────────────────
-    const [pipnexEnabled, setPipnexEnabled] = useState(() =>
-        getStoredState('pipnexEnabled', false)
-    );
-    const [novaEnabled, setNovaEnabled] = useState(() =>
-        getStoredState('novaEnabled', false)
-    );
-
+    const [mt5Account, setMt5Account] = useState<any>(null);
+    const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
+    const [novaEnabled, setNovaEnabled] = useState(() => getStoredState('novaEnabled', false));
     const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>({});
     const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
 
-    // ─── Save to localStorage whenever state changes ──────
+    // ─── Load MT5 account from localStorage ───────────────────
+    useEffect(() => {
+        const stored = localStorage.getItem('mt5Account');
+        if (stored) {
+            setMt5Account(JSON.parse(stored));
+        }
+    }, []);
+
+    // ─── Poll account every 1 second ────────────────────────
+    useEffect(() => {
+        if (!mt5Account) return;
+        const interval = setInterval(() => {
+            refetch();
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [mt5Account, refetch]);
+
+    // ─── State persistence ────────────────────────────────────
     useEffect(() => {
         setStoredState('pipnexEnabled', pipnexEnabled);
     }, [pipnexEnabled]);
@@ -42,12 +52,13 @@ export const Dashboard: React.FC = () => {
         setStoredState('novaEnabled', novaEnabled);
     }, [novaEnabled]);
 
-    // ─── Send Master_Enabled command when either changes ──
+    // ─── Send Master_Enabled command ──────────────────────────
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
     }, [pipnexEnabled, novaEnabled]);
 
+    // ─── Toggle strategy ──────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
         setIsToggling(type);
         setCommandError(null);
@@ -162,6 +173,22 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    // ─── If no MT5 account is linked ──────────────────────────
+    if (!mt5Account) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <CloudOff className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Cloud Bot Not Activated</h2>
+                    <p className="text-slate-400 text-sm">
+                        Your cloud trading bot has not been activated yet.
+                        Please contact the administrator to set up your MT5 account.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -171,7 +198,7 @@ export const Dashboard: React.FC = () => {
                     </h1>
                     <div className="flex items-center gap-2 text-sm">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span className="text-slate-300">Live</span>
+                        <span className="text-slate-300">Live (1s refresh)</span>
                     </div>
                 </div>
 
