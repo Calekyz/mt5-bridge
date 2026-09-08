@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check } from 'lucide-react';
 
 interface User {
     id: number;
@@ -30,6 +30,7 @@ export const AdminPanel: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState<number | null>(null);
     const [keyCount, setKeyCount] = useState(1);
     const [generating, setGenerating] = useState(false);
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         try {
@@ -168,6 +169,24 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
+    // ─── Copy key to clipboard ──────────────────────────────
+    const copyToClipboard = (key: string) => {
+        navigator.clipboard.writeText(key).then(() => {
+            setCopiedKey(key);
+            setTimeout(() => setCopiedKey(null), 2000);
+        }).catch(() => {
+            // Fallback: select and copy using document.execCommand
+            const textarea = document.createElement('textarea');
+            textarea.value = key;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopiedKey(key);
+            setTimeout(() => setCopiedKey(null), 2000);
+        });
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -179,7 +198,6 @@ export const AdminPanel: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -199,7 +217,6 @@ export const AdminPanel: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={18} />
@@ -336,22 +353,42 @@ export const AdminPanel: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {keys.map((key) => (
-                                    <tr key={key.id} className="border-b border-slate-700/30">
-                                        <td className="px-4 py-2 font-mono text-white text-xs">{key.key_code}</td>
-                                        <td className="px-4 py-2 text-slate-400">{new Date(key.created_at).toLocaleString()}</td>
-                                        <td className="px-4 py-2 text-slate-400">{key.used_by_email || 'Not used'}</td>
-                                        <td className="px-4 py-2 text-right">
-                                            <button
-                                                onClick={() => handleDeleteKey(key.id)}
-                                                disabled={!!key.used_by_email}
-                                                className="text-red-400 hover:text-red-300 disabled:opacity-30 transition"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {keys.map((key) => {
+                                    const isCopied = copiedKey === key.key_code;
+                                    return (
+                                        <tr key={key.id} className="border-b border-slate-700/30">
+                                            <td className="px-4 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <code className="font-mono text-white text-xs bg-slate-700/50 px-2 py-1 rounded select-all">
+                                                        {key.key_code}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => copyToClipboard(key.key_code)}
+                                                        className="text-slate-400 hover:text-white transition"
+                                                        title="Copy key"
+                                                    >
+                                                        {isCopied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-2 text-slate-400 text-xs">
+                                                {new Date(key.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-slate-400 text-xs">
+                                                {key.used_by_email || 'Not used'}
+                                            </td>
+                                            <td className="px-4 py-2 text-right">
+                                                <button
+                                                    onClick={() => handleDeleteKey(key.id)}
+                                                    disabled={!!key.used_by_email}
+                                                    className="text-red-400 hover:text-red-300 disabled:opacity-30 transition"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {keys.length === 0 && (
                                     <tr><td colSpan={4} className="px-4 py-4 text-center text-slate-400">No keys generated.</td></tr>
                                 )}
