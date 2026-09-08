@@ -95,12 +95,18 @@ function App() {
 
     const handleLogin = (data: { token: string; user: any }) => {
         localStorage.setItem('token', data.token);
+        if (data.user.mt5) {
+            localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
+        } else {
+            localStorage.removeItem('mt5Account');
+        }
         setUser(data.user);
         setIsAuthenticated(true);
     };
 
     const handleLogout = () => {
         clearToken();
+        localStorage.removeItem('mt5Account');
         setUser(null);
         setIsAuthenticated(false);
     };
