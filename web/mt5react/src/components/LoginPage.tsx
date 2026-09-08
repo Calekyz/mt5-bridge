@@ -29,10 +29,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
             const payload: any = { email, password };
             if (mode === 'login') {
-                payload.access_key = accessKey.trim(); // <-- ensure key is trimmed
+                payload.access_key = accessKey.trim();
             }
 
-            console.log('Sending payload:', payload); // <-- debug
+            console.log('Sending payload:', payload);
 
             const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
@@ -52,7 +52,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 return;
             }
 
-            // Login success
+            // ✅ Login success – store the access key in localStorage
+            if (data.access_key) {
+                localStorage.setItem('accessKey', data.access_key);
+            } else {
+                // fallback: if backend doesn't send it, use the one the user typed
+                localStorage.setItem('accessKey', accessKey.trim());
+            }
+
+            // Pass user & token to parent (App)
             onLogin({ token: data.token, user: data.user });
         } catch (err: any) {
             setLocalError(err.message);
