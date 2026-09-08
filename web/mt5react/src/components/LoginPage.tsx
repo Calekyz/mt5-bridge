@@ -13,6 +13,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
+    const [accessKey, setAccessKey] = useState('');
     const [server, setServer] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -25,9 +26,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
         try {
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
-            const payload = mode === 'login' 
-                ? { email: login, password }
-                : { email: login, password };
+            const payload: any = { email: login, password };
+            if (mode === 'signup') {
+                payload.access_key = accessKey;
+            }
 
             const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
@@ -52,6 +54,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const toggleMode = () => {
         setMode(mode === 'login' ? 'signup' : 'login');
         setLocalError(null);
+        setAccessKey('');
     };
 
     return (
@@ -67,7 +70,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         >
             <div className="w-full max-w-md relative z-10">
                 <div className="bg-slate-800/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-6 sm:p-8 md:p-10 transition-all duration-300 hover:shadow-blue-500/10">
-                    {/* Logo */}
                     <div className="text-center mb-6 sm:mb-8">
                         <div className="flex justify-center mb-4">
                             <img 
@@ -85,7 +87,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Login / Email field */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                                 {mode === 'login' ? 'Login' : 'Email'}
@@ -100,7 +101,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             />
                         </div>
 
-                        {/* Password */}
                         <div>
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Password
@@ -124,7 +124,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         </div>
 
-                        {/* Server field – only for login */}
+                        {mode === 'signup' && (
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Access Key
+                                </label>
+                                <input
+                                    type="text"
+                                    value={accessKey}
+                                    onChange={(e) => setAccessKey(e.target.value)}
+                                    placeholder="Enter your access key"
+                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
+                                    required
+                                />
+                            </div>
+                        )}
+
                         {mode === 'login' && (
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -140,7 +155,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         )}
 
-                        {/* Error message */}
                         {(localError || error) && (
                             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-xl p-3 animate-pulse">
                                 <AlertCircle size={18} className="flex-shrink-0" />
@@ -148,7 +162,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         )}
 
-                        {/* Submit button */}
                         <button
                             type="submit"
                             disabled={loading || isLoading}
@@ -164,7 +177,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             )}
                         </button>
 
-                        {/* Toggle between login and signup */}
                         <div className="text-center text-xs text-slate-400 mt-2">
                             {mode === 'login' ? (
                                 <>
@@ -191,7 +203,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             )}
                         </div>
 
-                        {/* Forgot password link – only on login */}
                         {mode === 'login' && (
                             <div className="text-center text-xs text-slate-500 mt-1">
                                 <span className="hover:text-white cursor-pointer transition">Forgot password?</span>
