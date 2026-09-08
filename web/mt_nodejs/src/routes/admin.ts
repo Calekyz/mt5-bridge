@@ -76,7 +76,8 @@ router.post('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
 
 // ─── DELETE a user ─────────────────────────────────────────
 router.delete('/admin/users/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    const { id } = req.params;
+    // ✅ FIX: explicitly convert id to string
+    const id = req.params.id as string;
     try {
         const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
         if (result.rows.length === 0) {
@@ -132,7 +133,8 @@ router.post('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
 
 // ─── DELETE an access key ───────────────────────────────────
 router.delete('/admin/keys/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    const { id } = req.params;
+    // ✅ FIX: explicitly convert id to string
+    const id = req.params.id as string;
     try {
         await query('DELETE FROM access_keys WHERE id = $1', [id]);
         res.json({ success: true });
