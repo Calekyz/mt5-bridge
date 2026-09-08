@@ -8,7 +8,7 @@ interface User {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || ''; // set in Vercel env
+const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || '';
 
 export const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
