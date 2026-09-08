@@ -3,7 +3,7 @@ import { getAccount, type Account } from '../api/nodejsApiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
-export function useAccount() {
+export function useAccount(intervalMs: number = 2000) {
     const [account, setAccount] = useState<Account | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -22,9 +22,9 @@ export function useAccount() {
 
     useEffect(() => {
         fetchAccount();
-        const interval = setInterval(fetchAccount, 2000);
+        const interval = setInterval(fetchAccount, intervalMs);
         return () => clearInterval(interval);
-    }, []);
+    }, [intervalMs]);
 
     return { account, loading, error, refetch: fetchAccount };
 }
