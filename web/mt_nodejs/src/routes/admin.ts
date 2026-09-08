@@ -76,7 +76,6 @@ router.post('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
 
 // ─── DELETE a user ─────────────────────────────────────────
 router.delete('/admin/users/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    // ✅ FIX: explicitly convert id to string
     const id = req.params.id as string;
     try {
         const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
@@ -112,19 +111,26 @@ router.post('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
     const { count = 1 } = req.body;
     const adminId = req.adminId;
     if (!adminId) {
+        console.error('adminId not set in request');
         return res.status(500).json({ error: 'Admin ID not found' });
     }
+
+    const numKeys = Math.min(count, 20);
+    const generatedKeys: string[] = [];
+
     try {
-        const keys = [];
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < numKeys; i++) {
             const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-            await query(
-                'INSERT INTO access_keys (key_code, created_by) VALUES ($1, $2)',
+            console.log(`Inserting key: ${keyCode} for adminId: ${adminId}`);
+            const result = await query(
+                'INSERT INTO access_keys (key_code, created_by) VALUES ($1, $2) RETURNING id',
                 [keyCode, adminId]
             );
-            keys.push(keyCode);
+            console.log(`Inserted key ID: ${result.rows[0].id}`);
+            generatedKeys.push(keyCode);
         }
-        res.status(201).json({ keys });
+        console.log(`Generated ${generatedKeys.length} keys`);
+        res.status(201).json({ keys: generatedKeys });
     } catch (err) {
         console.error('Generate keys error:', err);
         res.status(500).json({ error: 'Failed to generate keys' });
@@ -133,7 +139,6 @@ router.post('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
 
 // ─── DELETE an access key ───────────────────────────────────
 router.delete('/admin/keys/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    // ✅ FIX: explicitly convert id to string
     const id = req.params.id as string;
     try {
         await query('DELETE FROM access_keys WHERE id = $1', [id]);
