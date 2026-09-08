@@ -29,8 +29,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
             const payload: any = { email, password };
             if (mode === 'login') {
-                payload.access_key = accessKey;
+                payload.access_key = accessKey.trim(); // <-- ensure key is trimmed
             }
+
+            console.log('Sending payload:', payload); // <-- debug
 
             const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
@@ -45,7 +47,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
             const data = await res.json();
             if (mode === 'signup') {
-                // Show the message: "Account created. Contact admin for access key."
                 setSignupMessage(data.message || 'Account created. Please contact admin for an access key to log in.');
                 setLoading(false);
                 return;
