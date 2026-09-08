@@ -1,6 +1,11 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../db';
+
+// ─── Custom request interface with adminId ────────────────
+interface AdminRequest extends Request {
+    adminId?: number;
+}
 
 const router = Router();
 
@@ -8,7 +13,7 @@ const router = Router();
 const ADMIN_KEY = process.env.ADMIN_KEY || 'admin-secret-key-change-this';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'caleborenge8@gmail.com';
 
-async function adminMiddleware(req: any, res: any, next: any) {
+async function adminMiddleware(req: AdminRequest, res: any, next: any) {
     const adminKey = req.headers['x-admin-key'];
     if (!adminKey || adminKey !== ADMIN_KEY) {
         return res.status(403).json({ error: 'Forbidden: Invalid admin key' });
@@ -34,7 +39,7 @@ async function adminMiddleware(req: any, res: any, next: any) {
 }
 
 // ─── GET all users ─────────────────────────────────────────
-router.get('/admin/users', adminMiddleware, async (req, res) => {
+router.get('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
     try {
         const result = await query('SELECT id, email, role, created_at FROM users ORDER BY id');
         res.json(result.rows);
@@ -44,8 +49,8 @@ router.get('/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
-// ─── ADD a new user (admin can create any user) ──────────
-router.post('/admin/users', adminMiddleware, async (req, res) => {
+// ─── ADD a new user ────────────────────────────────────────
+router.post('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
     const { email, password, role = 'user' } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password required' });
@@ -70,7 +75,7 @@ router.post('/admin/users', adminMiddleware, async (req, res) => {
 });
 
 // ─── DELETE a user ─────────────────────────────────────────
-router.delete('/admin/users/:id', adminMiddleware, async (req, res) => {
+router.delete('/admin/users/:id', adminMiddleware, async (req: AdminRequest, res) => {
     const { id } = req.params;
     try {
         const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
@@ -85,7 +90,7 @@ router.delete('/admin/users/:id', adminMiddleware, async (req, res) => {
 });
 
 // ─── GET all access keys ────────────────────────────────────
-router.get('/admin/keys', adminMiddleware, async (req, res) => {
+router.get('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
     try {
         const result = await query(
             `SELECT k.*, u.email as created_by_email, u2.email as used_by_email
@@ -102,9 +107,12 @@ router.get('/admin/keys', adminMiddleware, async (req, res) => {
 });
 
 // ─── Generate new access keys ──────────────────────────────
-router.post('/admin/keys', adminMiddleware, async (req, res) => {
+router.post('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
     const { count = 1 } = req.body;
     const adminId = req.adminId;
+    if (!adminId) {
+        return res.status(500).json({ error: 'Admin ID not found' });
+    }
     try {
         const keys = [];
         for (let i = 0; i < count; i++) {
@@ -123,7 +131,7 @@ router.post('/admin/keys', adminMiddleware, async (req, res) => {
 });
 
 // ─── DELETE an access key ───────────────────────────────────
-router.delete('/admin/keys/:id', adminMiddleware, async (req, res) => {
+router.delete('/admin/keys/:id', adminMiddleware, async (req: AdminRequest, res) => {
     const { id } = req.params;
     try {
         await query('DELETE FROM access_keys WHERE id = $1', [id]);
