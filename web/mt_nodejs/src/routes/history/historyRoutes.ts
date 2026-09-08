@@ -1,47 +1,35 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import {fetchOrderHistory, fetchPriceHistory} from '../../services/SocketBridgeApi';
+import { fetchOrderHistory, fetchPriceHistory } from '../../services/SocketBridgeApi';
+import { query } from '../../db';
+import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-/**
- * @swagger
- * /history/orders:
- *   get:
- *     summary: Get order history
- *     parameters:
- *       - in: query
- *         name: mode
- *         schema:
- *           type: string
- *           enum: [positions, orders, deals]
- *         required: false
- *         description: Filter by type (positions, orders, or deals)
- *       - in: query
- *         name: from_date
- *         schema:
- *           type: string
- *           format: date
- *         required: false
- *         description: Start date in YYYY-MM-DD format
- *       - in: query
- *         name: to_date
- *         schema:
- *           type: string
- *           format: date
- *         required: false
- *         description: End date in YYYY-MM-DD format
- *     responses:
- *       200:
- *         description: Success
- */
-router.get('/history/orders', async (req: Request, res: Response, next: NextFunction) => {
+// GET /history/orders
+router.get('/history/orders', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked' });
+        }
+
         const { mode, from_date, to_date } = req.query;
 
         const history = await fetchOrderHistory({
             mode: mode as string,
             from_date: from_date as string,
             to_date: to_date as string,
+            mt5: {
+                login: mt5Account.login,
+                password: mt5Account.password,
+                server: mt5Account.server,
+                port: mt5Account.mt5_port,
+            },
         });
 
         res.json(history);
@@ -50,39 +38,19 @@ router.get('/history/orders', async (req: Request, res: Response, next: NextFunc
     }
 });
 
-/**
- * @swagger
- * /history/prices:
- *   get:
- *     summary: Get price history
- *     parameters:
- *       - in: query
- *         name: mode
- *         schema:
- *           type: string
- *           enum: [positions, orders, deals]
- *         required: false
- *         description: Filter by type (positions, orders, or deals)
- *       - in: query
- *         name: from_date
- *         schema:
- *           type: string
- *           format: date
- *         required: false
- *         description: Start date in YYYY-MM-DD format
- *       - in: query
- *         name: to_date
- *         schema:
- *           type: string
- *           format: date
- *         required: false
- *         description: End date in YYYY-MM-DD format
- *     responses:
- *       200:
- *         description: Success
- */
-router.get('/history/prices', async (req: Request, res: Response, next: NextFunction) => {
+// GET /history/prices
+router.get('/history/prices', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked' });
+        }
+
         const { symbol, time_frame, from_date, to_date } = req.query;
 
         const prices = await fetchPriceHistory({
@@ -90,6 +58,12 @@ router.get('/history/prices', async (req: Request, res: Response, next: NextFunc
             time_frame: time_frame as string,
             from_date: from_date as string,
             to_date: to_date as string,
+            mt5: {
+                login: mt5Account.login,
+                password: mt5Account.password,
+                server: mt5Account.server,
+                port: mt5Account.mt5_port,
+            },
         });
 
         res.json(prices);
