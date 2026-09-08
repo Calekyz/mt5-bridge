@@ -1,18 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { 
-    Home, 
-    FileText, 
-    TrendingUp, 
-    User, 
-    Clock, 
-    BarChart3, 
-    Zap, 
-    LogOut,
-    Settings,
-    Users          // <-- added for admin icon
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users
 } from "lucide-react";
 
 // ---- Components ----
@@ -43,6 +34,7 @@ function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
     const [showLoader, setShowLoader] = useState(true);
+    const [user, setUser] = useState<any>(null);
 
     // ─── Minimum load time (4 seconds) ──────────────────────
     useEffect(() => {
@@ -65,30 +57,40 @@ function App() {
             headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(res => {
-            if (res.ok) {
-                setIsAuthenticated(true);
-            } else {
-                clearToken();
-            }
+            if (res.ok) return res.json();
+            clearToken();
+            throw new Error('Invalid token');
+        })
+        .then(data => {
+            setUser(data.user);
+            setIsAuthenticated(true);
         })
         .catch(() => {
             clearToken();
+            setIsAuthenticated(false);
         })
         .finally(() => {
             setAuthChecked(true);
         });
     }, []);
 
+    // ─── Login / Logout handlers ────────────────────────────
     const handleLogin = (data: { token: string; user: any }) => {
         localStorage.setItem('token', data.token);
+        setUser(data.user);
         setIsAuthenticated(true);
     };
 
     const handleLogout = () => {
         clearToken();
+        setUser(null);
         setIsAuthenticated(false);
     };
 
+    // ─── Admin check ─────────────────────────────────────────
+    const isAdmin = user?.email === 'caleborenge8@gmail.com';
+
+    // ─── Navigation items ────────────────────────────────────
     const navItems = [
         { path: "/", label: "Home", icon: Home },
         { path: "/orders", label: "Orders", icon: FileText },
@@ -98,8 +100,10 @@ function App() {
         { path: "/chart", label: "Chart", icon: BarChart3 },
         { path: "/ws", label: "WS", icon: Zap },
         { path: "/strategies", label: "Strategies", icon: Settings },
-        { path: "/admin", label: "Admin", icon: Users },   // <-- admin nav item
     ];
+    if (isAdmin) {
+        navItems.push({ path: "/admin", label: "Admin", icon: Users });
+    }
 
     // ─── SHOW LOADER until BOTH conditions are met ──────────
     if (!authChecked || showLoader) {
@@ -153,7 +157,10 @@ function App() {
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
                                 <Route path="/strategies" element={<PipnexTradingSystem />} />
-                                <Route path="/admin" element={<AdminPanel />} />   {/* admin route */}
+                                <Route 
+                                    path="/admin" 
+                                    element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />} 
+                                />
                             </Routes>
                         </main>
 
