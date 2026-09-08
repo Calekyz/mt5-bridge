@@ -15,7 +15,6 @@ router.post('/auth/register', async (req, res) => {
     }
 
     try {
-        // Check if user exists
         const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
         if (existing.rows.length > 0) {
             return res.status(409).json({ error: 'Email already exists' });
@@ -27,7 +26,6 @@ router.post('/auth/register', async (req, res) => {
             [email, hashed, 'user']
         );
 
-        // Return success message – the user will now need an access key to log in
         res.status(201).json({ 
             message: 'Account created. Please contact admin for an access key to log in.' 
         });
@@ -40,6 +38,8 @@ router.post('/auth/register', async (req, res) => {
 // ─── LOGIN (requires access key) ──────────────────────────
 router.post('/auth/login', async (req, res) => {
     const { email, password, access_key } = req.body;
+    console.log('Login attempt:', { email, access_key }); // <-- debug
+
     if (!email || !password || !access_key) {
         return res.status(400).json({ error: 'Email, password, and access key required' });
     }
@@ -61,16 +61,18 @@ router.post('/auth/login', async (req, res) => {
         // Validate access key
         const keyResult = await query(
             'SELECT id FROM access_keys WHERE key_code = $1 AND used_by IS NULL',
-            [access_key]
+            [access_key.trim()] // <-- trim to avoid whitespace issues
         );
+        console.log('Key query result:', keyResult.rows); // <-- debug
+
         if (keyResult.rows.length === 0) {
             return res.status(400).json({ error: 'Invalid or already used access key' });
         }
 
-        // Mark key as used by this user
+        // Mark key as used
         await query(
             'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE key_code = $2',
-            [user.id, access_key]
+            [user.id, access_key.trim()]
         );
 
         // Generate token
@@ -85,7 +87,7 @@ router.post('/auth/login', async (req, res) => {
     }
 });
 
-// ─── VERIFY TOKEN (used for keep‑alive) ──────────────────
+// ─── VERIFY TOKEN (keep-alive) ────────────────────────────
 router.get('/auth/verify', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -100,7 +102,6 @@ router.get('/auth/verify', async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        // Optionally refresh the token (or just return user)
         res.json({ user, valid: true });
     } catch (err) {
         return res.status(401).json({ error: 'Invalid token' });
