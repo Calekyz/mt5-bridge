@@ -59,8 +59,9 @@ router.post('/auth/login', async (req, res) => {
         }
 
         // 3. Validate access key – allow if unused OR used by this user
+        // ✅ Now also select key_code so we can return it
         const keyResult = await query(
-            'SELECT id, used_by FROM access_keys WHERE key_code = $1',
+            'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
             [access_key.trim()]
         );
         console.log('Key query result:', keyResult.rows);
@@ -92,6 +93,8 @@ router.post('/auth/login', async (req, res) => {
 
         // 6. Generate JWT
         const token = generateToken(user.id, user.email);
+
+        // 7. Send response – now including the access_key
         res.json({
             user: {
                 id: user.id,
@@ -99,7 +102,8 @@ router.post('/auth/login', async (req, res) => {
                 role: user.role,
                 mt5: mt5Account,
             },
-            token
+            token,
+            access_key: key.key_code,   // ✅ new field
         });
     } catch (err) {
         console.error('Login error:', err);
