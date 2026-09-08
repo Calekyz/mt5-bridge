@@ -26,8 +26,8 @@ router.post('/auth/register', async (req, res) => {
             [email, hashed, 'user']
         );
 
-        res.status(201).json({ 
-            message: 'Account created. Please contact admin for an access key to log in.' 
+        res.status(201).json({
+            message: 'Account created. Please contact admin for an access key to log in.'
         });
     } catch (err) {
         console.error('Register error:', err);
@@ -35,7 +35,7 @@ router.post('/auth/register', async (req, res) => {
     }
 });
 
-// ─── LOGIN (requires access key) ──────────────────────────
+// ─── LOGIN (access key required – reusable for the same user) ──
 router.post('/auth/login', async (req, res) => {
     const { email, password, access_key } = req.body;
     console.log('Login attempt:', { email, access_key });
@@ -45,44 +45,52 @@ router.post('/auth/login', async (req, res) => {
     }
 
     try {
-        // Find user
+        // 1. Find user
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Verify password
+        // 2. Verify password
         const valid = await bcrypt.compare(password, user.password_hash);
         if (!valid) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Validate access key
+        // 3. Validate access key – allow if unused OR used by this user
         const keyResult = await query(
-            'SELECT id FROM access_keys WHERE key_code = $1 AND used_by IS NULL',
+            'SELECT id, used_by FROM access_keys WHERE key_code = $1',
             [access_key.trim()]
         );
         console.log('Key query result:', keyResult.rows);
 
         if (keyResult.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid or already used access key' });
+            return res.status(400).json({ error: 'Invalid access key' });
         }
 
-        // Mark key as used
-        await query(
-            'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE key_code = $2',
-            [user.id, access_key.trim()]
-        );
+        const key = keyResult.rows[0];
+        if (key.used_by !== null && key.used_by !== user.id) {
+            return res.status(400).json({ error: 'Access key already used by another user' });
+        }
 
-        // Fetch user's MT5 account (if any)
+        // 4. If key is unused, bind it to this user
+        if (key.used_by === null) {
+            await query(
+                'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
+                [user.id, key.id]
+            );
+            console.log(`Key ${access_key} now bound to user ${user.id}`);
+        }
+
+        // 5. Fetch user's MT5 account (if any)
         const mt5Result = await query(
             'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [user.id]
         );
         const mt5Account = mt5Result.rows[0] || null;
 
-        // Generate token
+        // 6. Generate JWT
         const token = generateToken(user.id, user.email);
         res.json({
             user: {
@@ -99,7 +107,7 @@ router.post('/auth/login', async (req, res) => {
     }
 });
 
-// ─── VERIFY TOKEN (keep-alive) ────────────────────────────
+// ─── VERIFY TOKEN (keep‑alive) ──────────────────────────────
 router.get('/auth/verify', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
