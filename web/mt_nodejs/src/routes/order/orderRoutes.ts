@@ -5,32 +5,27 @@ import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-// Helper function to get MT5 credentials with fallback
-async function getMt5Credentials(userId: number) {
-    const mt5Result = await query(
-        'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-        [userId]
-    );
-    const account = mt5Result.rows[0];
-    if (!account) return null;
-    return {
-        login: account.login,
-        password: account.password,
-        server: account.server,
-        port: account.port || 443,
-    };
-}
-
 // GET /order/list
 router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.user!.id;
-        const mt5 = await getMt5Credentials(userId);
-        if (!mt5) {
+        const mt5Result = await query(
+            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
             return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
-        const orders = await fetchOrderList(mt5);
+        const credentials = {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.port || 443,
+        };
+
+        const orders = await fetchOrderList(credentials);
         res.json(orders);
     } catch (error) {
         console.error('Order list error:', error);
@@ -42,13 +37,24 @@ router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response
 router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.user!.id;
-        const mt5 = await getMt5Credentials(userId);
-        if (!mt5) {
+        const mt5Result = await query(
+            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
             return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
+        const credentials = {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.port || 443,
+        };
+
         const body = req.body;
-        const result = await postSendOrder(body, mt5);
+        const result = await postSendOrder(body, credentials);
         res.json(result);
     } catch (error) {
         console.error('Place order error:', error);
@@ -60,13 +66,24 @@ router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, ne
 router.post('/order/close', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.user!.id;
-        const mt5 = await getMt5Credentials(userId);
-        if (!mt5) {
+        const mt5Result = await query(
+            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
             return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
+        const credentials = {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.port || 443,
+        };
+
         const body = req.body;
-        const result = await closeSendOrder(body, mt5);
+        const result = await closeSendOrder(body, credentials);
         res.json(result);
     } catch (error) {
         console.error('Close order error:', error);
