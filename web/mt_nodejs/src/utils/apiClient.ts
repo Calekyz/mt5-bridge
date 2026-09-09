@@ -1,51 +1,35 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import { HttpError } from './HttpError';
+import axios, { AxiosRequestConfig, Method } from 'axios';
 
-const host = process.env.MT5_HOST || 'localhost';
-const port = process.env.MT5_PORT || '8890';
+const BASE_URL = process.env.MT5_BRIDGE_URL || 'http://51.75.104.231:8890';
 
-const api = axios.create({
-    baseURL: `http://${host}:${port}/v1`,
-});
-
-export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
-    try {
-        const response = await api.request<T>(config);
-        return response.data;
-    } catch (err: any) {
-        if (axios.isAxiosError(err)) {
-            const status = err.response?.status || 500;
-            const data = err.response?.data;
-
-            // Extract detail message if available
-            const detailMessage =
-                typeof data === 'object' && data?.detail
-                    ? String(data.detail)
-                    : err.response?.statusText || 'External API error';
-
-            // Explicit cases
-            if (!err.response) {
-                throw new HttpError(503, 'External API is unreachable.');
-            }
-
-            if (status >= 500) {
-                // preserve original status and details instead of forcing 503 without details
-                throw new HttpError(status, detailMessage, data);
-            }
-
-            if (status === 404) {
-                throw new HttpError(404, 'Resource not found.', data);
-            }
-
-            if (status === 401) {
-                throw new HttpError(401, 'Unauthorized access to external API.', data);
-            }
-
-            // Default: forward external error with extracted message
-            throw new HttpError(status, detailMessage, data);
-        }
-
-        // Non-Axios or unexpected error
-        throw new HttpError(500, 'Unexpected error when calling external API.');
-    }
+interface ApiRequestOptions {
+    method: Method;
+    url: string;
+    data?: any;
+    params?: any;
 }
+
+export const apiRequest = async <T = any>(options: ApiRequestOptions): Promise<T> => {
+    try {
+        const config: AxiosRequestConfig = {
+            method: options.method,
+            url: `${BASE_URL}${options.url}`,
+            data: options.data,
+            params: options.params,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        };
+
+        const response = await axios(config);
+        return response.data;
+    } catch (error: any) {
+        if (error.response) {
+            throw new Error(error.response.data?.error || error.response.data?.message || `API error: ${error.response.status}`);
+        } else if (error.request) {
+            throw new Error('No response from bridge server. Check VPS and EA status.');
+        } else {
+            throw new Error(error.message || 'Unknown API error');
+        }
+    }
+};
