@@ -44,6 +44,15 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
     onSettingsChange,
     initialSettings = {},
 }) => {
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     const def = STRATEGY_DEFS[strategy];
     const [settings, setSettings] = useState<Record<string, any>>(() => {
         const defaults: Record<string, any> = {};
@@ -58,6 +67,17 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
         setSettings(newSettings);
         onSettingsChange(newSettings);
     };
+
+    if (!vpsAddress) {
+        return (
+            <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+                <div className="text-center text-slate-400">
+                    <p className="text-sm">EA Not Configured – settings disabled</p>
+                    <p className="text-xs text-slate-500 mt-1">Please contact the administrator to set up your VPS.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
