@@ -7,27 +7,6 @@ import { generateToken } from '../auth';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// ─── TEST DATABASE CONNECTION ────────────────────────────
-router.get('/test-db', async (req, res) => {
-    try {
-        const result = await query('SELECT NOW() as time');
-        res.json({ success: true, time: result.rows[0] });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ─── TEST ACCESS KEY QUERY ────────────────────────────────
-router.get('/test-key', async (req, res) => {
-    try {
-        // Check if the access_keys table exists and has the expected columns
-        const result = await query('SELECT * FROM access_keys LIMIT 1');
-        res.json({ success: true, columns: Object.keys(result.rows[0] || {}) });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ─── REGISTER ─────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -65,15 +44,13 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email and password required' });
     }
 
-    // ─── Admin bypass (temporary) ──────────────────────────
+    // ─── Admin bypass ─────────────────────────────────────
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
-            console.log('Admin bypass triggered');
             // Find or create user
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
             if (!user) {
-                console.log('Admin user not found – creating...');
                 const hashed = await bcrypt.hash(password, 10);
                 await query(
                     'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
@@ -81,53 +58,42 @@ router.post('/auth/login', async (req, res) => {
                 );
                 userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
-                console.log('Admin user created with ID:', user.id);
             }
 
-            // Fetch the user's access key (if any)
+            // Fetch access key
             let accessKey = null;
-            try {
-                console.log('Fetching access key for user:', user.id);
-                const keyResult = await query(
-                    'SELECT key_code FROM access_keys WHERE used_by = $1',
-                    [user.id]
-                );
-                console.log('Key result:', keyResult.rows);
-                if (keyResult.rows.length > 0) {
-                    accessKey = keyResult.rows[0].key_code;
-                }
-            } catch (keyErr) {
-                console.error('Error fetching access key:', keyErr);
-                // Continue without key – it's not critical for login
+            const keyResult = await query(
+                'SELECT key_code FROM access_keys WHERE used_by = $1',
+                [user.id]
+            );
+            if (keyResult.rows.length > 0) {
+                accessKey = keyResult.rows[0].key_code;
             }
 
-            // Fetch MT5 account (with vps_address fallback)
+            // Fetch MT5 account – only query columns that exist
             let mt5Account = null;
             try {
-                console.log('Fetching MT5 account for user:', user.id);
+                // Try with vps_address first
                 const mt5Result = await query(
-                    'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    'SELECT login, password, server, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                     [user.id]
                 );
                 mt5Account = mt5Result.rows[0] || null;
-                console.log('MT5 account found:', mt5Account);
             } catch (mt5Err: any) {
                 if (mt5Err.code === '42703') {
+                    // vps_address missing, fallback without it
                     console.warn('vps_address column missing, fallback to basic query');
                     const mt5Result = await query(
-                        'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                        'SELECT login, password, server FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                         [user.id]
                     );
                     mt5Account = mt5Result.rows[0] || null;
                 } else {
-                    console.error('MT5 query error:', mt5Err);
                     throw mt5Err;
                 }
             }
 
-            console.log('Generating token for user:', user.id);
             const token = generateToken(user.id, user.email);
-            console.log('Token generated, sending response');
             return res.json({
                 user: {
                     id: user.id,
@@ -141,14 +107,13 @@ router.post('/auth/login', async (req, res) => {
         } catch (err: any) {
             console.error('Admin bypass error:', err);
             return res.status(500).json({
-                error: 'Internal server error (admin bypass)',
+                error: 'Internal server error',
                 details: err.message,
-                stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
             });
         }
     }
 
-    // ─── Normal login flow ──────────────────────────────────
+    // ─── Normal login ─────────────────────────────────────
     try {
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
@@ -161,33 +126,28 @@ router.post('/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Fetch the user's access key (if any)
+        // Fetch access key
         let accessKey = null;
-        try {
-            const keyResult = await query(
-                'SELECT key_code FROM access_keys WHERE used_by = $1',
-                [user.id]
-            );
-            if (keyResult.rows.length > 0) {
-                accessKey = keyResult.rows[0].key_code;
-            }
-        } catch (keyErr) {
-            console.error('Error fetching access key:', keyErr);
+        const keyResult = await query(
+            'SELECT key_code FROM access_keys WHERE used_by = $1',
+            [user.id]
+        );
+        if (keyResult.rows.length > 0) {
+            accessKey = keyResult.rows[0].key_code;
         }
 
         // Fetch MT5 account
         let mt5Account = null;
         try {
             const mt5Result = await query(
-                'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                'SELECT login, password, server, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                 [user.id]
             );
             mt5Account = mt5Result.rows[0] || null;
         } catch (mt5Err: any) {
             if (mt5Err.code === '42703') {
-                console.warn('vps_address column missing, fallback to basic query');
                 const mt5Result = await query(
-                    'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    'SELECT login, password, server FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                     [user.id]
                 );
                 mt5Account = mt5Result.rows[0] || null;
@@ -212,7 +172,6 @@ router.post('/auth/login', async (req, res) => {
         res.status(500).json({
             error: 'Internal server error',
             details: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
         });
     }
 });
