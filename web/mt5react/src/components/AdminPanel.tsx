@@ -8,7 +8,7 @@ interface User {
     created_at: string;
     login?: string;
     server?: string;
-    vps_address?: string | null; // ✅ added
+    vps_address?: string | null;
 }
 
 interface AccessKey {
@@ -277,11 +277,6 @@ export const AdminPanel: React.FC = () => {
 
     const handleVpsSave = async (userId: number) => {
         const vpsAddress = editingVps[userId];
-        if (!vpsAddress) {
-            // If empty, we might want to allow clearing? We'll let it save as null.
-            setError('VPS address cannot be empty (use a space or "null" to clear)');
-            return;
-        }
         // Find the user's email
         const user = users.find(u => u.id === userId);
         if (!user) return;
@@ -357,7 +352,6 @@ export const AdminPanel: React.FC = () => {
                         Add New Client (MT5 + Key)
                     </h2>
                     <form onSubmit={handleAddClient} className="space-y-4">
-                        {/* ... same as before ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
@@ -483,60 +477,66 @@ export const AdminPanel: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map((user) => (
-                                    <tr key={user.id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition">
-                                        <td className="px-6 py-4 text-sm text-white font-mono">#{user.id}</td>
-                                        <td className="px-6 py-4 text-sm text-white">{user.email}</td>
-                                        <td className="px-6 py-4 text-sm">
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                                user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-300'
-                                            }`}>
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-slate-400">
-                                            {new Date(user.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={editingVps[user.id] || ''}
-                                                    onChange={(e) => handleVpsChange(user.id, e.target.value)}
-                                                    placeholder="Add VPS address"
-                                                    className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                                />
-                                                <button
-                                                    onClick={() => handleVpsSave(user.id)}
-                                                    disabled={savingVps[user.id]}
-                                                    className="text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
-                                                    title="Save VPS address"
-                                                >
-                                                    {savingVps[user.id] ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <Save size={16} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            {user.email !== 'caleborenge8@gmail.com' && (
-                                                <button
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                    disabled={isDeleting === user.id}
-                                                    className="text-red-400 hover:text-red-300 transition disabled:opacity-50"
-                                                >
-                                                    {isDeleting === user.id ? (
-                                                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                                                    ) : (
-                                                        <Trash2 size={18} />
-                                                    )}
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {users.map((user) => {
+                                    const currentVps = editingVps[user.id] || '';
+                                    const isPending = !currentVps && !user.vps_address;
+                                    return (
+                                        <tr key={user.id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition">
+                                            <td className="px-6 py-4 text-sm text-white font-mono">#{user.id}</td>
+                                            <td className="px-6 py-4 text-sm text-white">{user.email}</td>
+                                            <td className="px-6 py-4 text-sm">
+                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                                    user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-300'
+                                                }`}>
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-400">
+                                                {new Date(user.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={currentVps}
+                                                        onChange={(e) => handleVpsChange(user.id, e.target.value)}
+                                                        placeholder={isPending ? "Pending" : "Enter VPS address"}
+                                                        className={`flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                                                            isPending ? 'text-yellow-400 placeholder-yellow-400/50' : ''
+                                                        }`}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleVpsSave(user.id)}
+                                                        disabled={savingVps[user.id]}
+                                                        className="text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
+                                                        title="Save VPS address"
+                                                    >
+                                                        {savingVps[user.id] ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Save size={16} />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                {user.email !== 'caleborenge8@gmail.com' && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        disabled={isDeleting === user.id}
+                                                        className="text-red-400 hover:text-red-300 transition disabled:opacity-50"
+                                                    >
+                                                        {isDeleting === user.id ? (
+                                                            <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                                                        ) : (
+                                                            <Trash2 size={18} />
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {users.length === 0 && (
                                     <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">No users found.</td></tr>
                                 )}
