@@ -159,4 +159,28 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
     }
 });
 
+// ─── PATCH /admin/client/vps ─────────────────────────────
+// Update VPS address for an existing client
+router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    const { email, vps_address } = req.body;
+    if (!email || !vps_address) {
+        return res.status(400).json({ error: 'Email and vps_address required' });
+    }
+    try {
+        const result = await query(
+            `UPDATE user_mt5_accounts 
+             SET vps_address = $1 
+             WHERE user_id = (SELECT id FROM users WHERE email = $2)`,
+            [vps_address, email]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'User not found or no MT5 account linked' });
+        }
+        res.json({ message: 'VPS address updated successfully' });
+    } catch (error) {
+        console.error('Update VPS error:', error);
+        next(error);
+    }
+});
+
 export default router;
