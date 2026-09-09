@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../db';
 
-// ─── JWT Helpers ─────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 export function generateToken(userId: number, email: string): string {
@@ -38,7 +37,6 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
 const router = Router();
 
-// ─── REGISTER ─────────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -58,7 +56,6 @@ router.post('/auth/register', async (req, res) => {
     }
 });
 
-// ─── LOGIN (email + password only) ──────────────────────────
 router.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
     console.log('Login attempt:', { email });
@@ -66,7 +63,7 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email and password required' });
     }
 
-    // ─── Admin bypass (temporary) ──────────────────────────
+    // ─── Admin bypass ──────────────────────────
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
@@ -78,6 +75,7 @@ router.post('/auth/login', async (req, res) => {
                 user = userResult.rows[0];
             }
 
+            // Only fetch vps_address
             let vpsAddress = null;
             try {
                 const vpsResult = await query(
@@ -107,7 +105,7 @@ router.post('/auth/login', async (req, res) => {
         }
     }
 
-    // ─── Normal login ──────────────────────────────────────
+    // ─── Normal login ──────────────────────────
     try {
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
@@ -145,7 +143,6 @@ router.post('/auth/login', async (req, res) => {
     }
 });
 
-// ─── VERIFY TOKEN ────────────────────────────────────────────
 router.get('/auth/verify', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
