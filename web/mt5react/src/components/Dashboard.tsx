@@ -40,7 +40,7 @@ export const Dashboard: React.FC = () => {
         }
     }, []);
 
-    // ─── Check EA health using the user's VPS ──────────────────
+    // ─── Check EA health using VPS ──────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -67,7 +67,7 @@ export const Dashboard: React.FC = () => {
             }
         };
         checkEaHealth();
-        const interval = setInterval(checkEaHealth, 15000); // check every 15s
+        const interval = setInterval(checkEaHealth, 15000);
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
@@ -131,7 +131,88 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ... (rest of the component – updateSetting, localInputs, etc. are unchanged)
+    const updateSetting = async (type: StrategyType, key: string, value: number) => {
+        try {
+            const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
+            await sendCommand(`${prefix}${key}`, value);
+            if (type === 'pipnex') {
+                setPipnexSettings(prev => ({ ...prev, [key]: value }));
+            } else {
+                setNovaSettings(prev => ({ ...prev, [key]: value }));
+            }
+            toast.success(`${key} updated to ${value}`);
+        } catch (err: any) {
+            toast.error(`Failed to update ${key}`);
+        }
+    };
+
+    // ─── Local input states for mobile-friendly typing ────
+    const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
+        pipnex: {},
+        nova: {},
+    });
+
+    useEffect(() => {
+        const initLocal = (type: StrategyType) => {
+            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
+            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const inputs: Record<string, string> = {};
+            for (const def of defs) {
+                if (def.type === 'number') {
+                    const val = settings[def.key] ?? def.default;
+                    inputs[def.key] = String(val);
+                }
+            }
+            setLocalInputs(prev => ({
+                ...prev,
+                [type]: inputs,
+            }));
+        };
+        initLocal('pipnex');
+        initLocal('nova');
+    }, [pipnexSettings, novaSettings]);
+
+    const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
+        setLocalInputs(prev => ({
+            ...prev,
+            [type]: {
+                ...prev[type],
+                [key]: rawValue,
+            },
+        }));
+    };
+
+    const handleInputBlur = (type: StrategyType, key: string) => {
+        const raw = localInputs[type]?.[key] || '';
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+            updateSetting(type, key, num);
+        } else {
+            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
+            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const def = defs.find(d => d.key === key);
+            if (def) {
+                const currentVal = settings[key] ?? def.default;
+                setLocalInputs(prev => ({
+                    ...prev,
+                    [type]: {
+                        ...prev[type],
+                        [key]: String(currentVal),
+                    },
+                }));
+            }
+        }
+    };
+
+    const handleCheckboxChange = (type: StrategyType, key: string, checked: boolean) => {
+        const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
+        sendCommand(`${prefix}${key}`, checked).catch(console.error);
+        if (type === 'pipnex') {
+            setPipnexSettings(prev => ({ ...prev, [key]: checked }));
+        } else {
+            setNovaSettings(prev => ({ ...prev, [key]: checked }));
+        }
+    };
 
     // ─── If no MT5 account is linked ──────────────────────────
     if (!mt5Account) {
@@ -157,7 +238,6 @@ export const Dashboard: React.FC = () => {
                         <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                             📊 Trading Dashboard
                         </h1>
-                        {/* Access Key Card */}
                         {accessKey && (
                             <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
                                 <Key size={18} className="text-blue-400" />
@@ -167,7 +247,6 @@ export const Dashboard: React.FC = () => {
                                 </code>
                             </div>
                         )}
-                        {/* VPS Address Display */}
                         <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
                             <Server size={18} className="text-blue-400" />
                             <span className="text-slate-300 text-sm font-medium">VPS Address:</span>
@@ -181,7 +260,6 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-                        {/* EA Connection Status */}
                         <div className="flex items-center gap-2 text-sm">
                             {!vpsAddress ? (
                                 <>
@@ -235,7 +313,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* Strategy Cards with disabled state if VPS not configured */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <StrategyCard
                         type="pipnex"
