@@ -1,16 +1,15 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import { fetchOrderList, postSendOrder, closeSendOrder } from '../../services/SocketBridgeApi';
 import { query } from '../../db';
 import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-// GET /order/list
-router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/order/list', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
@@ -23,6 +22,7 @@ router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const orders = await fetchOrderList(credentials);
@@ -33,12 +33,11 @@ router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response
     }
 });
 
-// POST /order
-router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/order', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
@@ -51,6 +50,7 @@ router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, ne
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const body = req.body;
@@ -62,12 +62,11 @@ router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, ne
     }
 });
 
-// POST /order/close
-router.post('/order/close', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/order/close', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
@@ -80,6 +79,7 @@ router.post('/order/close', authMiddleware, async (req: AuthRequest, res: Respon
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const body = req.body;
