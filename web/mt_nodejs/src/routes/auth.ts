@@ -7,6 +7,16 @@ import { generateToken } from '../auth';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
+// ─── TEST DATABASE CONNECTION ────────────────────────────
+router.get('/test-db', async (req, res) => {
+    try {
+        const result = await query('SELECT NOW() as time');
+        res.json({ success: true, time: result.rows[0] });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── REGISTER ─────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -51,6 +61,7 @@ router.post('/auth/login', async (req, res) => {
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
             if (!user) {
+                console.log('Admin user not found – creating...');
                 const hashed = await bcrypt.hash(password, 10);
                 await query(
                     'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
@@ -58,6 +69,7 @@ router.post('/auth/login', async (req, res) => {
                 );
                 userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
+                console.log('Admin user created with ID:', user.id);
             }
 
             // Validate access key
@@ -77,26 +89,30 @@ router.post('/auth/login', async (req, res) => {
                     'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
                     [user.id, key.id]
                 );
+                console.log(`Key ${access_key} bound to user ${user.id}`);
             }
 
-            // Fetch MT5 account – handle missing column gracefully
+            // Fetch MT5 account – with try/catch per query
             let mt5Account = null;
             try {
+                // Try with vps_address first
                 const mt5Result = await query(
                     'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                     [user.id]
                 );
                 mt5Account = mt5Result.rows[0] || null;
             } catch (mt5Err: any) {
-                // If column missing, fallback to query without vps_address
-                if (mt5Err.code === '42703') { // undefined column
-                    console.warn('vps_address column missing, falling back to basic query');
+                // If column missing, fallback without vps_address
+                if (mt5Err.code === '42703') {
+                    console.warn('vps_address column missing, fallback to basic query');
                     const mt5Result = await query(
                         'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                         [user.id]
                     );
                     mt5Account = mt5Result.rows[0] || null;
                 } else {
+                    // Other error – log and rethrow
+                    console.error('MT5 query error:', mt5Err);
                     throw mt5Err;
                 }
             }
@@ -114,9 +130,11 @@ router.post('/auth/login', async (req, res) => {
             });
         } catch (err: any) {
             console.error('Admin bypass error:', err);
+            // Return the actual error message
             return res.status(500).json({
                 error: 'Internal server error',
                 details: err.message,
+                stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
             });
         }
     }
@@ -152,7 +170,7 @@ router.post('/auth/login', async (req, res) => {
             );
         }
 
-        // Fetch MT5 account – handle missing column gracefully
+        // Fetch MT5 account – with fallback
         let mt5Account = null;
         try {
             const mt5Result = await query(
@@ -162,13 +180,14 @@ router.post('/auth/login', async (req, res) => {
             mt5Account = mt5Result.rows[0] || null;
         } catch (mt5Err: any) {
             if (mt5Err.code === '42703') {
-                console.warn('vps_address column missing, falling back to basic query');
+                console.warn('vps_address column missing, fallback to basic query');
                 const mt5Result = await query(
                     'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                     [user.id]
                 );
                 mt5Account = mt5Result.rows[0] || null;
             } else {
+                console.error('MT5 query error:', mt5Err);
                 throw mt5Err;
             }
         }
@@ -189,6 +208,7 @@ router.post('/auth/login', async (req, res) => {
         res.status(500).json({
             error: 'Internal server error',
             details: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
         });
     }
 });
