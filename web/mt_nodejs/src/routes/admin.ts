@@ -17,14 +17,16 @@ const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => 
 };
 
 // ─── GET /admin/users ────────────────────────────────────
+// Returns unique users with their MT5 account info (login, server, vps_address)
 router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await query(`
-            SELECT u.id, u.email, u.role, u.created_at,
-                   a.login, a.server, a.vps_address
+            SELECT DISTINCT ON (u.id) 
+                u.id, u.email, u.role, u.created_at,
+                a.login, a.server, a.vps_address
             FROM users u
             LEFT JOIN user_mt5_accounts a ON a.user_id = u.id
-            ORDER BY u.id
+            ORDER BY u.id, a.id DESC
         `);
         res.json(result.rows);
     } catch (error) {
@@ -109,6 +111,7 @@ router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Respons
 });
 
 // ─── POST /admin/client ──────────────────────────────────
+// Creates a new user, stores MT5 credentials, generates & binds an access key
 router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password, mt5, vps_address } = req.body;
 
@@ -140,7 +143,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
             [userId, mt5.login, mt5.password, mt5.server, port, vps]
         );
 
-        // 4. Generate access key and bind to user
+        // 4. Generate a unique access key and bind it to the user
         const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         await query(
             'INSERT INTO access_keys (key_code, used_by, used_at, created_by) VALUES ($1, $2, NOW(), $3)',
@@ -160,7 +163,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
 });
 
 // ─── PATCH /admin/client/vps ─────────────────────────────
-// Update VPS address for an existing client
+// Updates VPS address for an existing client (by email)
 router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, vps_address } = req.body;
     if (!email || !vps_address) {
