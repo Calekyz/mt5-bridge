@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getAccount, type Account } from '../api/nodejsApiClient';
-import { usePolling } from '../hooks/usePolling';
 
 const AccountInfo: React.FC = () => {
     const [account, setAccount] = useState<Account | null>(null);
@@ -33,12 +32,6 @@ const AccountInfo: React.FC = () => {
     useEffect(() => {
         if (vpsAddress) {
             fetchAccount();
-        }
-    }, [vpsAddress]);
-
-    // Poll only if VPS exists
-    useEffect(() => {
-        if (vpsAddress) {
             const interval = setInterval(fetchAccount, 2000);
             return () => clearInterval(interval);
         }
