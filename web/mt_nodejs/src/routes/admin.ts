@@ -4,10 +4,13 @@ import { query } from '../db';
 
 const router = Router();
 
-// ─── Admin Key Middleware ────────────────────────────────
+// ─── 🔥 TEMPORARY FALLBACK – remove after setting env vars ───
+const ADMIN_KEY = process.env.ADMIN_KEY || 'my-super-secret-admin-key-2024';
+// ─────────────────────────────────────────────────────────────────
+
 const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) {
+    if (adminKey !== ADMIN_KEY) {
         return res.status(403).json({ error: 'Invalid admin key' });
     }
     next();
@@ -100,7 +103,6 @@ router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Respons
 });
 
 // ─── POST /admin/client ──────────────────────────────────
-// Creates a user, stores MT5 credentials, and generates a bound access key
 router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password, mt5 } = req.body;
 
@@ -111,14 +113,14 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
     }
 
     try {
-        // 1. Create the user
+        // 1. Create user
         const hashed = await bcrypt.hash(password, 10);
         await query(
             'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
             [email, hashed, 'user']
         );
 
-        // 2. Get the new user ID
+        // 2. Get new user ID
         const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
         const userId = userResult.rows[0].id;
 
@@ -129,26 +131,17 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
             [userId, mt5.login, mt5.password, mt5.server, port]
         );
 
-        // 4. Generate a unique access key and bind it to the user
+        // 4. Generate access key and bind to user
         const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         await query(
             'INSERT INTO access_keys (key_code, used_by, used_at, created_by) VALUES ($1, $2, NOW(), $3)',
             [keyCode, userId, userId]
         );
 
-        // 5. Return the client info
         res.status(201).json({
             message: 'Client created successfully',
-            user: {
-                id: userId,
-                email,
-                role: 'user'
-            },
-            mt5: {
-                login: mt5.login,
-                server: mt5.server,
-                port
-            },
+            user: { id: userId, email, role: 'user' },
+            mt5: { login: mt5.login, server: mt5.server, port },
             access_key: keyCode
         });
     } catch (error) {
