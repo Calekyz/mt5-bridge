@@ -44,6 +44,78 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email, password, and access key required' });
     }
 
+    // ============================================================
+    // 🔥 TEMPORARY ADMIN BYPASS – remove after fixing the hash
+    // ============================================================
+    if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
+        try {
+            // Find or create the user if missing
+            let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+            let user = userResult.rows[0];
+
+            if (!user) {
+                // If the user doesn't exist, create it with a proper hash
+                const hashed = await bcrypt.hash(password, 10);
+                await query(
+                    'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
+                    [email, hashed, 'admin']
+                );
+                userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+                user = userResult.rows[0];
+                console.log('Admin user created.');
+            }
+
+            // Validate access key
+            const keyResult = await query(
+                'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
+                [access_key.trim()]
+            );
+            if (keyResult.rows.length === 0) {
+                return res.status(400).json({ error: 'Invalid access key' });
+            }
+
+            const key = keyResult.rows[0];
+            if (key.used_by !== null && key.used_by !== user.id) {
+                return res.status(400).json({ error: 'Access key already used by another user' });
+            }
+
+            // If key is unused, bind it to this user
+            if (key.used_by === null) {
+                await query(
+                    'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
+                    [user.id, key.id]
+                );
+                console.log(`Key ${access_key} now bound to user ${user.id}`);
+            }
+
+            // Fetch user's MT5 account
+            const mt5Result = await query(
+                'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                [user.id]
+            );
+            const mt5Account = mt5Result.rows[0] || null;
+
+            // Generate JWT
+            const token = generateToken(user.id, user.email);
+
+            return res.json({
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    mt5: mt5Account,
+                },
+                token,
+                access_key: key.key_code,
+            });
+        } catch (err) {
+            console.error('Admin bypass error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+    // ============================================================
+
+    // ─── Normal login flow for all other users ──────────────────
     try {
         // 1. Find user
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
@@ -59,7 +131,6 @@ router.post('/auth/login', async (req, res) => {
         }
 
         // 3. Validate access key – allow if unused OR used by this user
-        // ✅ Now also select key_code so we can return it
         const keyResult = await query(
             'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
             [access_key.trim()]
@@ -103,7 +174,7 @@ router.post('/auth/login', async (req, res) => {
                 mt5: mt5Account,
             },
             token,
-            access_key: key.key_code,   // ✅ new field
+            access_key: key.key_code,
         });
     } catch (err) {
         console.error('Login error:', err);
