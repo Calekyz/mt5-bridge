@@ -53,12 +53,12 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to fetch users');
+                throw new Error(data.error || data.message || 'Failed to fetch users');
             }
             const data = await res.json();
             setUsers(data);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         }
     };
 
@@ -70,12 +70,12 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to fetch keys');
+                throw new Error(data.error || data.message || 'Failed to fetch keys');
             }
             const data = await res.json();
             setKeys(data);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         }
     };
 
@@ -108,13 +108,13 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to add user');
+                throw new Error(data.error || data.message || 'Failed to add user');
             }
             setNewEmail('');
             setNewPassword('');
             await loadData();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         } finally {
             setIsAdding(false);
         }
@@ -132,11 +132,11 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to delete user');
+                throw new Error(data.error || data.message || 'Failed to delete user');
             }
             await loadData();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         } finally {
             setIsDeleting(null);
         }
@@ -157,11 +157,11 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to generate keys');
+                throw new Error(data.error || data.message || 'Failed to generate keys');
             }
             await loadData();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         } finally {
             setGenerating(false);
         }
@@ -177,11 +177,11 @@ export const AdminPanel: React.FC = () => {
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to delete key');
+                throw new Error(data.error || data.message || 'Failed to delete key');
             }
             await loadData();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Unknown error');
         }
     };
 
@@ -234,7 +234,7 @@ export const AdminPanel: React.FC = () => {
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || 'Failed to create client');
+                throw new Error(data.error || data.message || 'Failed to create client');
             }
 
             const data = await res.json();
@@ -248,7 +248,7 @@ export const AdminPanel: React.FC = () => {
             setClientMt5Port('443');
             await loadData();
         } catch (err: any) {
-            setClientError(err.message);
+            setClientError(err.message || 'Unknown error');
         } finally {
             setAddingClient(false);
         }
