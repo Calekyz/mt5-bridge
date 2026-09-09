@@ -13,7 +13,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [accessKey, setAccessKey] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
@@ -28,9 +27,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         try {
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
             const payload: any = { email, password };
-            if (mode === 'login') {
-                payload.access_key = accessKey.trim();
-            }
+            // ✅ No access_key needed for login
 
             const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
@@ -50,19 +47,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 return;
             }
 
-            // ✅ Login success – store everything in localStorage
-            localStorage.setItem('accessKey', data.access_key);
+            // Login success – store everything
             localStorage.setItem('token', data.token);
-            // Store the entire user object (including mt5)
             localStorage.setItem('user', JSON.stringify(data.user));
-            // Also store mt5 separately for easy access (optional)
+            if (data.user.access_key) {
+                localStorage.setItem('accessKey', data.user.access_key);
+            }
             if (data.user.mt5) {
                 localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
-            } else {
-                localStorage.removeItem('mt5Account');
             }
 
-            // Pass to parent (App)
             onLogin({ token: data.token, user: data.user });
         } catch (err: any) {
             setLocalError(err.message);
@@ -75,7 +69,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setMode(mode === 'login' ? 'signup' : 'login');
         setLocalError(null);
         setSignupMessage(null);
-        setAccessKey('');
     };
 
     return (
@@ -150,22 +143,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </button>
                             </div>
                         </div>
-
-                        {mode === 'login' && (
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                                    Access Key
-                                </label>
-                                <input
-                                    type="text"
-                                    value={accessKey}
-                                    onChange={(e) => setAccessKey(e.target.value)}
-                                    placeholder="Enter your access key"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition duration-200"
-                                    required
-                                />
-                            </div>
-                        )}
 
                         {(localError || error) && (
                             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-xl p-3 animate-pulse">
