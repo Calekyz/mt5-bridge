@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Server } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Server, Save } from 'lucide-react';
 
 interface User {
     id: number;
     email: string;
     role: string;
     created_at: string;
+    login?: string;
+    server?: string;
+    vps_address?: string | null; // ✅ added
 }
 
 interface AccessKey {
@@ -46,11 +49,9 @@ export const AdminPanel: React.FC = () => {
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
     const [clientError, setClientError] = useState<string | null>(null);
 
-    // ─── Assign VPS State ──────────────────────────────────────
-    const [vpsEmail, setVpsEmail] = useState('');
-    const [vpsAddress, setVpsAddress] = useState('');
-    const [updatingVps, setUpdatingVps] = useState(false);
-    const [vpsUpdateMessage, setVpsUpdateMessage] = useState<string | null>(null);
+    // ─── Inline VPS update state ──────────────────────────────
+    const [editingVps, setEditingVps] = useState<{ [key: number]: string }>({});
+    const [savingVps, setSavingVps] = useState<{ [key: number]: boolean }>({});
 
     // ─── Fetch users ──────────────────────────────────────────
     const fetchUsers = async () => {
@@ -64,6 +65,12 @@ export const AdminPanel: React.FC = () => {
             }
             const data = await res.json();
             setUsers(data);
+            // initialize editing state for each user
+            const initialEdit: { [key: number]: string } = {};
+            data.forEach((u: User) => {
+                initialEdit[u.id] = u.vps_address || '';
+            });
+            setEditingVps(initialEdit);
         } catch (err: any) {
             setError(err.message || 'Unknown error');
         }
@@ -263,15 +270,24 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Handle Update VPS ──────────────────────────────────────
-    const handleUpdateVps = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!vpsEmail || !vpsAddress) {
-            setVpsUpdateMessage('Email and VPS address are required');
+    // ─── Handle inline VPS update ──────────────────────────────
+    const handleVpsChange = (userId: number, value: string) => {
+        setEditingVps(prev => ({ ...prev, [userId]: value }));
+    };
+
+    const handleVpsSave = async (userId: number) => {
+        const vpsAddress = editingVps[userId];
+        if (!vpsAddress) {
+            // If empty, we might want to allow clearing? We'll let it save as null.
+            setError('VPS address cannot be empty (use a space or "null" to clear)');
             return;
         }
-        setUpdatingVps(true);
-        setVpsUpdateMessage(null);
+        // Find the user's email
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+
+        setSavingVps(prev => ({ ...prev, [userId]: true }));
+        setError(null);
         try {
             const res = await fetch(`${API_URL}/admin/client/vps`, {
                 method: 'PATCH',
@@ -280,7 +296,7 @@ export const AdminPanel: React.FC = () => {
                     'X-Admin-Key': ADMIN_KEY,
                 },
                 body: JSON.stringify({
-                    email: vpsEmail,
+                    email: user.email,
                     vps_address: vpsAddress,
                 }),
             });
@@ -288,14 +304,12 @@ export const AdminPanel: React.FC = () => {
                 const data = await res.json();
                 throw new Error(data.error || data.message || 'Failed to update VPS');
             }
-            setVpsUpdateMessage('✅ VPS address updated successfully!');
-            setVpsEmail('');
-            setVpsAddress('');
-            await loadData(); // refresh users list
+            // Update local state
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
         } catch (err: any) {
-            setVpsUpdateMessage('❌ ' + (err.message || 'Unknown error'));
+            setError(err.message || 'Unknown error');
         } finally {
-            setUpdatingVps(false);
+            setSavingVps(prev => ({ ...prev, [userId]: false }));
         }
     };
 
@@ -343,6 +357,7 @@ export const AdminPanel: React.FC = () => {
                         Add New Client (MT5 + Key)
                     </h2>
                     <form onSubmit={handleAddClient} className="space-y-4">
+                        {/* ... same as before ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
@@ -453,91 +468,6 @@ export const AdminPanel: React.FC = () => {
                     </form>
                 </div>
 
-                {/* ─── Assign VPS to Existing Client ───────────────────── */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Server size={20} className="text-blue-400" />
-                        Assign VPS to Existing Client
-                    </h2>
-                    <form onSubmit={handleUpdateVps} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Client Email</label>
-                            <input
-                                type="email"
-                                value={vpsEmail}
-                                onChange={(e) => setVpsEmail(e.target.value)}
-                                placeholder="client@example.com"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                required
-                            />
-                        </div>
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
-                            <input
-                                type="text"
-                                value={vpsAddress}
-                                onChange={(e) => setVpsAddress(e.target.value)}
-                                placeholder="https://your-vps-ip:8890"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                required
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={updatingVps}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {updatingVps ? <Loader2 className="w-4 h-4 animate-spin" /> : <Server size={18} />}
-                            {updatingVps ? 'Updating...' : 'Update VPS'}
-                        </button>
-                    </form>
-                    {vpsUpdateMessage && (
-                        <div className={`mt-3 text-sm ${vpsUpdateMessage.startsWith('✅') ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {vpsUpdateMessage}
-                        </div>
-                    )}
-                </div>
-
-                {/* ─── Add User ───────────────────────────────────── */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <UserPlus size={20} className="text-blue-400" />
-                        Add User
-                    </h2>
-                    <form onSubmit={handleAddUser} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={newEmail}
-                                onChange={(e) => setNewEmail(e.target.value)}
-                                placeholder="user@example.com"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
-                        </div>
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Password</label>
-                            <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={isAdding}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={18} />}
-                            {isAdding ? 'Adding...' : 'Add User'}
-                        </button>
-                    </form>
-                </div>
-
                 {/* ─── Users Table ───────────────────────────────── */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
                     <div className="overflow-x-auto">
@@ -548,6 +478,7 @@ export const AdminPanel: React.FC = () => {
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Role</th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Joined</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">VPS Address</th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -565,6 +496,29 @@ export const AdminPanel: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-400">
                                             {new Date(user.created_at).toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editingVps[user.id] || ''}
+                                                    onChange={(e) => handleVpsChange(user.id, e.target.value)}
+                                                    placeholder="Add VPS address"
+                                                    className="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                />
+                                                <button
+                                                    onClick={() => handleVpsSave(user.id)}
+                                                    disabled={savingVps[user.id]}
+                                                    className="text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
+                                                    title="Save VPS address"
+                                                >
+                                                    {savingVps[user.id] ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Save size={16} />
+                                                    )}
+                                                </button>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {user.email !== 'caleborenge8@gmail.com' && (
@@ -584,7 +538,7 @@ export const AdminPanel: React.FC = () => {
                                     </tr>
                                 ))}
                                 {users.length === 0 && (
-                                    <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400">No users found.</td></tr>
+                                    <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">No users found.</td></tr>
                                 )}
                             </tbody>
                         </table>
