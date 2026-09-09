@@ -1,21 +1,20 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import { fetchOrderHistory, fetchPriceHistory } from '../../services/SocketBridgeApi';
 import { query } from '../../db';
 import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-// GET /history/orders
-router.get('/history/orders', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/history/orders', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
         if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+            return res.status(404).json({ error: 'No MT5 account linked' });
         }
 
         const credentials = {
@@ -23,6 +22,7 @@ router.get('/history/orders', authMiddleware, async (req: AuthRequest, res: Resp
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const { mode, from_date, to_date } = req.query;
@@ -41,17 +41,16 @@ router.get('/history/orders', authMiddleware, async (req: AuthRequest, res: Resp
     }
 });
 
-// GET /history/prices
-router.get('/history/prices', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/history/prices', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
         if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+            return res.status(404).json({ error: 'No MT5 account linked' });
         }
 
         const credentials = {
@@ -59,6 +58,7 @@ router.get('/history/prices', authMiddleware, async (req: AuthRequest, res: Resp
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const { symbol, time_frame, from_date, to_date } = req.query;
