@@ -44,17 +44,17 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email, password, and access key required' });
     }
 
-    // ============================================================
-    // 🔥 TEMPORARY ADMIN BYPASS – remove after fixing the hash
-    // ============================================================
+    // ================================================================
+    // 🔥 TEMPORARY ADMIN BYPASS – with detailed error handling
+    // ================================================================
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
-            // Find or create the user if missing
+            // 1. Find or create the admin user
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
 
             if (!user) {
-                // If the user doesn't exist, create it with a proper hash
+                console.log('Admin user not found – creating one...');
                 const hashed = await bcrypt.hash(password, 10);
                 await query(
                     'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
@@ -62,14 +62,16 @@ router.post('/auth/login', async (req, res) => {
                 );
                 userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
-                console.log('Admin user created.');
+                console.log('Admin user created with ID:', user.id);
             }
 
-            // Validate access key
+            // 2. Validate access key
             const keyResult = await query(
                 'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
                 [access_key.trim()]
             );
+            console.log('Key query result:', keyResult.rows);
+
             if (keyResult.rows.length === 0) {
                 return res.status(400).json({ error: 'Invalid access key' });
             }
@@ -79,7 +81,7 @@ router.post('/auth/login', async (req, res) => {
                 return res.status(400).json({ error: 'Access key already used by another user' });
             }
 
-            // If key is unused, bind it to this user
+            // 3. If key is unused, bind it to this user
             if (key.used_by === null) {
                 await query(
                     'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
@@ -88,16 +90,17 @@ router.post('/auth/login', async (req, res) => {
                 console.log(`Key ${access_key} now bound to user ${user.id}`);
             }
 
-            // Fetch user's MT5 account
+            // 4. Fetch user's MT5 account (if any)
             const mt5Result = await query(
                 'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                 [user.id]
             );
             const mt5Account = mt5Result.rows[0] || null;
 
-            // Generate JWT
+            // 5. Generate JWT
             const token = generateToken(user.id, user.email);
 
+            // 6. Return response with access_key
             return res.json({
                 user: {
                     id: user.id,
@@ -108,12 +111,16 @@ router.post('/auth/login', async (req, res) => {
                 token,
                 access_key: key.key_code,
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error('Admin bypass error:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({
+                error: 'Internal server error (admin bypass)',
+                details: err.message || 'Unknown error',
+                stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+            });
         }
     }
-    // ============================================================
+    // ================================================================
 
     // ─── Normal login flow for all other users ──────────────────
     try {
@@ -176,9 +183,13 @@ router.post('/auth/login', async (req, res) => {
             token,
             access_key: key.key_code,
         });
-    } catch (err) {
+    } catch (err: any) {
         console.error('Login error:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({
+            error: 'Internal server error',
+            details: err.message || 'Unknown error',
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+        });
     }
 });
 
@@ -198,8 +209,12 @@ router.get('/auth/verify', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         res.json({ user, valid: true });
-    } catch (err) {
-        return res.status(401).json({ error: 'Invalid token' });
+    } catch (err: any) {
+        console.error('Verify error:', err);
+        return res.status(401).json({
+            error: 'Invalid token',
+            details: err.message,
+        });
     }
 });
 
