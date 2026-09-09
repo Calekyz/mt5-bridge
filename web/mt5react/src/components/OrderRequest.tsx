@@ -37,15 +37,23 @@ const OrderRequestForm: React.FC = () => {
     const [loadingQuote, setLoadingQuote] = useState(false);
     const [quoteError, setQuoteError] = useState<string | null>(null);
 
-    // ─── SYMBOLS AUTO‑COMPLETE ──────────────────────────
     const [symbols, setSymbols] = useState<string[]>([]);
     const [filteredSymbols, setFilteredSymbols] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [loadingSymbols, setLoadingSymbols] = useState(true);
     const [symbolsSet, setSymbolsSet] = useState<Set<string>>(new Set());
 
-    // Fetch symbols on mount
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     useEffect(() => {
+        if (!vpsAddress) return;
         const loadSymbols = async () => {
             try {
                 const data = await getSymbols();
@@ -58,30 +66,25 @@ const OrderRequestForm: React.FC = () => {
             }
         };
         loadSymbols();
-    }, []);
+    }, [vpsAddress]);
 
-    // Filter symbols as user types
     useEffect(() => {
         const input = formData.symbol.toUpperCase();
         if (input.length === 0) {
             setFilteredSymbols(symbols.slice(0, 20));
             return;
         }
-        const filtered = symbols
-            .filter(s => s.toUpperCase().includes(input))
-            .slice(0, 20);
+        const filtered = symbols.filter(s => s.toUpperCase().includes(input)).slice(0, 20);
         setFilteredSymbols(filtered);
     }, [formData.symbol, symbols]);
 
-    // ─── QUOTE FETCH ──────────────────────────────────────
-    // Only fetch if the symbol is valid (exists in the symbols list)
     const isSymbolValid = () => {
         if (!formData.symbol) return false;
         return symbolsSet.has(formData.symbol.toUpperCase());
     };
 
     useEffect(() => {
-        if (formData.symbol.length >= 2 && isSymbolValid()) {
+        if (formData.symbol.length >= 2 && isSymbolValid() && vpsAddress) {
             fetchQuote();
         } else if (formData.symbol.length >= 2 && !isSymbolValid()) {
             setQuote(null);
@@ -90,20 +93,17 @@ const OrderRequestForm: React.FC = () => {
             setQuote(null);
             setQuoteError(null);
         }
-    }, [formData.symbol, symbolsSet]);
+    }, [formData.symbol, symbolsSet, vpsAddress]);
 
     const fetchQuote = async () => {
-        if (!formData.symbol || formData.symbol.length < 2) return;
+        if (!formData.symbol || !vpsAddress) return;
         if (!isSymbolValid()) {
-            setQuoteError(`Symbol "${formData.symbol}" not recognized. Please select from the dropdown.`);
+            setQuoteError(`Symbol "${formData.symbol}" not recognized.`);
             return;
         }
-
         setLoadingQuote(true);
         setQuoteError(null);
-
         try {
-            // Use the symbol as-is (preserve case, e.g., XAUUSD.m)
             const quoteData = await getQuote(formData.symbol);
             setQuote(quoteData);
         } catch (error) {
@@ -114,10 +114,8 @@ const OrderRequestForm: React.FC = () => {
         }
     };
 
-    // ─── HANDLERS ──────────────────────────────────────────
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
         setFormData(prev => ({
             ...prev,
             [name]: name === "volume" || name === "sl" || name === "tp" || name === "deviation"
@@ -126,7 +124,6 @@ const OrderRequestForm: React.FC = () => {
         }));
         if (name === "symbol") {
             setShowSuggestions(true);
-            // Clear any previous quote error when user types
             setQuoteError(null);
         }
     };
@@ -134,24 +131,24 @@ const OrderRequestForm: React.FC = () => {
     const handleSymbolSelect = (symbol: string) => {
         setFormData(prev => ({ ...prev, symbol }));
         setShowSuggestions(false);
-        setQuoteError(null); // Clear error on selection
+        setQuoteError(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!vpsAddress) {
+            toast.error('VPS not configured');
+            return;
+        }
         if (!isSymbolValid()) {
             toast.error("Please select a valid symbol from the dropdown.");
             return;
         }
         try {
-            // Use the symbol as-is (preserve case)
-            console.log("Placing order with data:", formData);
             await placeOrder(formData);
             toast.success("Order placed successfully!");
         } catch (error) {
             if (error instanceof Error) {
-                console.error("Error object:", error);
-                console.error("error.message:", error.message);
                 toast.error(error.message || "Something went wrong");
             } else {
                 toast.error("Failed to place order: Unknown error");
@@ -169,9 +166,21 @@ const OrderRequestForm: React.FC = () => {
         return quote.ask - quote.bid;
     };
 
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 shadow-2xl border border-blue-800/30 w-full max-w-4xl backdrop-blur-sm overflow-hidden">
-            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl shadow-lg">
                     <TrendingUp className="w-6 h-6 text-white" />
