@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { getOrders, closeOrder, type OrderResponse } from "../api/nodejsApiClient";
-import { usePolling } from "../hooks/usePolling";
-import { toast } from "react-toastify";
+import React, { useState, useEffect } from 'react';
+import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
+import { toast } from 'react-toastify';
 
 export const OrdersList: React.FC = () => {
     const [orders, setOrders] = useState<OrderResponse | null>(null);
@@ -9,7 +8,17 @@ export const OrdersList: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [closing, setClosing] = useState<number | null>(null);
 
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     const fetchOrders = async () => {
+        if (!vpsAddress) return;
         try {
             const data = await getOrders();
             setOrders(data);
@@ -21,15 +30,20 @@ export const OrdersList: React.FC = () => {
         }
     };
 
-    // Poll every 2 seconds
-    usePolling(fetchOrders, 2000);
+    useEffect(() => {
+        if (vpsAddress) {
+            fetchOrders();
+            const interval = setInterval(fetchOrders, 2000);
+            return () => clearInterval(interval);
+        }
+    }, [vpsAddress]);
 
     const handleClose = async (ticket: number) => {
         setClosing(ticket);
         try {
             await closeOrder(ticket);
             toast.success(`Order #${ticket} closed successfully`);
-            await fetchOrders(); // immediate refresh
+            await fetchOrders();
         } catch (err: any) {
             toast.error(`Failed to close order: ${err.message}`);
         } finally {
@@ -37,16 +51,26 @@ export const OrdersList: React.FC = () => {
         }
     };
 
-    // Helper to get BUY/SELL from the API's type field
     const getOrderType = (order: any) => {
         if (order.type) {
-            // The API returns strings like "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
             return order.type === "POSITION_TYPE_BUY" ? "BUY" : "SELL";
         }
-        // Fallback for older API versions (should not happen now)
         console.warn("Order type missing, using price fallback");
         return order.price_current >= order.price_open ? "BUY" : "SELL";
     };
+
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (loading && !orders) {
         return (
