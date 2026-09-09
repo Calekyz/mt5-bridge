@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, CloudOff, Key, Wifi, WifiOff, Server, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -103,7 +103,10 @@ export const Dashboard: React.FC = () => {
 
     // ─── Toggle strategy ──────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
-        // ✅ No restrictions – always allow toggle
+        if (!vpsAddress || !eaConnected) {
+            toast.error('VPS not configured or EA not reachable');
+            return;
+        }
         setIsToggling(type);
         setCommandError(null);
         try {
@@ -217,9 +220,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Show dashboard always (even without VPS) ────────────
-    // We removed the early return if !vpsAddress
-
+    // ─── Render dashboard (always) ──────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -245,7 +246,7 @@ export const Dashboard: React.FC = () => {
                                     {vpsAddress}
                                 </code>
                             ) : (
-                                <span className="text-yellow-400 text-sm font-medium">Pending (Admin to assign)</span>
+                                <span className="text-yellow-400 text-sm font-medium">Pending</span>
                             )}
                         </div>
                     </div>
@@ -294,7 +295,11 @@ export const Dashboard: React.FC = () => {
                         profit={account.equity - account.balance}
                         currency={account.currency || '$'}
                     />
-                ) : null}
+                ) : (
+                    <div className="bg-slate-800/40 rounded-xl p-6 text-center text-slate-400 border border-slate-700/50">
+                        <p>No account data available. Please ensure your VPS is configured and the EA is running.</p>
+                    </div>
+                )}
 
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
@@ -318,7 +323,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS}
-                        disabled={false} // ✅ Always enabled
+                        disabled={!vpsAddress || !eaConnected}
                     />
                     <StrategyCard
                         type="nova"
@@ -334,7 +339,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS}
-                        disabled={false} // ✅ Always enabled
+                        disabled={!vpsAddress || !eaConnected}
                     />
                 </div>
             </div>
