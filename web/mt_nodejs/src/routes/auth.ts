@@ -7,16 +7,6 @@ import { generateToken } from '../auth';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// ─── TEST DATABASE CONNECTION ────────────────────────────
-router.get('/test-db', async (req, res) => {
-    try {
-        const result = await query('SELECT NOW() as time');
-        res.json({ success: true, time: result.rows[0] });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ─── REGISTER ─────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -45,13 +35,13 @@ router.post('/auth/register', async (req, res) => {
     }
 });
 
-// ─── LOGIN ─────────────────────────────────────────────────
+// ─── LOGIN (email + password only) ──────────────────────
 router.post('/auth/login', async (req, res) => {
-    const { email, password, access_key } = req.body;
-    console.log('Login attempt:', { email, access_key });
+    const { email, password } = req.body;
+    console.log('Login attempt:', { email });
 
-    if (!email || !password || !access_key) {
-        return res.status(400).json({ error: 'Email, password, and access key required' });
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
     }
 
     // ─── Admin bypass (temporary) ──────────────────────────
@@ -72,37 +62,25 @@ router.post('/auth/login', async (req, res) => {
                 console.log('Admin user created with ID:', user.id);
             }
 
-            // Validate access key
+            // Fetch the user's access key (if any)
+            let accessKey = null;
             const keyResult = await query(
-                'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
-                [access_key.trim()]
+                'SELECT key_code FROM access_keys WHERE used_by = $1',
+                [user.id]
             );
-            if (keyResult.rows.length === 0) {
-                return res.status(400).json({ error: 'Invalid access key' });
-            }
-            const key = keyResult.rows[0];
-            if (key.used_by !== null && key.used_by !== user.id) {
-                return res.status(400).json({ error: 'Access key already used by another user' });
-            }
-            if (key.used_by === null) {
-                await query(
-                    'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
-                    [user.id, key.id]
-                );
-                console.log(`Key ${access_key} bound to user ${user.id}`);
+            if (keyResult.rows.length > 0) {
+                accessKey = keyResult.rows[0].key_code;
             }
 
-            // Fetch MT5 account – with try/catch per query
+            // Fetch MT5 account (with vps_address fallback)
             let mt5Account = null;
             try {
-                // Try with vps_address first
                 const mt5Result = await query(
                     'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                     [user.id]
                 );
                 mt5Account = mt5Result.rows[0] || null;
             } catch (mt5Err: any) {
-                // If column missing, fallback without vps_address
                 if (mt5Err.code === '42703') {
                     console.warn('vps_address column missing, fallback to basic query');
                     const mt5Result = await query(
@@ -111,8 +89,6 @@ router.post('/auth/login', async (req, res) => {
                     );
                     mt5Account = mt5Result.rows[0] || null;
                 } else {
-                    // Other error – log and rethrow
-                    console.error('MT5 query error:', mt5Err);
                     throw mt5Err;
                 }
             }
@@ -124,17 +100,15 @@ router.post('/auth/login', async (req, res) => {
                     email: user.email,
                     role: user.role,
                     mt5: mt5Account,
+                    access_key: accessKey, // included but not required for login
                 },
                 token,
-                access_key: key.key_code,
             });
         } catch (err: any) {
             console.error('Admin bypass error:', err);
-            // Return the actual error message
             return res.status(500).json({
                 error: 'Internal server error',
                 details: err.message,
-                stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
             });
         }
     }
@@ -152,25 +126,17 @@ router.post('/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
+        // Fetch the user's access key (if any)
+        let accessKey = null;
         const keyResult = await query(
-            'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
-            [access_key.trim()]
+            'SELECT key_code FROM access_keys WHERE used_by = $1',
+            [user.id]
         );
-        if (keyResult.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid access key' });
-        }
-        const key = keyResult.rows[0];
-        if (key.used_by !== null && key.used_by !== user.id) {
-            return res.status(400).json({ error: 'Access key already used by another user' });
-        }
-        if (key.used_by === null) {
-            await query(
-                'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
-                [user.id, key.id]
-            );
+        if (keyResult.rows.length > 0) {
+            accessKey = keyResult.rows[0].key_code;
         }
 
-        // Fetch MT5 account – with fallback
+        // Fetch MT5 account
         let mt5Account = null;
         try {
             const mt5Result = await query(
@@ -187,7 +153,6 @@ router.post('/auth/login', async (req, res) => {
                 );
                 mt5Account = mt5Result.rows[0] || null;
             } else {
-                console.error('MT5 query error:', mt5Err);
                 throw mt5Err;
             }
         }
@@ -199,16 +164,15 @@ router.post('/auth/login', async (req, res) => {
                 email: user.email,
                 role: user.role,
                 mt5: mt5Account,
+                access_key: accessKey,
             },
             token,
-            access_key: key.key_code,
         });
     } catch (err: any) {
         console.error('Login error:', err);
         res.status(500).json({
             error: 'Internal server error',
             details: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
         });
     }
 });
