@@ -258,7 +258,29 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Render dashboard (always) ──────────────────────────
+    // ─── EA Not Configured screen ──────────────────────────
+    if (!vpsAddress) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                    <button
+                        onClick={refreshUserInfo}
+                        disabled={refreshingUser}
+                        className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50 mx-auto"
+                    >
+                        <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
+                        {refreshingUser ? 'Refreshing...' : 'Refresh VPS Info'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── Normal dashboard ──────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -279,13 +301,9 @@ export const Dashboard: React.FC = () => {
                         <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
                             <Server size={18} className="text-blue-400" />
                             <span className="text-slate-300 text-sm font-medium">VPS Address:</span>
-                            {vpsAddress ? (
-                                <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
-                                    {vpsAddress}
-                                </code>
-                            ) : (
-                                <span className="text-yellow-400 text-sm font-medium">Pending</span>
-                            )}
+                            <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
+                                {vpsAddress}
+                            </code>
                             <button
                                 onClick={refreshUserInfo}
                                 disabled={refreshingUser}
@@ -298,12 +316,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                         <div className="flex items-center gap-2 text-sm">
-                            {!vpsAddress ? (
-                                <>
-                                    <AlertTriangle size={16} className="text-yellow-400" />
-                                    <span className="text-yellow-400">VPS Pending</span>
-                                </>
-                            ) : eaConnected === null ? (
+                            {eaConnected === null ? (
                                 <span className="text-slate-400">Checking EA...</span>
                             ) : eaConnected ? (
                                 <>
@@ -341,11 +354,7 @@ export const Dashboard: React.FC = () => {
                         profit={account.equity - account.balance}
                         currency={account.currency || '$'}
                     />
-                ) : (
-                    <div className="bg-slate-800/40 rounded-xl p-6 text-center text-slate-400 border border-slate-700/50">
-                        <p>No account data available. Please ensure your VPS is configured and the EA is running.</p>
-                    </div>
-                )}
+                ) : null}
 
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
@@ -369,7 +378,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS}
-                        disabled={!vpsAddress || !eaConnected}
+                        disabled={!eaConnected}
                     />
                     <StrategyCard
                         type="nova"
@@ -385,7 +394,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS}
-                        disabled={!vpsAddress || !eaConnected}
+                        disabled={!eaConnected}
                     />
                 </div>
             </div>
@@ -488,7 +497,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                 {disabled && (
                     <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400/80">
                         <AlertTriangle size={14} />
-                        <span>VPS not configured or EA offline</span>
+                        <span>EA offline</span>
                     </div>
                 )}
             </div>
