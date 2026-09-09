@@ -1,8 +1,5 @@
-// web/mt_nodejs/src/services/SocketBridgeApi.ts
-
 import { apiRequest } from '../utils/apiClient';
 
-// ─── Shared Type ──────────────────────────────────────────
 interface Mt5Credentials {
     login: string;
     password: string;
@@ -14,7 +11,7 @@ interface Mt5Credentials {
 export const fetchOrderList = async (mt5: Mt5Credentials) => {
     return apiRequest({
         method: 'POST',
-        url: '/v1/order/list',          // ✅ corrected
+        url: '/v1/order/list',
         data: { mt5 },
     });
 };
@@ -32,10 +29,9 @@ export interface SendOrderRequest {
 }
 
 export const postSendOrder = async (body: SendOrderRequest, mt5: Mt5Credentials) => {
-    console.log("Posting send order...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/order',               // ✅ corrected
+        url: '/v1/order',
         data: { ...body, mt5 },
     });
 };
@@ -45,20 +41,18 @@ export interface CloseOrderRequest {
 }
 
 export const closeSendOrder = async (body: CloseOrderRequest, mt5: Mt5Credentials) => {
-    console.log("Posting close order...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/order/close',         // ✅ corrected
+        url: '/v1/order/close',
         data: { ...body, mt5 },
     });
 };
 
 // ─── ACCOUNT ──────────────────────────────────────────────
 export const fetchAccount = async (mt5: Mt5Credentials) => {
-    console.log("Fetching account information...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/account',             // ✅ corrected
+        url: '/v1/account',
         data: { mt5 },
     });
 };
@@ -72,10 +66,9 @@ export interface OrderHistoryParams {
 
 export const fetchOrderHistory = async (params: OrderHistoryParams & { mt5: Mt5Credentials }) => {
     const { mt5, ...rest } = params;
-    console.log("Fetching order history...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/history/orders',      // ✅ corrected
+        url: '/v1/history/orders',
         data: { ...rest, mt5 },
     });
 };
@@ -89,10 +82,9 @@ export interface PriceHistoryParams {
 
 export const fetchPriceHistory = async (params: PriceHistoryParams & { mt5: Mt5Credentials }) => {
     const { mt5, ...rest } = params;
-    console.log("Fetching price history...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/history/prices',      // ✅ corrected
+        url: '/v1/history/prices',
         data: { ...rest, mt5 },
     });
 };
@@ -103,10 +95,9 @@ export interface TrackPricesBody {
 }
 
 export const postTrackPrices = async (body: TrackPricesBody, mt5: Mt5Credentials) => {
-    console.log("Posting track prices...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/track/prices',        // ✅ corrected
+        url: '/v1/track/prices',
         data: { ...body, mt5 },
     });
 };
@@ -122,19 +113,17 @@ export interface OhlcEntry {
 }
 
 export const postTrackOhlc = async (body: OhlcRequest, mt5: Mt5Credentials) => {
-    console.log("Posting track ohlc...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/track/ohlc',          // ✅ corrected
+        url: '/v1/track/ohlc',
         data: { ...body, mt5 },
     });
 };
 
 export const postTrackMbook = async (body: TrackPricesBody, mt5: Mt5Credentials) => {
-    console.log("Posting track mbook...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/track/mbook',         // ✅ corrected
+        url: '/v1/track/mbook',
         data: { ...body, mt5 },
     });
 };
@@ -144,20 +133,18 @@ export interface OrderEvents {
 }
 
 export const postTrackOrders = async (body: OrderEvents, mt5: Mt5Credentials) => {
-    console.log("Posting track order events...");
     return apiRequest({
         method: 'POST',
-        url: '/v1/track/orders',        // ✅ corrected
+        url: '/v1/track/orders',
         data: { ...body, mt5 },
     });
 };
 
 // ─── QUOTE ──────────────────────────────────────────────────
 export const getQuote = async (symbol: string, mt5: Mt5Credentials) => {
-    console.log(`Fetching quote for symbol: ${symbol}`);
     return apiRequest({
         method: 'POST',
-        url: '/v1/quote',               // ✅ corrected
+        url: '/v1/quote',
         data: { symbol, mt5 },
     });
 };
