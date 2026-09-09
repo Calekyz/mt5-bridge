@@ -1,47 +1,23 @@
 import { Router } from 'express';
-import { fetchAccount } from '../../services/SocketBridgeApi'; // ✅ fixed path
-import { query } from '../../db';                             // ✅ fixed path
-import { authMiddleware, AuthRequest } from '../../auth';     // ✅ fixed path
+import { fetchAccount } from '../../services/SocketBridgeApi';
+import { query } from '../../db';
+import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
 router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
-
-        // Fetch only existing columns (fallback if vps_address missing)
-        let mt5Result;
-        try {
-            mt5Result = await query(
-                'SELECT login, password, server, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                [userId]
-            );
-        } catch (err: any) {
-            if (err.code === '42703') {
-                // vps_address missing
-                mt5Result = await query(
-                    'SELECT login, password, server FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                    [userId]
-                );
-            } else {
-                throw err;
-            }
-        }
-        const mt5Account = mt5Result.rows[0];
-
-        if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+        const result = await query(
+            'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const vpsAccount = result.rows[0];
+        if (!vpsAccount || !vpsAccount.vps_address) {
+            return res.status(404).json({ error: 'No VPS assigned to this user' });
         }
 
-        const credentials = {
-            login: mt5Account.login,
-            password: mt5Account.password,
-            server: mt5Account.server,
-            port: 443,
-            vps_address: mt5Account.vps_address || null,
-        };
-
-        const account = await fetchAccount(credentials);
+        const account = await fetchAccount(vpsAccount.vps_address);
         res.json(account);
     } catch (error) {
         console.error('Account route error:', error);
