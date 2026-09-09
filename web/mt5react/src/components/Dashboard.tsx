@@ -18,7 +18,7 @@ function setStoredState(key: string, value: boolean) {
 
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
-    const [mt5Account, setMt5Account] = useState<any>(null);
+    const [vpsAddress, setVpsAddress] = useState<string | null>(null);
     const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
     const [novaEnabled, setNovaEnabled] = useState(() => getStoredState('novaEnabled', false));
     const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>({});
@@ -26,43 +26,27 @@ export const Dashboard: React.FC = () => {
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
-    const [vpsAddress, setVpsAddress] = useState<string | null>(null);
 
     const accessKey = localStorage.getItem('accessKey') || '';
 
-    // ─── Load user & MT5 account from localStorage ──────────
+    // ─── Load user and VPS address from localStorage ──────────
     useEffect(() => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
-                if (user.mt5) {
-                    setMt5Account(user.mt5);
-                    setVpsAddress(user.mt5.vps_address || null);
+                if (user.vps_address) {
+                    setVpsAddress(user.vps_address);
                 } else {
-                    // No MT5 account linked – the user will see the Cloud Bot Not Activated message
-                    setMt5Account(null);
                     setVpsAddress(null);
                 }
             } catch (e) {
-                console.error('Failed to parse user from localStorage', e);
-            }
-        } else {
-            // fallback: try the old key
-            const stored = localStorage.getItem('mt5Account');
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    setMt5Account(parsed);
-                    setVpsAddress(parsed?.vps_address || null);
-                } catch (e) {
-                    console.error('Failed to parse mt5Account', e);
-                }
+                console.error('Failed to parse user', e);
             }
         }
     }, []);
 
-    // ─── Check EA health using VPS ──────────────────────────
+    // ─── Check EA health using the VPS ──────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -95,12 +79,12 @@ export const Dashboard: React.FC = () => {
 
     // ─── Poll account every 1 second ────────────────────────
     useEffect(() => {
-        if (!mt5Account) return;
+        if (!vpsAddress) return;
         const interval = setInterval(() => {
             refetch();
         }, 1000);
         return () => clearInterval(interval);
-    }, [mt5Account, refetch]);
+    }, [vpsAddress, refetch]);
 
     // ─── State persistence ────────────────────────────────────
     useEffect(() => {
@@ -168,7 +152,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Local input states for mobile-friendly typing ────
+    // ─── Local input states ──────────────────────────────────
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
         pipnex: {},
         nova: {},
@@ -236,16 +220,16 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── If no MT5 account is linked ──────────────────────────
-    if (!mt5Account) {
+    // ─── If no VPS is assigned ──────────────────────────────
+    if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
                     <CloudOff className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-white mb-2">Cloud Bot Not Activated</h2>
                     <p className="text-slate-400 text-sm">
-                        Your cloud trading bot has not been activated yet.
-                        Please contact the administrator to set up your MT5 account.
+                        Your cloud trading bot has not been activated yet.<br />
+                        Please contact the administrator to assign your VPS.
                     </p>
                 </div>
             </div>
@@ -272,23 +256,14 @@ export const Dashboard: React.FC = () => {
                         <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
                             <Server size={18} className="text-blue-400" />
                             <span className="text-slate-300 text-sm font-medium">VPS Address:</span>
-                            {vpsAddress ? (
-                                <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
-                                    {vpsAddress}
-                                </code>
-                            ) : (
-                                <span className="text-yellow-400 text-sm font-medium">Pending</span>
-                            )}
+                            <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
+                                {vpsAddress}
+                            </code>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                         <div className="flex items-center gap-2 text-sm">
-                            {!vpsAddress ? (
-                                <>
-                                    <AlertTriangle size={16} className="text-yellow-400" />
-                                    <span className="text-yellow-400">VPS Pending</span>
-                                </>
-                            ) : eaConnected === null ? (
+                            {eaConnected === null ? (
                                 <span className="text-slate-400">Checking EA...</span>
                             ) : eaConnected ? (
                                 <>
