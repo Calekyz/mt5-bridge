@@ -7,12 +7,10 @@ export interface AuthRequest extends Request {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// ─── Generate a JWT token ──────────────────────────────────
 export function generateToken(userId: number, email: string): string {
     return jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn: '7d' });
 }
 
-// ─── Verify a JWT token ────────────────────────────────────
 export function verifyToken(token: string): { id: number; email: string } | null {
     try {
         return jwt.verify(token, JWT_SECRET) as { id: number; email: string };
@@ -21,7 +19,6 @@ export function verifyToken(token: string): { id: number; email: string } | null
     }
 }
 
-// ─── Express middleware to protect routes ─────────────────
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
