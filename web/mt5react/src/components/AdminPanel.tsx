@@ -220,7 +220,12 @@ export const AdminPanel: React.FC = () => {
             setClientVps('');
             await loadData();
         } catch (err: any) {
-            setClientError(err.message || 'Unknown error');
+            // Extract the actual error message
+            let msg = 'Unknown error';
+            if (err.message) msg = err.message;
+            else if (err.error) msg = err.error;
+            else if (typeof err === 'string') msg = err;
+            setClientError(msg);
         } finally {
             setAddingClient(false);
         }
@@ -234,38 +239,29 @@ export const AdminPanel: React.FC = () => {
         const vpsAddress = editingVps[userId];
         const user = users.find(u => u.id === userId);
         if (!user) return;
-
         setSavingVps(prev => ({ ...prev, [userId]: true }));
         setError(null);
         setVpsUpdateMessage(null);
         try {
             const res = await fetch(`${API_URL}/admin/client/vps`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': ADMIN_KEY,
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
                 body: JSON.stringify({ email: user.email, vps_address: vpsAddress }),
             });
-
             if (!res.ok) {
-                let errorMsg = 'Failed to update VPS';
-                try {
-                    const data = await res.json();
-                    errorMsg = data.error || data.message || errorMsg;
-                } catch (e) {
-                    // If response is not JSON, use status text
-                    errorMsg = `Server error: ${res.status} ${res.statusText}`;
-                }
-                throw new Error(errorMsg);
+                const data = await res.json();
+                throw new Error(data.error || data.message || 'Failed to update VPS');
             }
-
-            const data = await res.json();
-            setVpsUpdateMessage('✅ ' + (data.message || 'VPS updated for ' + user.email));
+            setVpsUpdateMessage('✅ VPS updated for ' + user.email);
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
             setEditingVps(prev => ({ ...prev, [userId]: vpsAddress }));
         } catch (err: any) {
-            setError(err.message || 'Unknown error');
+            // Extract the actual error message
+            let msg = 'Unknown error';
+            if (err.message) msg = err.message;
+            else if (err.error) msg = err.error;
+            else if (typeof err === 'string') msg = err;
+            setError(msg);
         } finally {
             setSavingVps(prev => ({ ...prev, [userId]: false }));
             setTimeout(() => setVpsUpdateMessage(null), 3000);
