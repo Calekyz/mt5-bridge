@@ -90,12 +90,18 @@ router.post('/auth/login', async (req, res) => {
                 console.log(`Key ${access_key} now bound to user ${user.id}`);
             }
 
-            // 4. Fetch user's MT5 account (if any)
-            const mt5Result = await query(
-                'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                [user.id]
-            );
-            const mt5Account = mt5Result.rows[0] || null;
+            // 4. Fetch user's MT5 account (if any) – using "port" instead of "mt5_port"
+            let mt5Account = null;
+            try {
+                const mt5Result = await query(
+                    'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    [user.id]
+                );
+                mt5Account = mt5Result.rows[0] || null;
+            } catch (mt5Err) {
+                console.warn('Could not fetch MT5 account (maybe table or column missing):', mt5Err);
+                // Continue with mt5Account = null
+            }
 
             // 5. Generate JWT
             const token = generateToken(user.id, user.email);
@@ -115,7 +121,7 @@ router.post('/auth/login', async (req, res) => {
             console.error('Admin bypass error:', err);
             return res.status(500).json({
                 error: 'Internal server error (admin bypass)',
-                details: err.message || 'Unknown error',
+                details: err?.message || 'Unknown error',
                 stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
             });
         }
@@ -137,7 +143,7 @@ router.post('/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // 3. Validate access key – allow if unused OR used by this user
+        // 3. Validate access key
         const keyResult = await query(
             'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
             [access_key.trim()]
@@ -153,7 +159,7 @@ router.post('/auth/login', async (req, res) => {
             return res.status(400).json({ error: 'Access key already used by another user' });
         }
 
-        // 4. If key is unused, bind it to this user
+        // 4. If key is unused, bind it
         if (key.used_by === null) {
             await query(
                 'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
@@ -163,16 +169,22 @@ router.post('/auth/login', async (req, res) => {
         }
 
         // 5. Fetch user's MT5 account (if any)
-        const mt5Result = await query(
-            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-            [user.id]
-        );
-        const mt5Account = mt5Result.rows[0] || null;
+        let mt5Account = null;
+        try {
+            const mt5Result = await query(
+                'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                [user.id]
+            );
+            mt5Account = mt5Result.rows[0] || null;
+        } catch (mt5Err) {
+            console.warn('Could not fetch MT5 account:', mt5Err);
+            // Continue
+        }
 
         // 6. Generate JWT
         const token = generateToken(user.id, user.email);
 
-        // 7. Send response – now including the access_key
+        // 7. Send response
         res.json({
             user: {
                 id: user.id,
@@ -187,7 +199,7 @@ router.post('/auth/login', async (req, res) => {
         console.error('Login error:', err);
         res.status(500).json({
             error: 'Internal server error',
-            details: err.message || 'Unknown error',
+            details: err?.message || 'Unknown error',
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
         });
     }
@@ -213,7 +225,7 @@ router.get('/auth/verify', async (req, res) => {
         console.error('Verify error:', err);
         return res.status(401).json({
             error: 'Invalid token',
-            details: err.message,
+            details: err?.message,
         });
     }
 });
