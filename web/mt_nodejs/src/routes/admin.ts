@@ -19,7 +19,13 @@ const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => 
 // ─── GET /admin/users ────────────────────────────────────
 router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await query('SELECT id, email, role, created_at FROM users ORDER BY id');
+        const result = await query(`
+            SELECT u.id, u.email, u.role, u.created_at,
+                   a.login, a.server, a.vps_address
+            FROM users u
+            LEFT JOIN user_mt5_accounts a ON a.user_id = u.id
+            ORDER BY u.id
+        `);
         res.json(result.rows);
     } catch (error) {
         next(error);
@@ -104,7 +110,7 @@ router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Respons
 
 // ─── POST /admin/client ──────────────────────────────────
 router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password, mt5 } = req.body;
+    const { email, password, mt5, vps_address } = req.body;
 
     if (!email || !password || !mt5 || !mt5.login || !mt5.password || !mt5.server) {
         return res.status(400).json({
@@ -124,11 +130,14 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
         const userId = userResult.rows[0].id;
 
-        // 3. Insert MT5 account
+        // 3. Insert MT5 account with VPS address
         const port = mt5.port || 443;
+        const vps = vps_address || null;
         await query(
-            'INSERT INTO user_mt5_accounts (user_id, login, password, server, port) VALUES ($1, $2, $3, $4, $5)',
-            [userId, mt5.login, mt5.password, mt5.server, port]
+            `INSERT INTO user_mt5_accounts 
+             (user_id, login, password, server, port, vps_address) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [userId, mt5.login, mt5.password, mt5.server, port, vps]
         );
 
         // 4. Generate access key and bind to user
@@ -141,7 +150,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         res.status(201).json({
             message: 'Client created successfully',
             user: { id: userId, email, role: 'user' },
-            mt5: { login: mt5.login, server: mt5.server, port },
+            mt5: { login: mt5.login, server: mt5.server, port, vps_address: vps },
             access_key: keyCode
         });
     } catch (error) {
