@@ -7,7 +7,7 @@ import { generateToken } from '../auth';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
-// ─── REGISTER (email + password only) ────────────────────
+// ─── REGISTER ─────────────────────────────────────────────
 router.post('/auth/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -35,7 +35,7 @@ router.post('/auth/register', async (req, res) => {
     }
 });
 
-// ─── LOGIN (access key required – reusable for the same user) ──
+// ─── LOGIN ─────────────────────────────────────────────────
 router.post('/auth/login', async (req, res) => {
     const { email, password, access_key } = req.body;
     console.log('Login attempt:', { email, access_key });
@@ -44,168 +44,86 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email, password, and access key required' });
     }
 
-    // ================================================================
-    // 🔥 TEMPORARY ADMIN BYPASS – with detailed error handling
-    // ================================================================
+    // 🔥 Admin bypass
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
-            // 1. Find or create the admin user
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
-
             if (!user) {
-                console.log('Admin user not found – creating one...');
                 const hashed = await bcrypt.hash(password, 10);
-                await query(
-                    'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
-                    [email, hashed, 'admin']
-                );
+                await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'admin']);
                 userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
-                console.log('Admin user created with ID:', user.id);
             }
 
-            // 2. Validate access key
-            const keyResult = await query(
-                'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
-                [access_key.trim()]
-            );
-            console.log('Key query result:', keyResult.rows);
-
-            if (keyResult.rows.length === 0) {
-                return res.status(400).json({ error: 'Invalid access key' });
-            }
-
+            const keyResult = await query('SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1', [access_key.trim()]);
+            if (keyResult.rows.length === 0) return res.status(400).json({ error: 'Invalid access key' });
             const key = keyResult.rows[0];
             if (key.used_by !== null && key.used_by !== user.id) {
                 return res.status(400).json({ error: 'Access key already used by another user' });
             }
-
-            // 3. If key is unused, bind it to this user
             if (key.used_by === null) {
-                await query(
-                    'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
-                    [user.id, key.id]
-                );
-                console.log(`Key ${access_key} now bound to user ${user.id}`);
+                await query('UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2', [user.id, key.id]);
             }
 
-            // 4. Fetch user's MT5 account (if any) – using "port" instead of "mt5_port"
-            let mt5Account = null;
-            try {
-                const mt5Result = await query(
-                    'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                    [user.id]
-                );
-                mt5Account = mt5Result.rows[0] || null;
-            } catch (mt5Err) {
-                console.warn('Could not fetch MT5 account (maybe table or column missing):', mt5Err);
-                // Continue with mt5Account = null
-            }
+            // ✅ Fetch MT5 with vps_address
+            const mt5Result = await query(
+                'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                [user.id]
+            );
+            const mt5Account = mt5Result.rows[0] || null;
 
-            // 5. Generate JWT
             const token = generateToken(user.id, user.email);
-
-            // 6. Return response with access_key
             return res.json({
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    role: user.role,
-                    mt5: mt5Account,
-                },
+                user: { id: user.id, email: user.email, role: user.role, mt5: mt5Account },
                 token,
                 access_key: key.key_code,
             });
         } catch (err: any) {
             console.error('Admin bypass error:', err);
-            return res.status(500).json({
-                error: 'Internal server error (admin bypass)',
-                details: err?.message || 'Unknown error',
-                stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-            });
+            return res.status(500).json({ error: 'Internal server error', details: err.message });
         }
     }
-    // ================================================================
 
-    // ─── Normal login flow for all other users ──────────────────
+    // ─── Normal login ──────────────────────────────────────
     try {
-        // 1. Find user
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
+        if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
-        // 2. Verify password
         const valid = await bcrypt.compare(password, user.password_hash);
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
+        if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
 
-        // 3. Validate access key
-        const keyResult = await query(
-            'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
-            [access_key.trim()]
-        );
-        console.log('Key query result:', keyResult.rows);
-
-        if (keyResult.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid access key' });
-        }
-
+        const keyResult = await query('SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1', [access_key.trim()]);
+        if (keyResult.rows.length === 0) return res.status(400).json({ error: 'Invalid access key' });
         const key = keyResult.rows[0];
         if (key.used_by !== null && key.used_by !== user.id) {
             return res.status(400).json({ error: 'Access key already used by another user' });
         }
-
-        // 4. If key is unused, bind it
         if (key.used_by === null) {
-            await query(
-                'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
-                [user.id, key.id]
-            );
-            console.log(`Key ${access_key} now bound to user ${user.id}`);
+            await query('UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2', [user.id, key.id]);
         }
 
-        // 5. Fetch user's MT5 account (if any)
-        let mt5Account = null;
-        try {
-            const mt5Result = await query(
-                'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                [user.id]
-            );
-            mt5Account = mt5Result.rows[0] || null;
-        } catch (mt5Err) {
-            console.warn('Could not fetch MT5 account:', mt5Err);
-            // Continue
-        }
+        // ✅ Fetch MT5 with vps_address
+        const mt5Result = await query(
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [user.id]
+        );
+        const mt5Account = mt5Result.rows[0] || null;
 
-        // 6. Generate JWT
         const token = generateToken(user.id, user.email);
-
-        // 7. Send response
         res.json({
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                mt5: mt5Account,
-            },
+            user: { id: user.id, email: user.email, role: user.role, mt5: mt5Account },
             token,
             access_key: key.key_code,
         });
     } catch (err: any) {
         console.error('Login error:', err);
-        res.status(500).json({
-            error: 'Internal server error',
-            details: err?.message || 'Unknown error',
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-        });
+        res.status(500).json({ error: 'Internal server error', details: err.message });
     }
 });
 
-// ─── VERIFY TOKEN (keep‑alive) ──────────────────────────────
+// ─── VERIFY TOKEN ──────────────────────────────────────────
 router.get('/auth/verify', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -217,16 +135,10 @@ router.get('/auth/verify', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
         const result = await query('SELECT id, email, role FROM users WHERE id = $1', [decoded.id]);
         const user = result.rows[0];
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.json({ user, valid: true });
     } catch (err: any) {
-        console.error('Verify error:', err);
-        return res.status(401).json({
-            error: 'Invalid token',
-            details: err?.message,
-        });
+        return res.status(401).json({ error: 'Invalid token', details: err.message });
     }
 });
 
