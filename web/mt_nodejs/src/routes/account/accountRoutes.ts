@@ -10,7 +10,6 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res: Response, n
         const userId = req.user!.id;
 
         // Fetch the user's MT5 account credentials
-        // Use 'port' – adjust if your column is named differently (e.g., 'mt5_port', 'port')
         const mt5Result = await query(
             'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
@@ -26,7 +25,7 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res: Response, n
             login: mt5Account.login,
             password: mt5Account.password,
             server: mt5Account.server,
-            port: mt5Account.port || 443, // fallback if column is null/undefined
+            port: mt5Account.port || 443,
         };
 
         // Pass credentials to the service
