@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Server, Save } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save } from 'lucide-react';
 
 interface User {
     id: number;
