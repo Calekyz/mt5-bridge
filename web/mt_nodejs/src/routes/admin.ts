@@ -1,11 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../db';
-import { authMiddleware, AuthRequest } from '../auth';
 
 const router = Router();
 
-// Middleware to check admin key (you may already have this)
+// Middleware to check admin key
 const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const adminKey = req.headers['x-admin-key'];
     if (adminKey !== process.env.ADMIN_KEY) {
@@ -24,7 +23,7 @@ router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, nex
     }
 });
 
-// ─── POST /admin/users (existing) ────────────────────────
+// ─── POST /admin/users ─────────────────────────────────────
 router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -39,10 +38,14 @@ router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, ne
     }
 });
 
-// ─── DELETE /admin/users/:id ─────────────────────────────
+// ─── DELETE /admin/users/:id ──────────────────────────────
 router.delete('/users/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    const userId = parseInt(req.params.id);
-    if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
+    // ✅ Convert params.id to string explicitly
+    const userIdStr = String(req.params.id);
+    const userId = parseInt(userIdStr, 10);
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
     try {
         await query('DELETE FROM users WHERE id = $1', [userId]);
         res.json({ message: 'User deleted' });
@@ -68,7 +71,7 @@ router.get('/keys', adminKeyMiddleware, async (req: Request, res: Response, next
     }
 });
 
-// ─── POST /admin/keys (existing) ─────────────────────────
+// ─── POST /admin/keys ─────────────────────────────────────
 router.post('/keys', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { count = 1 } = req.body;
     try {
@@ -86,8 +89,12 @@ router.post('/keys', adminKeyMiddleware, async (req: Request, res: Response, nex
 
 // ─── DELETE /admin/keys/:id ──────────────────────────────
 router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    const keyId = parseInt(req.params.id);
-    if (isNaN(keyId)) return res.status(400).json({ error: 'Invalid key ID' });
+    // ✅ Convert params.id to string explicitly
+    const keyIdStr = String(req.params.id);
+    const keyId = parseInt(keyIdStr, 10);
+    if (isNaN(keyId)) {
+        return res.status(400).json({ error: 'Invalid key ID' });
+    }
     try {
         await query('DELETE FROM access_keys WHERE id = $1', [keyId]);
         res.json({ message: 'Key deleted' });
@@ -129,7 +136,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         await query(
             'INSERT INTO access_keys (key_code, used_by, used_at, created_by) VALUES ($1, $2, NOW(), $3)',
-            [keyCode, userId, userId] // created_by = userId (the admin, but we don't have admin ID; set to userId for now)
+            [keyCode, userId, userId]
         );
 
         // 5. Return the client info
