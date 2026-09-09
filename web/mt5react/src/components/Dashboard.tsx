@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, CloudOff, Key } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, CloudOff, Key, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -25,9 +25,33 @@ export const Dashboard: React.FC = () => {
     const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
+    const [eaConnected, setEaConnected] = useState<boolean | null>(null);
 
     // ✅ Read the access key from localStorage
     const accessKey = localStorage.getItem('accessKey') || '';
+
+    // ─── Check EA health on mount ──────────────────────────
+    useEffect(() => {
+        const checkEaHealth = async () => {
+            try {
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                if (response.ok) {
+                    setEaConnected(true);
+                } else {
+                    setEaConnected(false);
+                }
+            } catch {
+                setEaConnected(false);
+            }
+        };
+        checkEaHealth();
+        const interval = setInterval(checkEaHealth, 10000); // check every 10s
+        return () => clearInterval(interval);
+    }, []);
 
     // ─── Load MT5 account from localStorage ───────────────────
     useEffect(() => {
@@ -200,17 +224,38 @@ export const Dashboard: React.FC = () => {
                         <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                             📊 Trading Dashboard
                         </h1>
-                        {/* ✅ Display the access key here */}
+                        {/* Access Key Card */}
                         {accessKey && (
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 bg-slate-700/30 px-3 py-1 rounded-full inline-flex">
-                                <Key size={14} className="text-blue-400" />
-                                <span>Key: <code className="font-mono text-slate-300">{accessKey}</code></span>
+                            <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
+                                <Key size={18} className="text-blue-400" />
+                                <span className="text-slate-300 text-sm font-medium">Access Key:</span>
+                                <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
+                                    {accessKey}
+                                </code>
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                        <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        <span className="text-slate-300">Live (1s refresh)</span>
+                    <div className="flex items-center gap-4">
+                        {/* EA Connection Status */}
+                        <div className="flex items-center gap-2 text-sm">
+                            {eaConnected === null ? (
+                                <span className="text-slate-400">Checking EA...</span>
+                            ) : eaConnected ? (
+                                <>
+                                    <Wifi size={16} className="text-green-400" />
+                                    <span className="text-green-400">EA Connected</span>
+                                </>
+                            ) : (
+                                <>
+                                    <WifiOff size={16} className="text-red-400" />
+                                    <span className="text-red-400">EA Disconnected</span>
+                                </>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                            <span className="text-slate-300">Live (1s refresh)</span>
+                        </div>
                     </div>
                 </div>
 
