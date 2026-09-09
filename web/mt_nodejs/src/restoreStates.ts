@@ -3,17 +3,14 @@ import { query } from './db';
 export async function restoreStrategyStates() {
     try {
         const result = await query(`
-            SELECT s.id, s.account_id, s.strategy_name, s.is_active, a.vps_address
-            FROM user_strategies s
-            JOIN user_mt5_accounts a ON a.id = s.account_id
-            WHERE s.is_active = true
+            SELECT a.vps_address
+            FROM user_mt5_accounts a
+            WHERE a.vps_address IS NOT NULL
         `);
 
-        console.log(`Restoring ${result.rows.length} active strategies...`);
-
+        console.log(`Found ${result.rows.length} VPS addresses.`);
         for (const row of result.rows) {
-            console.log(`Strategy ${row.id} (${row.strategy_name}) active on VPS: ${row.vps_address}`);
-            // Optionally, you can add code here to send commands to the EA
+            console.log(`VPS: ${row.vps_address}`);
         }
 
         console.log('EA states restored successfully.');
