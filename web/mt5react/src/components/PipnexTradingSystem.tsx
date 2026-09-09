@@ -32,7 +32,6 @@ interface Strategy {
 
 type StrategyMap = Record<string, Strategy>;
 
-// EA definitions
 const EA_DEFS: Record<string, {
     label: string;
     icon: string;
@@ -78,7 +77,17 @@ export const PipnexTradingSystem: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     const fetchStatus = async () => {
+        if (!vpsAddress) return;
         setRefreshing(true);
         try {
             const res = await fetch(`${API_URL}/strategies/status`);
@@ -86,7 +95,6 @@ export const PipnexTradingSystem: React.FC = () => {
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
                 const base = strategy as Strategy;
-                // Simulate realistic stats – replace with real data later
                 const total = Math.floor(Math.random() * 80) + 10;
                 const wins = Math.floor(total * (0.45 + Math.random() * 0.35));
                 const losses = total - wins;
@@ -122,12 +130,13 @@ export const PipnexTradingSystem: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchStatus();
-    }, []);
+        if (vpsAddress) {
+            fetchStatus();
+        }
+    }, [vpsAddress]);
 
-    // ---- Helpers ----
     const getRecommendedLot = (balance: number, riskPercent: number = 1): number => {
-        const lot = (balance * riskPercent / 100) / 50; // assume 50 pip stop loss
+        const lot = (balance * riskPercent / 100) / 50;
         return Math.round(lot * 100) / 100;
     };
 
@@ -149,6 +158,19 @@ export const PipnexTradingSystem: React.FC = () => {
 
     const overall = getOverallStats();
 
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     if (loading || accountLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-900">
@@ -160,7 +182,6 @@ export const PipnexTradingSystem: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -180,7 +201,6 @@ export const PipnexTradingSystem: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Account Summary (minimal) */}
                 {accountError ? (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
                         <AlertCircle size={20} />
@@ -210,7 +230,6 @@ export const PipnexTradingSystem: React.FC = () => {
                     </div>
                 ) : null}
 
-                {/* Overall Performance Summary */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
                         <div className="text-xs text-slate-400 flex items-center gap-1"><Activity size={14} /> Total Trades</div>
@@ -236,7 +255,6 @@ export const PipnexTradingSystem: React.FC = () => {
                     </div>
                 </div>
 
-                {/* EA Performance Cards */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {Object.entries(EA_DEFS).map(([id, def]) => {
                         const strategy = strategies[id] || { enabled: false, settings: {}, stats: undefined };
@@ -253,7 +271,6 @@ export const PipnexTradingSystem: React.FC = () => {
                                         : 'border-slate-700/50 opacity-70'
                                 }`}
                             >
-                                {/* Card Header */}
                                 <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <span className="text-3xl">{def.icon}</span>
@@ -268,11 +285,9 @@ export const PipnexTradingSystem: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Stats Body */}
                                 <div className="p-6 space-y-4">
                                     {isActive && stats ? (
                                         <>
-                                            {/* Quick Metrics */}
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                                                     <div className="text-xs text-slate-400">Win Rate</div>
@@ -305,7 +320,6 @@ export const PipnexTradingSystem: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Extended Stats */}
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                 <div className="bg-slate-700/20 rounded-lg p-2 text-center">
                                                     <div className="text-xs text-slate-400">Weekly P&L</div>
@@ -329,14 +343,12 @@ export const PipnexTradingSystem: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Avg Win/Loss & Risk/Reward */}
                                             <div className="flex justify-between text-xs text-slate-400 bg-slate-700/20 rounded-lg px-3 py-2">
                                                 <span>Avg Win: <span className="text-green-400">+${stats.avgWin?.toFixed(2)}</span></span>
                                                 <span>Avg Loss: <span className="text-red-400">${stats.avgLoss?.toFixed(2)}</span></span>
                                                 <span>Risk/Reward: <span className="text-white">{(stats.avgWin! / Math.abs(stats.avgLoss!)).toFixed(2)}</span></span>
                                             </div>
 
-                                            {/* Recommended Settings */}
                                             <div className="border-t border-slate-700/50 pt-4">
                                                 <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                                     <Shield size={14} /> Recommended Settings
