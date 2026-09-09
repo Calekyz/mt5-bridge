@@ -7,11 +7,13 @@ const ADMIN_KEY = process.env.ADMIN_KEY || 'my-super-secret-admin-key-2024';
 
 const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== ADMIN_KEY) return res.status(403).json({ error: 'Invalid admin key' });
+    if (adminKey !== ADMIN_KEY) {
+        return res.status(403).json({ error: 'Invalid admin key' });
+    }
     next();
 };
 
-// GET /admin/users – list users with their VPS address
+// ─── GET /admin/users ────────────────────────────────────
 router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await query(`
@@ -27,10 +29,12 @@ router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, nex
     }
 });
 
-// POST /admin/users – create user (no MT5 credentials)
+// ─── POST /admin/users ───────────────────────────────────
 router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
+    }
     try {
         const hashed = await bcrypt.hash(password, 10);
         await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
@@ -40,10 +44,12 @@ router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, ne
     }
 });
 
-// DELETE /admin/users/:id
+// ─── DELETE /admin/users/:id ─────────────────────────────
 router.delete('/users/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const userId = parseInt(req.params.id as string, 10);
-    if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
     try {
         await query('DELETE FROM users WHERE id = $1', [userId]);
         res.json({ message: 'User deleted' });
@@ -52,7 +58,7 @@ router.delete('/users/:id', adminKeyMiddleware, async (req: Request, res: Respon
     }
 });
 
-// GET /admin/keys – still used for access key management
+// ─── GET /admin/keys ─────────────────────────────────────
 router.get('/keys', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await query(`
@@ -69,7 +75,7 @@ router.get('/keys', adminKeyMiddleware, async (req: Request, res: Response, next
     }
 });
 
-// POST /admin/keys
+// ─── POST /admin/keys ────────────────────────────────────
 router.post('/keys', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { count = 1 } = req.body;
     try {
@@ -85,10 +91,12 @@ router.post('/keys', adminKeyMiddleware, async (req: Request, res: Response, nex
     }
 });
 
-// DELETE /admin/keys/:id
+// ─── DELETE /admin/keys/:id ─────────────────────────────
 router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const keyId = parseInt(req.params.id as string, 10);
-    if (isNaN(keyId)) return res.status(400).json({ error: 'Invalid key ID' });
+    if (isNaN(keyId)) {
+        return res.status(400).json({ error: 'Invalid key ID' });
+    }
     try {
         await query('DELETE FROM access_keys WHERE id = $1', [keyId]);
         res.json({ message: 'Key deleted' });
@@ -97,7 +105,7 @@ router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Respons
     }
 });
 
-// POST /admin/client – create user with VPS address
+// ─── POST /admin/client ──────────────────────────────────
 router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password, vps_address } = req.body;
     if (!email || !password) {
@@ -112,11 +120,11 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
         const userId = userResult.rows[0].id;
 
-        // Insert VPS address (if provided)
+        // Insert VPS address (with label = email to satisfy NOT NULL)
         if (vps_address) {
             await query(
-                'INSERT INTO user_mt5_accounts (user_id, vps_address) VALUES ($1, $2)',
-                [userId, vps_address]
+                'INSERT INTO user_mt5_accounts (user_id, label, vps_address) VALUES ($1, $2, $3)',
+                [userId, email, vps_address]
             );
         }
 
@@ -139,7 +147,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
     }
 });
 
-// PATCH /admin/client/vps – assign VPS to existing user
+// ─── PATCH /admin/client/vps ─────────────────────────────
 router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, vps_address } = req.body;
     if (!email || !vps_address) {
@@ -156,8 +164,11 @@ router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Respon
         // Check if VPS row exists
         const vpsCheck = await query('SELECT id FROM user_mt5_accounts WHERE user_id = $1', [userId]);
         if (vpsCheck.rows.length === 0) {
-            // Insert new VPS row
-            await query('INSERT INTO user_mt5_accounts (user_id, vps_address) VALUES ($1, $2)', [userId, vps_address]);
+            // Insert new VPS row with label = email
+            await query(
+                'INSERT INTO user_mt5_accounts (user_id, label, vps_address) VALUES ($1, $2, $3)',
+                [userId, trimmedEmail, vps_address]
+            );
             return res.json({ message: 'VPS address assigned successfully' });
         }
 
