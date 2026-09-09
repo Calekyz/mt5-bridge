@@ -15,7 +15,7 @@ router.get('/order/list', authMiddleware, async (req: AuthRequest, res: Response
         );
         const mt5Account = mt5Result.rows[0];
         if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked' });
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
         const orders = await fetchOrderList({
@@ -40,18 +40,15 @@ router.post('/order', authMiddleware, async (req: AuthRequest, res: Response, ne
         );
         const mt5Account = mt5Result.rows[0];
         if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked' });
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
         const body = req.body;
-        const result = await postSendOrder({
-            ...body,
-            mt5: {
-                login: mt5Account.login,
-                password: mt5Account.password,
-                server: mt5Account.server,
-                port: mt5Account.mt5_port,
-            },
+        const result = await postSendOrder(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
         });
         res.json(result);
     } catch (error) {
@@ -69,18 +66,15 @@ router.post('/order/close', authMiddleware, async (req: AuthRequest, res: Respon
         );
         const mt5Account = mt5Result.rows[0];
         if (!mt5Account) {
-            return res.status(404).json({ error: 'No MT5 account linked' });
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
         }
 
         const body = req.body;
-        const result = await closeSendOrder({
-            ...body,
-            mt5: {
-                login: mt5Account.login,
-                password: mt5Account.password,
-                server: mt5Account.server,
-                port: mt5Account.mt5_port,
-            },
+        const result = await closeSendOrder(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
         });
         res.json(result);
     } catch (error) {
