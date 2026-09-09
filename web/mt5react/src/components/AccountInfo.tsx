@@ -1,13 +1,23 @@
-import React, { useState } from "react";
-import { getAccount, type Account } from "../api/nodejsApiClient";
-import { usePolling } from "../hooks/usePolling";
+import React, { useState, useEffect } from 'react';
+import { getAccount, type Account } from '../api/nodejsApiClient';
+import { usePolling } from '../hooks/usePolling';
 
 const AccountInfo: React.FC = () => {
     const [account, setAccount] = useState<Account | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     const fetchAccount = async () => {
+        if (!vpsAddress) return;
         try {
             setLoading(true);
             const data = await getAccount();
@@ -20,8 +30,32 @@ const AccountInfo: React.FC = () => {
         }
     };
 
-    // Poll every 2 seconds
-    usePolling(fetchAccount, 2000);
+    useEffect(() => {
+        if (vpsAddress) {
+            fetchAccount();
+        }
+    }, [vpsAddress]);
+
+    // Poll only if VPS exists
+    useEffect(() => {
+        if (vpsAddress) {
+            const interval = setInterval(fetchAccount, 2000);
+            return () => clearInterval(interval);
+        }
+    }, [vpsAddress]);
+
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (loading && !account) {
         return (
