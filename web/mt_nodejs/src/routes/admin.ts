@@ -1,151 +1,148 @@
-import { Router, Request } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../db';
-
-// ─── Custom request interface with adminId ────────────────
-interface AdminRequest extends Request {
-    adminId?: number;
-}
+import { authMiddleware, AuthRequest } from '../auth';
 
 const router = Router();
 
-// ─── Admin middleware ──────────────────────────────────────
-const ADMIN_KEY = process.env.ADMIN_KEY || 'admin-secret-key-change-this';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'caleborenge8@gmail.com';
-
-async function adminMiddleware(req: AdminRequest, res: any, next: any) {
+// Middleware to check admin key (you may already have this)
+const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const adminKey = req.headers['x-admin-key'];
-    if (!adminKey || adminKey !== ADMIN_KEY) {
-        return res.status(403).json({ error: 'Forbidden: Invalid admin key' });
+    if (adminKey !== process.env.ADMIN_KEY) {
+        return res.status(403).json({ error: 'Invalid admin key' });
     }
-    try {
-        // Ensure admin user exists
-        let adminUser = await query('SELECT id FROM users WHERE email = $1', [ADMIN_EMAIL]);
-        if (adminUser.rows.length === 0) {
-            const hashed = await bcrypt.hash('admin123', 10);
-            const ins = await query(
-                'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id',
-                [ADMIN_EMAIL, hashed, 'admin']
-            );
-            req.adminId = ins.rows[0].id;
-        } else {
-            req.adminId = adminUser.rows[0].id;
-        }
-        next();
-    } catch (err) {
-        console.error('Admin middleware error:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-}
+    next();
+};
 
-// ─── GET all users ─────────────────────────────────────────
-router.get('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
+// ─── GET /admin/users ─────────────────────────────────────
+router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await query('SELECT id, email, role, created_at FROM users ORDER BY id');
         res.json(result.rows);
-    } catch (err) {
-        console.error('Get users error:', err);
-        res.status(500).json({ error: 'Failed to fetch users' });
+    } catch (error) {
+        next(error);
     }
 });
 
-// ─── ADD a new user ────────────────────────────────────────
-router.post('/admin/users', adminMiddleware, async (req: AdminRequest, res) => {
-    const { email, password, role = 'user' } = req.body;
+// ─── POST /admin/users (existing) ────────────────────────
+router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password required' });
     }
-
     try {
-        const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
-        if (existing.rows.length > 0) {
-            return res.status(409).json({ error: 'User already exists' });
-        }
-
         const hashed = await bcrypt.hash(password, 10);
-        const result = await query(
-            'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role, created_at',
-            [email, hashed, role]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error('Add user error:', err);
-        res.status(500).json({ error: 'Failed to add user' });
+        await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
+        res.status(201).json({ message: 'User created' });
+    } catch (error) {
+        next(error);
     }
 });
 
-// ─── DELETE a user ─────────────────────────────────────────
-router.delete('/admin/users/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    const id = req.params.id as string;
+// ─── DELETE /admin/users/:id ─────────────────────────────
+router.delete('/users/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
     try {
-        const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.json({ success: true, id: parseInt(id) });
-    } catch (err) {
-        console.error('Delete user error:', err);
-        res.status(500).json({ error: 'Failed to delete user' });
+        await query('DELETE FROM users WHERE id = $1', [userId]);
+        res.json({ message: 'User deleted' });
+    } catch (error) {
+        next(error);
     }
 });
 
-// ─── GET all access keys ────────────────────────────────────
-router.get('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
+// ─── GET /admin/keys ──────────────────────────────────────
+router.get('/keys', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await query(
-            `SELECT k.*, u.email as created_by_email, u2.email as used_by_email
-             FROM access_keys k
-             LEFT JOIN users u ON k.created_by = u.id
-             LEFT JOIN users u2 ON k.used_by = u2.id
-             ORDER BY k.created_at DESC`
-        );
+        const result = await query(`
+            SELECT k.id, k.key_code, k.created_at, u.email AS used_by_email, 
+                   creator.email AS created_by_email
+            FROM access_keys k
+            LEFT JOIN users u ON k.used_by = u.id
+            LEFT JOIN users creator ON k.created_by = creator.id
+            ORDER BY k.id
+        `);
         res.json(result.rows);
-    } catch (err) {
-        console.error('Get keys error:', err);
-        res.status(500).json({ error: 'Failed to fetch access keys' });
+    } catch (error) {
+        next(error);
     }
 });
 
-// ─── Generate new access keys ──────────────────────────────
-router.post('/admin/keys', adminMiddleware, async (req: AdminRequest, res) => {
+// ─── POST /admin/keys (existing) ─────────────────────────
+router.post('/keys', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { count = 1 } = req.body;
-    const adminId = req.adminId;
-    if (!adminId) {
-        console.error('adminId not set in request');
-        return res.status(500).json({ error: 'Admin ID not found' });
-    }
-
-    const numKeys = Math.min(count, 20);
-    const generatedKeys: string[] = [];
-
     try {
-        for (let i = 0; i < numKeys; i++) {
-            const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-            console.log(`Inserting key: ${keyCode} for adminId: ${adminId}`);
-            const result = await query(
-                'INSERT INTO access_keys (key_code, created_by) VALUES ($1, $2) RETURNING id',
-                [keyCode, adminId]
-            );
-            console.log(`Inserted key ID: ${result.rows[0].id}`);
-            generatedKeys.push(keyCode);
+        const keys = [];
+        for (let i = 0; i < count; i++) {
+            const code = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+            await query('INSERT INTO access_keys (key_code) VALUES ($1)', [code]);
+            keys.push(code);
         }
-        console.log(`Generated ${generatedKeys.length} keys`);
-        res.status(201).json({ keys: generatedKeys });
-    } catch (err) {
-        console.error('Generate keys error:', err);
-        res.status(500).json({ error: 'Failed to generate keys' });
+        res.status(201).json({ keys });
+    } catch (error) {
+        next(error);
     }
 });
 
-// ─── DELETE an access key ───────────────────────────────────
-router.delete('/admin/keys/:id', adminMiddleware, async (req: AdminRequest, res) => {
-    const id = req.params.id as string;
+// ─── DELETE /admin/keys/:id ──────────────────────────────
+router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    const keyId = parseInt(req.params.id);
+    if (isNaN(keyId)) return res.status(400).json({ error: 'Invalid key ID' });
     try {
-        await query('DELETE FROM access_keys WHERE id = $1', [id]);
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Delete key error:', err);
-        res.status(500).json({ error: 'Failed to delete key' });
+        await query('DELETE FROM access_keys WHERE id = $1', [keyId]);
+        res.json({ message: 'Key deleted' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ════════════════════════════════════════════════════════════
+// 🆕 NEW: POST /admin/client – create user + mt5 + key
+// ════════════════════════════════════════════════════════════
+router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password, mt5 } = req.body;
+
+    if (!email || !password || !mt5 || !mt5.login || !mt5.password || !mt5.server) {
+        return res.status(400).json({ error: 'Missing required fields: email, password, mt5.login, mt5.password, mt5.server' });
+    }
+
+    try {
+        // 1. Create user
+        const hashed = await bcrypt.hash(password, 10);
+        await query(
+            'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
+            [email, hashed, 'user']
+        );
+
+        // 2. Get the new user ID
+        const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
+        const userId = userResult.rows[0].id;
+
+        // 3. Insert MT5 account
+        const port = mt5.port || 443;
+        await query(
+            'INSERT INTO user_mt5_accounts (user_id, login, password, server, port) VALUES ($1, $2, $3, $4, $5)',
+            [userId, mt5.login, mt5.password, mt5.server, port]
+        );
+
+        // 4. Generate a unique access key and bind it to this user
+        const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        await query(
+            'INSERT INTO access_keys (key_code, used_by, used_at, created_by) VALUES ($1, $2, NOW(), $3)',
+            [keyCode, userId, userId] // created_by = userId (the admin, but we don't have admin ID; set to userId for now)
+        );
+
+        // 5. Return the client info
+        res.status(201).json({
+            message: 'Client created successfully',
+            user: { id: userId, email, role: 'user' },
+            mt5: { login: mt5.login, server: mt5.server, port },
+            access_key: keyCode
+        });
+
+    } catch (error) {
+        console.error('Admin client creation error:', error);
+        next(error);
     }
 });
 
