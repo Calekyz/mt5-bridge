@@ -103,10 +103,7 @@ export const Dashboard: React.FC = () => {
 
     // ─── Toggle strategy ──────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
-        if (!vpsAddress || !eaConnected) {
-            toast.error('VPS not configured or EA not reachable');
-            return;
-        }
+        // ✅ No restrictions – always allow toggle
         setIsToggling(type);
         setCommandError(null);
         try {
@@ -220,21 +217,8 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── If no VPS is assigned ──────────────────────────────
-    if (!vpsAddress) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
-                    <CloudOff className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-white mb-2">Cloud Bot Not Activated</h2>
-                    <p className="text-slate-400 text-sm">
-                        Your cloud trading bot has not been activated yet.<br />
-                        Please contact the administrator to assign your VPS.
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    // ─── Show dashboard always (even without VPS) ────────────
+    // We removed the early return if !vpsAddress
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
@@ -256,14 +240,23 @@ export const Dashboard: React.FC = () => {
                         <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
                             <Server size={18} className="text-blue-400" />
                             <span className="text-slate-300 text-sm font-medium">VPS Address:</span>
-                            <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
-                                {vpsAddress}
-                            </code>
+                            {vpsAddress ? (
+                                <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
+                                    {vpsAddress}
+                                </code>
+                            ) : (
+                                <span className="text-yellow-400 text-sm font-medium">Pending (Admin to assign)</span>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
                         <div className="flex items-center gap-2 text-sm">
-                            {eaConnected === null ? (
+                            {!vpsAddress ? (
+                                <>
+                                    <AlertTriangle size={16} className="text-yellow-400" />
+                                    <span className="text-yellow-400">VPS Pending</span>
+                                </>
+                            ) : eaConnected === null ? (
                                 <span className="text-slate-400">Checking EA...</span>
                             ) : eaConnected ? (
                                 <>
@@ -325,7 +318,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS}
-                        disabled={!vpsAddress || !eaConnected}
+                        disabled={false} // ✅ Always enabled
                     />
                     <StrategyCard
                         type="nova"
@@ -341,7 +334,7 @@ export const Dashboard: React.FC = () => {
                         onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS}
-                        disabled={!vpsAddress || !eaConnected}
+                        disabled={false} // ✅ Always enabled
                     />
                 </div>
             </div>
