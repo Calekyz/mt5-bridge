@@ -17,7 +17,9 @@ interface AccessKey {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || '';
+// ─── 🔥 TEMPORARY FALLBACK – remove after setting env vars ───
+const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'my-super-secret-admin-key-2024';
+// ─────────────────────────────────────────────────────────────────
 
 export const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
