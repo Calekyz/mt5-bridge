@@ -1,135 +1,113 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { postTrackMbook, postTrackOhlc, postTrackOrders, postTrackPrices } from '../../services/SocketBridgeApi';
+import {
+    postTrackPrices,
+    postTrackOhlc,
+    postTrackMbook,
+    postTrackOrders,
+} from '../../services/SocketBridgeApi';
+import { query } from '../../db';
+import { authMiddleware, AuthRequest } from '../../auth';
 
 const router = Router();
 
-/**
- * @swagger
- * /track/prices:
- *   post:
- *     summary: Track symbols
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               symbols:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["EURUSD", "GBPUSD"]
- *     responses:
- *       200:
- *         description: Tracking initiated successfully
- */
-router.post('/track/prices', async (req: Request, res: Response, next: NextFunction) => {
+// POST /track/prices
+router.post('/track/prices', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+        }
+
         const body = req.body;
-        const result = await postTrackPrices(body);
+        const result = await postTrackPrices(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
+        });
         res.json(result);
     } catch (error) {
         next(error);
     }
 });
 
-/**
- * @swagger
- * /track/ohlc:
- *   post:
- *     summary: Track OHLC data
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               ohlc:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     time_frame:
- *                       type: string
- *                       example: M1
- *                     symbol:
- *                       type: string
- *                       example: EURUSD
- *                     depth:
- *                       type: integer
- *                       example: 3
- *     responses:
- *       200:
- *         description: Tracking initiated successfully
- */
-router.post('/track/ohlc', async (req: Request, res: Response, next: NextFunction) => {
+// POST /track/ohlc
+router.post('/track/ohlc', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+        }
+
         const body = req.body;
-        const result = await postTrackOhlc(body);
+        const result = await postTrackOhlc(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
+        });
         res.json(result);
     } catch (error) {
         next(error);
     }
 });
 
-/**
- * @swagger
- * /track/mbook:
- *   post:
- *     summary: Track market book data
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               symbols:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["EURUSD", "USDJPY"]
- *     responses:
- *       200:
- *         description: Tracking initiated successfully
- */
-router.post('/track/mbook', async (req: Request, res: Response, next: NextFunction) => {
+// POST /track/mbook
+router.post('/track/mbook', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+        }
+
         const body = req.body;
-        const result = await postTrackMbook(body);
+        const result = await postTrackMbook(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
+        });
         res.json(result);
     } catch (error) {
         next(error);
     }
 });
 
-/**
- * @swagger
- * /track/orders:
- *   post:
- *     summary: Track order events
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               symbols:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["BTCUSD", "ETHUSD"]
- *     responses:
- *       200:
- *         description: Tracking initiated successfully
- */
-router.post('/track/orders', async (req: Request, res: Response, next: NextFunction) => {
+// POST /track/orders
+router.post('/track/orders', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const userId = req.user!.id;
+        const mt5Result = await query(
+            'SELECT login, password, server, mt5_port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const mt5Account = mt5Result.rows[0];
+        if (!mt5Account) {
+            return res.status(404).json({ error: 'No MT5 account linked to this user' });
+        }
+
         const body = req.body;
-        const result = await postTrackOrders(body);
+        const result = await postTrackOrders(body, {
+            login: mt5Account.login,
+            password: mt5Account.password,
+            server: mt5Account.server,
+            port: mt5Account.mt5_port,
+        });
         res.json(result);
     } catch (error) {
         next(error);
