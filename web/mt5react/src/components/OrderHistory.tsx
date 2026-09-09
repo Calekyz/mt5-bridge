@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { getOrderHistory } from "../api/nodejsApiClient";
 
-// Rich interface matching the history API response (positions mode)
 interface HistoryOrder {
     symbol: string;
     open_time: number;
     ticket: number;
-    type: string;                 // "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+    type: string;
     volume: number;
     open_price: number;
     sl_price: number;
@@ -33,16 +32,20 @@ const OrderHistory: React.FC = () => {
     const [orders, setOrders] = useState<HistoryOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Date filter
     const [fromDate, setFromDate] = useState<string>("");
     const [toDate, setToDate] = useState<string>("");
-
-    // Sorting
     const [sortKey, setSortKey] = useState<SortKey>("close_time");
     const [sortAsc, setSortAsc] = useState(false);
 
-    // Set default dates (last 30 days)
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     useEffect(() => {
         const today = new Date();
         const thirtyDaysAgo = new Date(today);
@@ -51,20 +54,18 @@ const OrderHistory: React.FC = () => {
         setFromDate(thirtyDaysAgo.toISOString().split("T")[0]);
     }, []);
 
-    // Fetch on mount and when filter changes
     useEffect(() => {
-        if (fromDate && toDate) {
+        if (fromDate && toDate && vpsAddress) {
             fetchHistory(fromDate, toDate);
         }
-    }, [fromDate, toDate]);
+    }, [fromDate, toDate, vpsAddress]);
 
     const fetchHistory = async (from: string, to: string) => {
+        if (!vpsAddress) return;
         try {
             setLoading(true);
             setError(null);
             const data = await getOrderHistory(from, to);
-            // The API returns { data: [...] } with the fields above.
-            // Cast to HistoryOrder[] (they match)
             setOrders((data.data as unknown) as HistoryOrder[] || []);
         } catch (err: any) {
             console.error("Error fetching order history:", err);
@@ -75,7 +76,7 @@ const OrderHistory: React.FC = () => {
     };
 
     const handleDateFilter = () => {
-        if (fromDate && toDate) {
+        if (fromDate && toDate && vpsAddress) {
             fetchHistory(fromDate, toDate);
         }
     };
@@ -88,7 +89,6 @@ const OrderHistory: React.FC = () => {
         setFromDate(thirtyDaysAgo.toISOString().split("T")[0]);
     };
 
-    // ─── SORTING ──────────────────────────────────────────
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
             setSortAsc(!sortAsc);
@@ -101,7 +101,6 @@ const OrderHistory: React.FC = () => {
     const sortedOrders = useMemo(() => {
         const copy = [...orders];
         if (copy.length === 0) return copy;
-
         copy.sort((a, b) => {
             let valA: any, valB: any;
             if (sortKey === "side") {
@@ -119,16 +118,12 @@ const OrderHistory: React.FC = () => {
         return copy;
     }, [orders, sortKey, sortAsc]);
 
-    // ─── STATS ────────────────────────────────────────────
     const stats = useMemo(() => {
         const total = orders.length;
         if (total === 0) return null;
-        let wins = 0,
-            losses = 0;
-        let totalProfit = 0,
-            totalNet = 0;
-        let maxProfit = -Infinity,
-            maxLoss = Infinity;
+        let wins = 0, losses = 0;
+        let totalProfit = 0, totalNet = 0;
+        let maxProfit = -Infinity, maxLoss = Infinity;
         orders.forEach((o) => {
             if (o.profit > 0) wins++;
             else losses++;
@@ -142,18 +137,8 @@ const OrderHistory: React.FC = () => {
         return { total, wins, losses, winRate, totalProfit, totalNet, avgProfit, maxProfit, maxLoss };
     }, [orders]);
 
-    // ─── HELPERS ──────────────────────────────────────────
-    const getSide = (type: string) =>
-        type === "POSITION_TYPE_BUY" ? "BUY" : "SELL";
-
-    const formatDate = (ts: number) => {
-        try {
-            return new Date(ts * 1000).toLocaleString();
-        } catch {
-            return "Invalid Date";
-        }
-    };
-
+    const getSide = (type: string) => type === "POSITION_TYPE_BUY" ? "BUY" : "SELL";
+    const formatDate = (ts: number) => new Date(ts * 1000).toLocaleString();
     const formatDuration = (seconds: number) => {
         const days = Math.floor(seconds / 86400);
         const hours = Math.floor((seconds % 86400) / 3600);
@@ -163,10 +148,7 @@ const OrderHistory: React.FC = () => {
         return `${mins}m`;
     };
 
-    const SortableHeader: React.FC<{ label: string; sortKey: SortKey }> = ({
-        label,
-        sortKey: key,
-    }) => (
+    const SortableHeader: React.FC<{ label: string; sortKey: SortKey }> = ({ label, sortKey: key }) => (
         <th
             onClick={() => handleSort(key)}
             style={{
@@ -189,7 +171,19 @@ const OrderHistory: React.FC = () => {
         </th>
     );
 
-    // ─── RENDER ────────────────────────────────────────────
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -216,83 +210,60 @@ const OrderHistory: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                         📊 Order History
                     </h1>
-                    <p className="text-slate-400 text-sm mt-1">
-                        View your trading history with detailed statistics
-                    </p>
+                    <p className="text-slate-400 text-sm mt-1">View your trading history with detailed statistics</p>
                 </div>
 
-                {/* Stats Cards */}
                 {stats && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
                             <div className="text-slate-400 text-xs uppercase tracking-wider">Total Trades</div>
                             <div className="text-2xl font-bold text-white">{stats.total}</div>
-                            <div className="text-xs text-slate-500 mt-1">
-                                Wins: {stats.wins} · Losses: {stats.losses}
-                            </div>
+                            <div className="text-xs text-slate-500 mt-1">Wins: {stats.wins} · Losses: {stats.losses}</div>
                         </div>
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
                             <div className="text-slate-400 text-xs uppercase tracking-wider">Win Rate</div>
                             <div className="text-2xl font-bold text-white">{stats.winRate.toFixed(1)}%</div>
-                            <div className="text-xs text-slate-500 mt-1">
-                                {stats.winRate >= 50 ? "✅ Profitable" : "📉 Needs improvement"}
-                            </div>
+                            <div className="text-xs text-slate-500 mt-1">{stats.winRate >= 50 ? "✅ Profitable" : "📉 Needs improvement"}</div>
                         </div>
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
                             <div className="text-slate-400 text-xs uppercase tracking-wider">Total Profit</div>
-                            <div
-                                className={`text-2xl font-bold ${
-                                    stats.totalProfit >= 0 ? "text-green-400" : "text-red-400"
-                                }`}
-                            >
+                            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
                                 ${stats.totalProfit.toFixed(2)}
                             </div>
                             <div className="text-xs text-slate-500 mt-1">Net: ${stats.totalNet.toFixed(2)}</div>
                         </div>
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
                             <div className="text-slate-400 text-xs uppercase tracking-wider">Avg. Trade</div>
-                            <div
-                                className={`text-2xl font-bold ${
-                                    stats.avgProfit >= 0 ? "text-green-400" : "text-red-400"
-                                }`}
-                            >
+                            <div className={`text-2xl font-bold ${stats.avgProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
                                 ${stats.avgProfit.toFixed(2)}
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">
-                                Best: +${stats.maxProfit.toFixed(2)} · Worst: ${stats.maxLoss.toFixed(2)}
-                            </div>
+                            <div className="text-xs text-slate-500 mt-1">Best: +${stats.maxProfit.toFixed(2)} · Worst: ${stats.maxLoss.toFixed(2)}</div>
                         </div>
                     </div>
                 )}
 
-                {/* Date Filter */}
                 <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-6">
                     <div className="flex flex-wrap items-end gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                                From
-                            </label>
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">From</label>
                             <input
                                 type="date"
                                 value={fromDate}
                                 onChange={(e) => setFromDate(e.target.value)}
-                                className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                                className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                                To
-                            </label>
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">To</label>
                             <input
                                 type="date"
                                 value={toDate}
                                 onChange={(e) => setToDate(e.target.value)}
-                                className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                                className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                             />
                         </div>
                         <button
@@ -311,14 +282,11 @@ const OrderHistory: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Table */}
                 {sortedOrders.length === 0 ? (
                     <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-12 text-center border border-slate-700/50">
                         <div className="text-5xl mb-4">📭</div>
                         <h3 className="text-xl font-semibold text-white">No Orders Found</h3>
-                        <p className="text-slate-400 text-sm mt-1">
-                            No trading orders in the selected date range.
-                        </p>
+                        <p className="text-slate-400 text-sm mt-1">No trading orders in the selected date range.</p>
                     </div>
                 ) : (
                     <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
@@ -343,56 +311,21 @@ const OrderHistory: React.FC = () => {
                                         const side = getSide(order.type);
                                         const isBuy = side === "BUY";
                                         return (
-                                            <tr
-                                                key={order.ticket}
-                                                className="border-t border-slate-700/30 hover:bg-slate-700/30 transition"
-                                            >
-                                                <td className="px-3 py-3 text-white font-mono text-xs">
-                                                    #{order.ticket}
-                                                </td>
-                                                <td className="px-3 py-3 text-white font-semibold">
-                                                    {order.symbol}
-                                                </td>
+                                            <tr key={order.ticket} className="border-t border-slate-700/30 hover:bg-slate-700/30 transition">
+                                                <td className="px-3 py-3 text-white font-mono text-xs">#{order.ticket}</td>
+                                                <td className="px-3 py-3 text-white font-semibold">{order.symbol}</td>
                                                 <td className="px-3 py-3">
-                                                    <span
-                                                        className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-                                                            isBuy
-                                                                ? "bg-green-500/20 text-green-400"
-                                                                : "bg-red-500/20 text-red-400"
-                                                        }`}
-                                                    >
+                                                    <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${isBuy ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
                                                         {side}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-3 text-white">
-                                                    {order.volume.toFixed(2)}
-                                                </td>
-                                                <td className="px-3 py-3 text-white font-mono text-xs">
-                                                    {order.open_price.toFixed(5)}
-                                                </td>
-                                                <td className="px-3 py-3 text-white font-mono text-xs">
-                                                    {order.close_price.toFixed(5)}
-                                                </td>
-                                                <td
-                                                    className={`px-3 py-3 font-semibold ${
-                                                        order.profit >= 0 ? "text-green-400" : "text-red-400"
-                                                    }`}
-                                                >
-                                                    ${order.profit.toFixed(2)}
-                                                </td>
-                                                <td
-                                                    className={`px-3 py-3 font-semibold ${
-                                                        order.net_profit >= 0 ? "text-green-400" : "text-red-400"
-                                                    }`}
-                                                >
-                                                    ${order.net_profit.toFixed(2)}
-                                                </td>
-                                                <td className="px-3 py-3 text-slate-300 text-xs whitespace-nowrap">
-                                                    {formatDuration(order.duration)}
-                                                </td>
-                                                <td className="px-3 py-3 text-slate-300 text-xs whitespace-nowrap">
-                                                    {formatDate(order.close_time)}
-                                                </td>
+                                                <td className="px-3 py-3 text-white">{order.volume.toFixed(2)}</td>
+                                                <td className="px-3 py-3 text-white font-mono text-xs">{order.open_price.toFixed(5)}</td>
+                                                <td className="px-3 py-3 text-white font-mono text-xs">{order.close_price.toFixed(5)}</td>
+                                                <td className={`px-3 py-3 font-semibold ${order.profit >= 0 ? "text-green-400" : "text-red-400"}`}>${order.profit.toFixed(2)}</td>
+                                                <td className={`px-3 py-3 font-semibold ${order.net_profit >= 0 ? "text-green-400" : "text-red-400"}`}>${order.net_profit.toFixed(2)}</td>
+                                                <td className="px-3 py-3 text-slate-300 text-xs whitespace-nowrap">{formatDuration(order.duration)}</td>
+                                                <td className="px-3 py-3 text-slate-300 text-xs whitespace-nowrap">{formatDate(order.close_time)}</td>
                                             </tr>
                                         );
                                     })}
