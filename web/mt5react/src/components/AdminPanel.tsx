@@ -41,6 +41,7 @@ export const AdminPanel: React.FC = () => {
     const [clientMt5Password, setClientMt5Password] = useState('');
     const [clientMt5Server, setClientMt5Server] = useState('');
     const [clientMt5Port, setClientMt5Port] = useState('443');
+    const [clientVps, setClientVps] = useState(''); // ✅ NEW
     const [addingClient, setAddingClient] = useState(false);
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
     const [clientError, setClientError] = useState<string | null>(null);
@@ -206,7 +207,7 @@ export const AdminPanel: React.FC = () => {
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!clientEmail || !clientPassword || !clientMt5Login || !clientMt5Password || !clientMt5Server) {
-            setClientError('All fields are required');
+            setClientError('All fields are required (except VPS)');
             return;
         }
         setAddingClient(true);
@@ -229,6 +230,7 @@ export const AdminPanel: React.FC = () => {
                         server: clientMt5Server,
                         port: parseInt(clientMt5Port) || 443,
                     },
+                    vps_address: clientVps, // ✅ NEW
                 }),
             });
 
@@ -246,6 +248,7 @@ export const AdminPanel: React.FC = () => {
             setClientMt5Password('');
             setClientMt5Server('');
             setClientMt5Port('443');
+            setClientVps('');
             await loadData();
         } catch (err: any) {
             setClientError(err.message || 'Unknown error');
@@ -368,6 +371,17 @@ export const AdminPanel: React.FC = () => {
                                     className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
+                            <input
+                                type="text"
+                                value={clientVps}
+                                onChange={(e) => setClientVps(e.target.value)}
+                                placeholder="https://your-vps-ip:8890"
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Optional: The VPS URL where this client's EA is running.</p>
                         </div>
 
                         {clientError && (
