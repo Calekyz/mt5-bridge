@@ -6,8 +6,6 @@ interface User {
     email: string;
     role: string;
     created_at: string;
-    login?: string;
-    server?: string;
     vps_address?: string | null;
 }
 
@@ -20,9 +18,7 @@ interface AccessKey {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
-// ─── 🔥 TEMPORARY FALLBACK – remove after setting env vars ───
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'my-super-secret-admin-key-2024';
-// ─────────────────────────────────────────────────────────────────
 
 export const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -37,23 +33,19 @@ export const AdminPanel: React.FC = () => {
     const [generating, setGenerating] = useState(false);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-    // ─── Add Client State ──────────────────────────────────────
+    // Add Client State
     const [clientEmail, setClientEmail] = useState('');
     const [clientPassword, setClientPassword] = useState('');
-    const [clientMt5Login, setClientMt5Login] = useState('');
-    const [clientMt5Password, setClientMt5Password] = useState('');
-    const [clientMt5Server, setClientMt5Server] = useState('');
     const [clientVps, setClientVps] = useState('');
     const [addingClient, setAddingClient] = useState(false);
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
     const [clientError, setClientError] = useState<string | null>(null);
 
-    // ─── Inline VPS update state ──────────────────────────────
+    // Inline VPS update state
     const [editingVps, setEditingVps] = useState<{ [key: number]: string }>({});
     const [savingVps, setSavingVps] = useState<{ [key: number]: boolean }>({});
     const [vpsUpdateMessage, setVpsUpdateMessage] = useState<string | null>(null);
 
-    // ─── Fetch users ──────────────────────────────────────────
     const fetchUsers = async () => {
         try {
             const res = await fetch(`${API_URL}/admin/users`, {
@@ -65,18 +57,14 @@ export const AdminPanel: React.FC = () => {
             }
             const data = await res.json();
             setUsers(data);
-            // initialize editing state for each user
             const initialEdit: { [key: number]: string } = {};
-            data.forEach((u: User) => {
-                initialEdit[u.id] = u.vps_address || '';
-            });
+            data.forEach((u: User) => { initialEdit[u.id] = u.vps_address || ''; });
             setEditingVps(initialEdit);
         } catch (err: any) {
             setError(err.message || 'Unknown error');
         }
     };
 
-    // ─── Fetch keys ───────────────────────────────────────────
     const fetchKeys = async () => {
         try {
             const res = await fetch(`${API_URL}/admin/keys`, {
@@ -93,7 +81,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Load all data ────────────────────────────────────────
     const loadData = async () => {
         setLoading(true);
         setError(null);
@@ -101,11 +88,8 @@ export const AdminPanel: React.FC = () => {
         setLoading(false);
     };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
-    // ─── Add user ──────────────────────────────────────────────
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newEmail || !newPassword) return;
@@ -114,10 +98,7 @@ export const AdminPanel: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/admin/users`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': ADMIN_KEY
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
                 body: JSON.stringify({ email: newEmail, password: newPassword })
             });
             if (!res.ok) {
@@ -134,7 +115,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Delete user ──────────────────────────────────────────
     const handleDeleteUser = async (id: number) => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         setIsDeleting(id);
@@ -156,17 +136,13 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Generate keys ──────────────────────────────────────────
     const generateKeys = async () => {
         setGenerating(true);
         setError(null);
         try {
             const res = await fetch(`${API_URL}/admin/keys`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': ADMIN_KEY
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
                 body: JSON.stringify({ count: keyCount })
             });
             if (!res.ok) {
@@ -181,7 +157,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Delete key ─────────────────────────────────────────────
     const handleDeleteKey = async (id: number) => {
         if (!window.confirm('Delete this key?')) return;
         try {
@@ -199,7 +174,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Copy key ──────────────────────────────────────────────
     const copyToClipboard = (key: string) => {
         navigator.clipboard.writeText(key).then(() => {
             setCopiedKey(key);
@@ -216,49 +190,33 @@ export const AdminPanel: React.FC = () => {
         });
     };
 
-    // ─── Add Client ──────────────────────────────────────────────
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!clientEmail || !clientPassword || !clientMt5Login || !clientMt5Password || !clientMt5Server) {
-            setClientError('All fields are required (except VPS)');
+        if (!clientEmail || !clientPassword) {
+            setClientError('Email and password are required');
             return;
         }
         setAddingClient(true);
         setClientError(null);
         setNewClientKey(null);
-
         try {
             const res = await fetch(`${API_URL}/admin/client`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': ADMIN_KEY,
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
                 body: JSON.stringify({
                     email: clientEmail,
                     password: clientPassword,
-                    mt5: {
-                        login: parseInt(clientMt5Login),
-                        password: clientMt5Password,
-                        server: clientMt5Server,
-                    },
                     vps_address: clientVps || null,
                 }),
             });
-
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || data.message || 'Failed to create client');
             }
-
             const data = await res.json();
             setNewClientKey(data.access_key);
-            // Clear form
             setClientEmail('');
             setClientPassword('');
-            setClientMt5Login('');
-            setClientMt5Password('');
-            setClientMt5Server('');
             setClientVps('');
             await loadData();
         } catch (err: any) {
@@ -268,7 +226,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Handle inline VPS update ──────────────────────────────
     const handleVpsChange = (userId: number, value: string) => {
         setEditingVps(prev => ({ ...prev, [userId]: value }));
     };
@@ -277,28 +234,20 @@ export const AdminPanel: React.FC = () => {
         const vpsAddress = editingVps[userId];
         const user = users.find(u => u.id === userId);
         if (!user) return;
-
         setSavingVps(prev => ({ ...prev, [userId]: true }));
         setError(null);
         setVpsUpdateMessage(null);
         try {
             const res = await fetch(`${API_URL}/admin/client/vps`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': ADMIN_KEY,
-                },
-                body: JSON.stringify({
-                    email: user.email,
-                    vps_address: vpsAddress,
-                }),
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+                body: JSON.stringify({ email: user.email, vps_address: vpsAddress }),
             });
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || data.message || 'Failed to update VPS');
             }
             setVpsUpdateMessage('✅ VPS updated for ' + user.email);
-            // Update local state
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
             setEditingVps(prev => ({ ...prev, [userId]: vpsAddress }));
         } catch (err: any) {
@@ -326,14 +275,10 @@ export const AdminPanel: React.FC = () => {
                             👥 Admin Panel
                         </h1>
                         <p className="text-slate-400 text-sm mt-1">
-                            Manage users, access keys, and onboard new clients
+                            Manage users and assign VPS addresses
                         </p>
                     </div>
-                    <button
-                        onClick={loadData}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50"
-                    >
+                    <button onClick={loadData} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50">
                         <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                         Refresh
                     </button>
@@ -351,11 +296,11 @@ export const AdminPanel: React.FC = () => {
                     </div>
                 )}
 
-                {/* ─── Add Client ───────────────────────────────────── */}
+                {/* Add Client */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
                     <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <UserPlus size={20} className="text-blue-400" />
-                        Add New Client (MT5 + Key)
+                        Add New Client
                     </h2>
                     <form onSubmit={handleAddClient} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -382,60 +327,21 @@ export const AdminPanel: React.FC = () => {
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">MT5 Login (ID)</label>
-                                <input
-                                    type="number"
-                                    value={clientMt5Login}
-                                    onChange={(e) => setClientMt5Login(e.target.value)}
-                                    placeholder="12345678"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">MT5 Password</label>
-                                <input
-                                    type="text"
-                                    value={clientMt5Password}
-                                    onChange={(e) => setClientMt5Password(e.target.value)}
-                                    placeholder="MT5 password"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
+                            <input
+                                type="text"
+                                value={clientVps}
+                                onChange={(e) => setClientVps(e.target.value)}
+                                placeholder="http://your-vps-ip:8890"
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                            />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">MT5 Server</label>
-                                <input
-                                    type="text"
-                                    value={clientMt5Server}
-                                    onChange={(e) => setClientMt5Server(e.target.value)}
-                                    placeholder="MetaQuotes-Demo"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
-                                <input
-                                    type="text"
-                                    value={clientVps}
-                                    onChange={(e) => setClientVps(e.target.value)}
-                                    placeholder="http://your-vps-ip:8890"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                />
-                            </div>
-                        </div>
-
                         {clientError && (
                             <div className="text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-lg p-3">
                                 {clientError}
                             </div>
                         )}
-
                         {newClientKey && (
                             <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
                                 <p className="text-emerald-400 text-sm font-semibold">✅ Client created! Access Key:</p>
@@ -445,7 +351,6 @@ export const AdminPanel: React.FC = () => {
                                 <p className="text-xs text-slate-400 mt-2">Give this key to the client for login.</p>
                             </div>
                         )}
-
                         <button
                             type="submit"
                             disabled={addingClient}
@@ -457,47 +362,7 @@ export const AdminPanel: React.FC = () => {
                     </form>
                 </div>
 
-                {/* ─── Add User ───────────────────────────────────── */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <UserPlus size={20} className="text-blue-400" />
-                        Add User
-                    </h2>
-                    <form onSubmit={handleAddUser} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={newEmail}
-                                onChange={(e) => setNewEmail(e.target.value)}
-                                placeholder="user@example.com"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
-                        </div>
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Password</label>
-                            <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={isAdding}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={18} />}
-                            {isAdding ? 'Adding...' : 'Add User'}
-                        </button>
-                    </form>
-                </div>
-
-                {/* ─── Users Table ───────────────────────────────── */}
+                {/* Users Table */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -520,9 +385,7 @@ export const AdminPanel: React.FC = () => {
                                             <td className="px-6 py-4 text-sm text-white font-mono">#{user.id}</td>
                                             <td className="px-6 py-4 text-sm text-white">{user.email}</td>
                                             <td className="px-6 py-4 text-sm">
-                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                                    user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-300'
-                                                }`}>
+                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-300'}`}>
                                                     {user.role}
                                                 </span>
                                             </td>
@@ -536,9 +399,7 @@ export const AdminPanel: React.FC = () => {
                                                         value={currentVps}
                                                         onChange={(e) => handleVpsChange(user.id, e.target.value)}
                                                         placeholder={isPending ? "Pending" : "Enter VPS address"}
-                                                        className={`flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                                                            isPending ? 'text-yellow-400 placeholder-yellow-400/50' : ''
-                                                        }`}
+                                                        className={`flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isPending ? 'text-yellow-400 placeholder-yellow-400/50' : ''}`}
                                                     />
                                                     <button
                                                         onClick={() => handleVpsSave(user.id)}
@@ -546,11 +407,7 @@ export const AdminPanel: React.FC = () => {
                                                         className="text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
                                                         title="Save VPS address"
                                                     >
-                                                        {savingVps[user.id] ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                            <Save size={16} />
-                                                        )}
+                                                        {savingVps[user.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
                                                     </button>
                                                 </div>
                                             </td>
@@ -561,11 +418,7 @@ export const AdminPanel: React.FC = () => {
                                                         disabled={isDeleting === user.id}
                                                         className="text-red-400 hover:text-red-300 transition disabled:opacity-50"
                                                     >
-                                                        {isDeleting === user.id ? (
-                                                            <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                                                        ) : (
-                                                            <Trash2 size={18} />
-                                                        )}
+                                                        {isDeleting === user.id ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : <Trash2 size={18} />}
                                                     </button>
                                                 )}
                                             </td>
@@ -580,7 +433,7 @@ export const AdminPanel: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── Access Keys ────────────────────────────────── */}
+                {/* Access Keys */}
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
                     <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <Key size={20} /> Access Keys
