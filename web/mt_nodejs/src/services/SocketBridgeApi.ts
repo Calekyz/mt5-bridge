@@ -5,6 +5,7 @@ interface Mt5Credentials {
     password: string;
     server: string;
     port?: number;
+    vps_address?: string;
 }
 
 // ─── ORDER ────────────────────────────────────────────────
@@ -13,6 +14,7 @@ export const fetchOrderList = async (mt5: Mt5Credentials) => {
         method: 'POST',
         url: '/v1/order/list',
         data: { mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -33,6 +35,7 @@ export const postSendOrder = async (body: SendOrderRequest, mt5: Mt5Credentials)
         method: 'POST',
         url: '/v1/order',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -45,6 +48,7 @@ export const closeSendOrder = async (body: CloseOrderRequest, mt5: Mt5Credential
         method: 'POST',
         url: '/v1/order/close',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -54,6 +58,7 @@ export const fetchAccount = async (mt5: Mt5Credentials) => {
         method: 'POST',
         url: '/v1/account',
         data: { mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -70,6 +75,7 @@ export const fetchOrderHistory = async (params: OrderHistoryParams & { mt5: Mt5C
         method: 'POST',
         url: '/v1/history/orders',
         data: { ...rest, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -86,6 +92,7 @@ export const fetchPriceHistory = async (params: PriceHistoryParams & { mt5: Mt5C
         method: 'POST',
         url: '/v1/history/prices',
         data: { ...rest, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -99,6 +106,7 @@ export const postTrackPrices = async (body: TrackPricesBody, mt5: Mt5Credentials
         method: 'POST',
         url: '/v1/track/prices',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -117,6 +125,7 @@ export const postTrackOhlc = async (body: OhlcRequest, mt5: Mt5Credentials) => {
         method: 'POST',
         url: '/v1/track/ohlc',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -125,6 +134,7 @@ export const postTrackMbook = async (body: TrackPricesBody, mt5: Mt5Credentials)
         method: 'POST',
         url: '/v1/track/mbook',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -137,6 +147,7 @@ export const postTrackOrders = async (body: OrderEvents, mt5: Mt5Credentials) =>
         method: 'POST',
         url: '/v1/track/orders',
         data: { ...body, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
 
@@ -146,5 +157,6 @@ export const getQuote = async (symbol: string, mt5: Mt5Credentials) => {
         method: 'POST',
         url: '/v1/quote',
         data: { symbol, mt5 },
+        baseUrl: mt5.vps_address,
     });
 };
