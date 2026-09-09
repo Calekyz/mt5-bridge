@@ -44,82 +44,152 @@ router.post('/auth/login', async (req, res) => {
         return res.status(400).json({ error: 'Email, password, and access key required' });
     }
 
-    // 🔥 Admin bypass
+    // ─── Admin bypass (temporary) ──────────────────────────
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
+            // Find or create user
             let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
             if (!user) {
                 const hashed = await bcrypt.hash(password, 10);
-                await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'admin']);
+                await query(
+                    'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)',
+                    [email, hashed, 'admin']
+                );
                 userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
             }
 
-            const keyResult = await query('SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1', [access_key.trim()]);
-            if (keyResult.rows.length === 0) return res.status(400).json({ error: 'Invalid access key' });
+            // Validate access key
+            const keyResult = await query(
+                'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
+                [access_key.trim()]
+            );
+            if (keyResult.rows.length === 0) {
+                return res.status(400).json({ error: 'Invalid access key' });
+            }
             const key = keyResult.rows[0];
             if (key.used_by !== null && key.used_by !== user.id) {
                 return res.status(400).json({ error: 'Access key already used by another user' });
             }
             if (key.used_by === null) {
-                await query('UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2', [user.id, key.id]);
+                await query(
+                    'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
+                    [user.id, key.id]
+                );
             }
 
-            // ✅ Fetch MT5 with vps_address
-            const mt5Result = await query(
-                'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                [user.id]
-            );
-            const mt5Account = mt5Result.rows[0] || null;
+            // Fetch MT5 account – handle missing column gracefully
+            let mt5Account = null;
+            try {
+                const mt5Result = await query(
+                    'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    [user.id]
+                );
+                mt5Account = mt5Result.rows[0] || null;
+            } catch (mt5Err: any) {
+                // If column missing, fallback to query without vps_address
+                if (mt5Err.code === '42703') { // undefined column
+                    console.warn('vps_address column missing, falling back to basic query');
+                    const mt5Result = await query(
+                        'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                        [user.id]
+                    );
+                    mt5Account = mt5Result.rows[0] || null;
+                } else {
+                    throw mt5Err;
+                }
+            }
 
             const token = generateToken(user.id, user.email);
             return res.json({
-                user: { id: user.id, email: user.email, role: user.role, mt5: mt5Account },
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    mt5: mt5Account,
+                },
                 token,
                 access_key: key.key_code,
             });
         } catch (err: any) {
             console.error('Admin bypass error:', err);
-            return res.status(500).json({ error: 'Internal server error', details: err.message });
+            return res.status(500).json({
+                error: 'Internal server error',
+                details: err.message,
+            });
         }
     }
 
-    // ─── Normal login ──────────────────────────────────────
+    // ─── Normal login flow ──────────────────────────────────
     try {
         const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
-        if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
 
         const valid = await bcrypt.compare(password, user.password_hash);
-        if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+        if (!valid) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
 
-        const keyResult = await query('SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1', [access_key.trim()]);
-        if (keyResult.rows.length === 0) return res.status(400).json({ error: 'Invalid access key' });
+        const keyResult = await query(
+            'SELECT id, key_code, used_by FROM access_keys WHERE key_code = $1',
+            [access_key.trim()]
+        );
+        if (keyResult.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid access key' });
+        }
         const key = keyResult.rows[0];
         if (key.used_by !== null && key.used_by !== user.id) {
             return res.status(400).json({ error: 'Access key already used by another user' });
         }
         if (key.used_by === null) {
-            await query('UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2', [user.id, key.id]);
+            await query(
+                'UPDATE access_keys SET used_by = $1, used_at = NOW() WHERE id = $2',
+                [user.id, key.id]
+            );
         }
 
-        // ✅ Fetch MT5 with vps_address
-        const mt5Result = await query(
-            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-            [user.id]
-        );
-        const mt5Account = mt5Result.rows[0] || null;
+        // Fetch MT5 account – handle missing column gracefully
+        let mt5Account = null;
+        try {
+            const mt5Result = await query(
+                'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                [user.id]
+            );
+            mt5Account = mt5Result.rows[0] || null;
+        } catch (mt5Err: any) {
+            if (mt5Err.code === '42703') {
+                console.warn('vps_address column missing, falling back to basic query');
+                const mt5Result = await query(
+                    'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    [user.id]
+                );
+                mt5Account = mt5Result.rows[0] || null;
+            } else {
+                throw mt5Err;
+            }
+        }
 
         const token = generateToken(user.id, user.email);
         res.json({
-            user: { id: user.id, email: user.email, role: user.role, mt5: mt5Account },
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                mt5: mt5Account,
+            },
             token,
             access_key: key.key_code,
         });
     } catch (err: any) {
         console.error('Login error:', err);
-        res.status(500).json({ error: 'Internal server error', details: err.message });
+        res.status(500).json({
+            error: 'Internal server error',
+            details: err.message,
+        });
     }
 });
 
@@ -135,10 +205,16 @@ router.get('/auth/verify', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
         const result = await query('SELECT id, email, role FROM users WHERE id = $1', [decoded.id]);
         const user = result.rows[0];
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
         res.json({ user, valid: true });
     } catch (err: any) {
-        return res.status(401).json({ error: 'Invalid token', details: err.message });
+        console.error('Verify error:', err);
+        return res.status(401).json({
+            error: 'Invalid token',
+            details: err.message,
+        });
     }
 });
 
