@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import ApexChart from 'react-apexcharts';
-import { getHistoricalData } from '../api/nodejsApiClient.ts';
-import { CsvExporter } from "./exprotToCsv.tsx";
+import { getHistoricalData } from '../api/nodejsApiClient';
+import { CsvExporter } from "./exprotToCsv";
 
 export interface CandlePoint {
     x: number;
@@ -65,12 +65,22 @@ export function CandleChart() {
     const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
     const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
 
+    const userStr = localStorage.getItem('user');
+    let vpsAddress = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            vpsAddress = user.vps_address;
+        } catch (e) {}
+    }
+
     const showToast = (message: string, type: 'error' | 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 5000);
     };
 
     const fetchData = async (tf: string, from: string, to: string, sym: string) => {
+        if (!vpsAddress) return;
         setIsLoading(true);
         try {
             const res = await getHistoricalData(sym, from, to, tf);
@@ -96,15 +106,15 @@ export function CandleChart() {
     };
 
     useEffect(() => {
-        fetchData(timeframe, fromDate, toDate, symbol);
-    }, [timeframe, fromDate, toDate, symbol]);
+        if (vpsAddress) {
+            fetchData(timeframe, fromDate, toDate, symbol);
+        }
+    }, [timeframe, fromDate, toDate, symbol, vpsAddress]);
 
     const getOHLCStats = () => {
         if (seriesData.length === 0) return null;
-        let high = -Infinity,
-            low = Infinity;
-        let open = 0,
-            close = 0;
+        let high = -Infinity, low = Infinity;
+        let open = 0, close = 0;
         const last = seriesData[seriesData.length - 1];
         const first = seriesData[0];
         if (last) close = last.y[3];
@@ -146,34 +156,22 @@ export function CandleChart() {
             },
             foreColor: '#94a3b8',
         },
-        theme: {
-            mode: 'dark',
-        },
+        theme: { mode: 'dark' },
         title: {
             text: `${symbol} | ${TIMEFRAMES.find(tf => tf.value === timeframe)?.label}`,
             align: 'left',
-            style: {
-                fontSize: '20px',
-                fontWeight: '700',
-                color: '#f1f5f9',
-            },
+            style: { fontSize: '20px', fontWeight: '700', color: '#f1f5f9' },
         },
         subtitle: {
             text: `${fromDate} → ${toDate} • ${seriesData.length} bars`,
             align: 'left',
-            style: {
-                fontSize: '13px',
-                color: '#64748b',
-            },
+            style: { fontSize: '13px', color: '#64748b' },
         },
         xaxis: {
             type: 'category',
             categories: customLabels,
             labels: {
-                style: {
-                    colors: '#94a3b8',
-                    fontSize: '11px',
-                },
+                style: { colors: '#94a3b8', fontSize: '11px' },
                 rotate: -45,
                 rotateAlways: true,
                 hideOverlappingLabels: true,
@@ -185,10 +183,7 @@ export function CandleChart() {
         yaxis: {
             tooltip: { enabled: true },
             labels: {
-                style: {
-                    colors: '#94a3b8',
-                    fontSize: '11px',
-                },
+                style: { colors: '#94a3b8', fontSize: '11px' },
                 formatter: (value: number) => value.toFixed(5),
             },
             opposite: false,
@@ -196,10 +191,7 @@ export function CandleChart() {
         grid: {
             borderColor: '#1e293b',
             strokeDashArray: 3,
-            row: {
-                colors: ['transparent'],
-                opacity: 0.1,
-            },
+            row: { colors: ['transparent'], opacity: 0.1 },
         },
         plotOptions: {
             candlestick: {
@@ -207,9 +199,7 @@ export function CandleChart() {
                     upward: '#22c55e',
                     downward: '#ef4444',
                 },
-                wick: {
-                    useFillColor: true,
-                },
+                wick: { useFillColor: true },
             },
         },
         tooltip: {
@@ -231,17 +221,27 @@ export function CandleChart() {
                 `;
             },
         },
-        legend: {
-            show: false,
-        },
+        legend: { show: false },
     };
 
     const chartSeries = [{ name: symbol, data: seriesData }];
 
+    if (!vpsAddress) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm">
+                        Please contact the administrator to set up your VPS and EA configuration.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-7xl mx-auto">
-
                 <div className="mb-6">
                     <h1 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
                         📈 Price Chart
@@ -253,7 +253,6 @@ export function CandleChart() {
 
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-5 border border-slate-700/50 mb-6">
                     <div className="flex flex-wrap items-end gap-4">
-
                         <div className="flex-1 min-w-[150px]">
                             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Symbol
