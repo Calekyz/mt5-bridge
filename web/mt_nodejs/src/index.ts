@@ -3,10 +3,11 @@ import cors from 'cors';
 import dataRoute from './routes/dataRoute';
 import authRoutes from './routes/auth';
 import strategiesRoutes from './routes/strategies';
-import adminRoutes from './routes/admin'; // <-- must exist
-import accountRoutes from './routes/account/accountRoutes';
+import adminRoutes from './routes/admin';
+import accountRoutes from './routes/account';
 import orderRoutes from './routes/order/orderRoutes';
 import historyRoutes from './routes/history/historyRoutes';
+import eaRoutes from './routes/eaRoutes'; // NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -22,18 +23,19 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// --- API Routes ---
+// API routes
 app.use('/v1', dataRoute);
 app.use('/v1', authRoutes);
 app.use('/v1', strategiesRoutes);
-app.use('/v1/admin', adminRoutes); // ✅ Mount admin routes under /v1/admin
+app.use('/v1/admin', adminRoutes);
 app.use('/v1', accountRoutes);
 app.use('/v1', orderRoutes);
 app.use('/v1', historyRoutes);
+app.use('/v1', eaRoutes); // NEW – mount under /v1
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// 404 handler
+// 404
 app.use((req, res) => {
     res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
 });
@@ -52,4 +54,5 @@ const PORT = process.env.PORT || 8891;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     await restoreStrategyStates();
+    console.log('✅ Strategy states restored');
 });
