@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { fetchAccount } from '../services/SocketBridgeApi';
-import { query } from '../db';
-import { authMiddleware, AuthRequest } from '../auth';
+import { fetchAccount } from '../../services/SocketBridgeApi'; // ✅ fixed path
+import { query } from '../../db';                             // ✅ fixed path
+import { authMiddleware, AuthRequest } from '../../auth';     // ✅ fixed path
 
 const router = Router();
 
@@ -9,19 +9,23 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
 
-        // Fetch only existing columns
+        // Fetch only existing columns (fallback if vps_address missing)
         let mt5Result;
         try {
             mt5Result = await query(
                 'SELECT login, password, server, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
                 [userId]
             );
-        } catch {
-            // fallback without vps_address
-            mt5Result = await query(
-                'SELECT login, password, server FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
-                [userId]
-            );
+        } catch (err: any) {
+            if (err.code === '42703') {
+                // vps_address missing
+                mt5Result = await query(
+                    'SELECT login, password, server FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    [userId]
+                );
+            } else {
+                throw err;
+            }
         }
         const mt5Account = mt5Result.rows[0];
 
@@ -33,7 +37,7 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
             login: mt5Account.login,
             password: mt5Account.password,
             server: mt5Account.server,
-            port: 443, // default port
+            port: 443,
             vps_address: mt5Account.vps_address || null,
         };
 
