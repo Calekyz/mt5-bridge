@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Server, Save } from 'lucide-react';
 
 interface User {
     id: number;
@@ -43,7 +43,6 @@ export const AdminPanel: React.FC = () => {
     const [clientMt5Login, setClientMt5Login] = useState('');
     const [clientMt5Password, setClientMt5Password] = useState('');
     const [clientMt5Server, setClientMt5Server] = useState('');
-    const [clientMt5Port, setClientMt5Port] = useState('443');
     const [clientVps, setClientVps] = useState('');
     const [addingClient, setAddingClient] = useState(false);
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
@@ -52,6 +51,7 @@ export const AdminPanel: React.FC = () => {
     // ─── Inline VPS update state ──────────────────────────────
     const [editingVps, setEditingVps] = useState<{ [key: number]: string }>({});
     const [savingVps, setSavingVps] = useState<{ [key: number]: boolean }>({});
+    const [vpsUpdateMessage, setVpsUpdateMessage] = useState<string | null>(null);
 
     // ─── Fetch users ──────────────────────────────────────────
     const fetchUsers = async () => {
@@ -241,9 +241,8 @@ export const AdminPanel: React.FC = () => {
                         login: parseInt(clientMt5Login),
                         password: clientMt5Password,
                         server: clientMt5Server,
-                        port: parseInt(clientMt5Port) || 443,
                     },
-                    vps_address: clientVps,
+                    vps_address: clientVps || null,
                 }),
             });
 
@@ -260,7 +259,6 @@ export const AdminPanel: React.FC = () => {
             setClientMt5Login('');
             setClientMt5Password('');
             setClientMt5Server('');
-            setClientMt5Port('443');
             setClientVps('');
             await loadData();
         } catch (err: any) {
@@ -277,12 +275,12 @@ export const AdminPanel: React.FC = () => {
 
     const handleVpsSave = async (userId: number) => {
         const vpsAddress = editingVps[userId];
-        // Find the user's email
         const user = users.find(u => u.id === userId);
         if (!user) return;
 
         setSavingVps(prev => ({ ...prev, [userId]: true }));
         setError(null);
+        setVpsUpdateMessage(null);
         try {
             const res = await fetch(`${API_URL}/admin/client/vps`, {
                 method: 'PATCH',
@@ -299,12 +297,15 @@ export const AdminPanel: React.FC = () => {
                 const data = await res.json();
                 throw new Error(data.error || data.message || 'Failed to update VPS');
             }
+            setVpsUpdateMessage('✅ VPS updated for ' + user.email);
             // Update local state
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
+            setEditingVps(prev => ({ ...prev, [userId]: vpsAddress }));
         } catch (err: any) {
             setError(err.message || 'Unknown error');
         } finally {
             setSavingVps(prev => ({ ...prev, [userId]: false }));
+            setTimeout(() => setVpsUpdateMessage(null), 3000);
         }
     };
 
@@ -342,6 +343,11 @@ export const AdminPanel: React.FC = () => {
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={18} />
                         <span>{error}</span>
+                    </div>
+                )}
+                {vpsUpdateMessage && (
+                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-3 text-emerald-400 text-sm flex items-center gap-2">
+                        <span>{vpsUpdateMessage}</span>
                     </div>
                 )}
 
@@ -413,26 +419,15 @@ export const AdminPanel: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">MT5 Port</label>
+                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
                                 <input
-                                    type="number"
-                                    value={clientMt5Port}
-                                    onChange={(e) => setClientMt5Port(e.target.value)}
-                                    placeholder="443"
+                                    type="text"
+                                    value={clientVps}
+                                    onChange={(e) => setClientVps(e.target.value)}
+                                    placeholder="http://your-vps-ip:8890"
                                     className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
                                 />
                             </div>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
-                            <input
-                                type="text"
-                                value={clientVps}
-                                onChange={(e) => setClientVps(e.target.value)}
-                                placeholder="https://your-vps-ip:8890"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                            />
-                            <p className="text-xs text-slate-400 mt-1">Optional: The VPS URL where this client's EA is running.</p>
                         </div>
 
                         {clientError && (
