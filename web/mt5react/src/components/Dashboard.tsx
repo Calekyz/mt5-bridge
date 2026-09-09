@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -26,11 +26,12 @@ export const Dashboard: React.FC = () => {
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
+    const [refreshingUser, setRefreshingUser] = useState(false);
 
     const accessKey = localStorage.getItem('accessKey') || '';
 
     // ─── Load user and VPS address from localStorage ──────────
-    useEffect(() => {
+    const loadUserFromStorage = () => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
             try {
@@ -44,7 +45,44 @@ export const Dashboard: React.FC = () => {
                 console.error('Failed to parse user', e);
             }
         }
+    };
+
+    useEffect(() => {
+        loadUserFromStorage();
     }, []);
+
+    // ─── Refresh user info from backend ──────────────────────────
+    const refreshUserInfo = async () => {
+        setRefreshingUser(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+            const response = await fetch(`${API_URL}/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info');
+            }
+            const user = await response.json();
+            // Update localStorage
+            const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const updatedUser = { ...existingUser, ...user };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            // Update state
+            if (user.vps_address) {
+                setVpsAddress(user.vps_address);
+                toast.success('VPS address updated: ' + user.vps_address);
+            } else {
+                setVpsAddress(null);
+                toast.info('No VPS assigned yet');
+            }
+        } catch (err: any) {
+            toast.error('Failed to refresh user info: ' + err.message);
+        } finally {
+            setRefreshingUser(false);
+        }
+    };
 
     // ─── Check EA health using the VPS ──────────────────────────
     useEffect(() => {
@@ -248,6 +286,14 @@ export const Dashboard: React.FC = () => {
                             ) : (
                                 <span className="text-yellow-400 text-sm font-medium">Pending</span>
                             )}
+                            <button
+                                onClick={refreshUserInfo}
+                                disabled={refreshingUser}
+                                className="ml-2 text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
+                                title="Refresh VPS info"
+                            >
+                                <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
+                            </button>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
