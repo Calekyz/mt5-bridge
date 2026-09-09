@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { fetchAccount } from '../services/SocketBridgeApi'; // ✅ fixed path
-import { query } from '../db';                               // ✅ fixed path
-import { authMiddleware, AuthRequest } from '../auth';       // ✅ fixed path
+import { fetchAccount } from '../services/SocketBridgeApi';
+import { query } from '../db';
+import { authMiddleware, AuthRequest } from '../auth';
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
         const userId = req.user!.id;
 
         const mt5Result = await query(
-            'SELECT login, password, server, port FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT login, password, server, port, vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
             [userId]
         );
         const mt5Account = mt5Result.rows[0];
@@ -24,6 +24,7 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
             password: mt5Account.password,
             server: mt5Account.server,
             port: mt5Account.port || 443,
+            vps_address: mt5Account.vps_address,
         };
 
         const account = await fetchAccount(credentials);
