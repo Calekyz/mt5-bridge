@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Server } from 'lucide-react';
 
 interface User {
     id: number;
@@ -41,10 +41,16 @@ export const AdminPanel: React.FC = () => {
     const [clientMt5Password, setClientMt5Password] = useState('');
     const [clientMt5Server, setClientMt5Server] = useState('');
     const [clientMt5Port, setClientMt5Port] = useState('443');
-    const [clientVps, setClientVps] = useState(''); // ✅ NEW
+    const [clientVps, setClientVps] = useState('');
     const [addingClient, setAddingClient] = useState(false);
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
     const [clientError, setClientError] = useState<string | null>(null);
+
+    // ─── Assign VPS State ──────────────────────────────────────
+    const [vpsEmail, setVpsEmail] = useState('');
+    const [vpsAddress, setVpsAddress] = useState('');
+    const [updatingVps, setUpdatingVps] = useState(false);
+    const [vpsUpdateMessage, setVpsUpdateMessage] = useState<string | null>(null);
 
     // ─── Fetch users ──────────────────────────────────────────
     const fetchUsers = async () => {
@@ -230,7 +236,7 @@ export const AdminPanel: React.FC = () => {
                         server: clientMt5Server,
                         port: parseInt(clientMt5Port) || 443,
                     },
-                    vps_address: clientVps, // ✅ NEW
+                    vps_address: clientVps,
                 }),
             });
 
@@ -254,6 +260,42 @@ export const AdminPanel: React.FC = () => {
             setClientError(err.message || 'Unknown error');
         } finally {
             setAddingClient(false);
+        }
+    };
+
+    // ─── Handle Update VPS ──────────────────────────────────────
+    const handleUpdateVps = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!vpsEmail || !vpsAddress) {
+            setVpsUpdateMessage('Email and VPS address are required');
+            return;
+        }
+        setUpdatingVps(true);
+        setVpsUpdateMessage(null);
+        try {
+            const res = await fetch(`${API_URL}/admin/client/vps`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Key': ADMIN_KEY,
+                },
+                body: JSON.stringify({
+                    email: vpsEmail,
+                    vps_address: vpsAddress,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || data.message || 'Failed to update VPS');
+            }
+            setVpsUpdateMessage('✅ VPS address updated successfully!');
+            setVpsEmail('');
+            setVpsAddress('');
+            await loadData(); // refresh users list
+        } catch (err: any) {
+            setVpsUpdateMessage('❌ ' + (err.message || 'Unknown error'));
+        } finally {
+            setUpdatingVps(false);
         }
     };
 
@@ -409,6 +451,51 @@ export const AdminPanel: React.FC = () => {
                             {addingClient ? 'Creating...' : 'Create Client'}
                         </button>
                     </form>
+                </div>
+
+                {/* ─── Assign VPS to Existing Client ───────────────────── */}
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
+                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Server size={20} className="text-blue-400" />
+                        Assign VPS to Existing Client
+                    </h2>
+                    <form onSubmit={handleUpdateVps} className="flex flex-wrap gap-4 items-end">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Client Email</label>
+                            <input
+                                type="email"
+                                value={vpsEmail}
+                                onChange={(e) => setVpsEmail(e.target.value)}
+                                placeholder="client@example.com"
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                                required
+                            />
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
+                            <input
+                                type="text"
+                                value={vpsAddress}
+                                onChange={(e) => setVpsAddress(e.target.value)}
+                                placeholder="https://your-vps-ip:8890"
+                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={updatingVps}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {updatingVps ? <Loader2 className="w-4 h-4 animate-spin" /> : <Server size={18} />}
+                            {updatingVps ? 'Updating...' : 'Update VPS'}
+                        </button>
+                    </form>
+                    {vpsUpdateMessage && (
+                        <div className={`mt-3 text-sm ${vpsUpdateMessage.startsWith('✅') ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {vpsUpdateMessage}
+                        </div>
+                    )}
                 </div>
 
                 {/* ─── Add User ───────────────────────────────────── */}
