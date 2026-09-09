@@ -30,13 +30,35 @@ export const Dashboard: React.FC = () => {
 
     const accessKey = localStorage.getItem('accessKey') || '';
 
-    // ─── Load MT5 account from localStorage ───────────────────
+    // ─── Load user & MT5 account from localStorage ──────────
     useEffect(() => {
-        const stored = localStorage.getItem('mt5Account');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            setMt5Account(parsed);
-            setVpsAddress(parsed?.vps_address || null);
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                if (user.mt5) {
+                    setMt5Account(user.mt5);
+                    setVpsAddress(user.mt5.vps_address || null);
+                } else {
+                    // No MT5 account linked – the user will see the Cloud Bot Not Activated message
+                    setMt5Account(null);
+                    setVpsAddress(null);
+                }
+            } catch (e) {
+                console.error('Failed to parse user from localStorage', e);
+            }
+        } else {
+            // fallback: try the old key
+            const stored = localStorage.getItem('mt5Account');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    setMt5Account(parsed);
+                    setVpsAddress(parsed?.vps_address || null);
+                } catch (e) {
+                    console.error('Failed to parse mt5Account', e);
+                }
+            }
         }
     }, []);
 
