@@ -32,8 +32,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 payload.access_key = accessKey.trim();
             }
 
-            console.log('Sending payload:', payload);
-
             const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -52,15 +50,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 return;
             }
 
-            // ✅ Login success – store the access key in localStorage
-            if (data.access_key) {
-                localStorage.setItem('accessKey', data.access_key);
+            // ✅ Login success – store everything in localStorage
+            localStorage.setItem('accessKey', data.access_key);
+            localStorage.setItem('token', data.token);
+            // Store the entire user object (including mt5)
+            localStorage.setItem('user', JSON.stringify(data.user));
+            // Also store mt5 separately for easy access (optional)
+            if (data.user.mt5) {
+                localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
             } else {
-                // fallback: if backend doesn't send it, use the one the user typed
-                localStorage.setItem('accessKey', accessKey.trim());
+                localStorage.removeItem('mt5Account');
             }
 
-            // Pass user & token to parent (App)
+            // Pass to parent (App)
             onLogin({ token: data.token, user: data.user });
         } catch (err: any) {
             setLocalError(err.message);
