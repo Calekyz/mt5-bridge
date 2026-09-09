@@ -17,12 +17,11 @@ const adminKeyMiddleware = (req: Request, res: Response, next: NextFunction) => 
 };
 
 // ─── GET /admin/users ────────────────────────────────────
-// Returns unique users with their MT5 account info (login, server, vps_address)
 router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // Try to include vps_address if column exists
         let result;
         try {
-            // Try with vps_address column (if exists)
             result = await query(`
                 SELECT DISTINCT ON (u.id) 
                     u.id, u.email, u.role, u.created_at,
@@ -130,7 +129,6 @@ router.delete('/keys/:id', adminKeyMiddleware, async (req: Request, res: Respons
 });
 
 // ─── POST /admin/client ──────────────────────────────────
-// Creates a new user, stores MT5 credentials, generates & binds an access key
 router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, password, mt5, vps_address } = req.body;
 
@@ -152,8 +150,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
         const userId = userResult.rows[0].id;
 
-        // 3. Insert MT5 account – port column may not exist, so we omit it
-        // We'll use default port 443 in the credentials later.
+        // 3. Insert MT5 account – include vps_address if provided
         let insertQuery = `
             INSERT INTO user_mt5_accounts 
             (user_id, login, password, server${vps_address !== undefined ? ', vps_address' : ''}) 
@@ -165,7 +162,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
         }
         await query(insertQuery, values);
 
-        // 4. Generate a unique access key and bind it to the user
+        // 4. Generate access key and bind to user
         const keyCode = `KEY-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         await query(
             'INSERT INTO access_keys (key_code, used_by, used_at, created_by) VALUES ($1, $2, NOW(), $3)',
@@ -178,7 +175,7 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
             mt5: {
                 login: mt5.login,
                 server: mt5.server,
-                port: 443, // default
+                port: 443,
                 vps_address: vps_address || null,
             },
             access_key: keyCode
@@ -190,37 +187,43 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
 });
 
 // ─── PATCH /admin/client/vps ─────────────────────────────
-// Updates VPS address for an existing client (by email)
 router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     const { email, vps_address } = req.body;
     if (!email || !vps_address) {
         return res.status(400).json({ error: 'Email and vps_address required' });
     }
+
     try {
-        // Check if vps_address column exists
+        // Check if vps_address column exists in the table
         let columnExists = true;
         try {
             await query('SELECT vps_address FROM user_mt5_accounts LIMIT 0');
         } catch (err: any) {
-            if (err.code === '42703') columnExists = false;
+            if (err.code === '42703') {
+                columnExists = false;
+            } else {
+                throw err;
+            }
         }
 
-        let result;
-        if (columnExists) {
-            result = await query(
-                `UPDATE user_mt5_accounts 
-                 SET vps_address = $1 
-                 WHERE user_id = (SELECT id FROM users WHERE email = $2)`,
-                [vps_address, email]
-            );
-        } else {
-            // Column doesn't exist – we can't update it, so we'll just return a message
-            return res.status(400).json({ error: 'vps_address column does not exist in your database. Please run: ALTER TABLE user_mt5_accounts ADD COLUMN vps_address VARCHAR(255);' });
+        if (!columnExists) {
+            return res.status(400).json({
+                error: 'vps_address column does not exist in your database. Please run: ALTER TABLE user_mt5_accounts ADD COLUMN vps_address VARCHAR(255);'
+            });
         }
+
+        // Update the vps_address for the user
+        const result = await query(
+            `UPDATE user_mt5_accounts 
+             SET vps_address = $1 
+             WHERE user_id = (SELECT id FROM users WHERE email = $2)`,
+            [vps_address, email]
+        );
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'User not found or no MT5 account linked' });
         }
+
         res.json({ message: 'VPS address updated successfully' });
     } catch (error) {
         console.error('Update VPS error:', error);
