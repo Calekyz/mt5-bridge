@@ -15,12 +15,12 @@ async function getUserVps(userId: number): Promise<string | null> {
 }
 
 // ─── Helper: Call the EA at a specific VPS ────────────────
-async function callEA(baseUrl: string, url: string, data: any) {
+async function callEA(baseUrl: string, method: 'GET' | 'POST', url: string, data?: any) {
     const cleanBase = baseUrl.replace(/\/$/, '');
     try {
         const response = await axios({
-            method: 'POST',
-            url: `${cleanBase}/v1${url}`,
+            method,
+            url: `${cleanBase}${url}`,
             data,
             headers: { 'Content-Type': 'application/json' },
             timeout: 5000,
@@ -34,7 +34,7 @@ async function callEA(baseUrl: string, url: string, data: any) {
     }
 }
 
-// ─── QUOTE ────────────────────────────────────────────────
+// ─── QUOTE (GET) ──────────────────────────────────────────
 router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
@@ -43,14 +43,14 @@ router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
         const symbol = req.query.symbol as string;
         if (!symbol) return res.status(400).json({ error: 'Missing symbol parameter' });
 
-        const data = await callEA(vpsAddress, '/quote', { symbol });
+        const data = await callEA(vpsAddress, 'GET', `/v1/quote?symbol=${encodeURIComponent(symbol)}`);
         res.json(data);
     } catch (err: any) {
         res.status(503).json({ error: err.message });
     }
 });
 
-// ─── SYMBOLS ──────────────────────────────────────────────
+// ─── SYMBOLS (GET) ────────────────────────────────────────
 router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
@@ -61,7 +61,7 @@ router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
             ]);
         }
 
-        const data = await callEA(vpsAddress, '/symbol/list', {});
+        const data = await callEA(vpsAddress, 'GET', '/v1/symbol/list');
         if (data && data.symbols && Array.isArray(data.symbols)) {
             const symbolNames = data.symbols.map((s: any) => s.name || s);
             res.json(symbolNames);
@@ -76,7 +76,7 @@ router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── GLOBAL SET (Start Algo) ──────────────────────────────
+// ─── GLOBAL SET (POST) ────────────────────────────────────
 router.post('/global/set', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
@@ -85,7 +85,7 @@ router.post('/global/set', authMiddleware, async (req: AuthRequest, res) => {
         const { name, value } = req.body;
         if (!name) return res.status(400).json({ error: 'Missing required field: name' });
 
-        const data = await callEA(vpsAddress, '/global/set', { name, value });
+        const data = await callEA(vpsAddress, 'POST', '/v1/global/set', { name, value });
         res.json(data);
     } catch (err: any) {
         console.error('Global set error:', err.message);
