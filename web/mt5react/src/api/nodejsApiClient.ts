@@ -1,5 +1,13 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
+// ─── Auth Header Helper ──────────────────────────────────
+const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('token');
+    return token
+        ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        : { 'Content-Type': 'application/json' };
+};
+
 // ─── ACCOUNT ──────────────────────────────────────────────
 export interface Account {
     login: number;
@@ -23,7 +31,7 @@ export interface OrderRequest {
     comment?: string;
 }
 
-// ─── OPEN ORDER (from /order/list) ──────────────────────
+// ─── OPEN ORDER ──────────────────────────────────────────
 export interface Order {
     price_open: number;
     ticket: number;
@@ -33,7 +41,7 @@ export interface Order {
     volume_initial: number;
     price_current: number;
     profit: number;
-    type: string;          // "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+    type: string;
 }
 
 export interface OrderResponse {
@@ -43,12 +51,12 @@ export interface OrderResponse {
     pending: Order[];
 }
 
-// ─── HISTORY ORDER (from /history/orders?mode=positions) ──
+// ─── HISTORY ORDER ────────────────────────────────────────
 export interface HistoryOrder {
     symbol: string;
     open_time: number;
     ticket: number;
-    type: string;                     // "POSITION_TYPE_BUY" or "POSITION_TYPE_SELL"
+    type: string;
     volume: number;
     open_price: number;
     sl_price: number;
@@ -57,7 +65,7 @@ export interface HistoryOrder {
     tp_pips: number;
     close_price: number;
     close_time: number;
-    duration: number;                 // in seconds
+    duration: number;
     swap: number;
     commission: number;
     profit: number;
@@ -74,18 +82,20 @@ export interface OrderHistoryResponse {
     orderCount: number;
     from_date: number;
     to_date: number;
-    data: HistoryOrder[];   // uses the rich history type
+    data: HistoryOrder[];
 }
 
 // ─── API FUNCTIONS ──────────────────────────────────────
 
 export async function getAccount(): Promise<Account> {
-    const res = await fetch(`${BASE_URL}/account`);
+    const res = await fetch(`${BASE_URL}/account`, {
+        headers: getAuthHeaders(),
+    });
     console.log('Fetching account info from:', `${BASE_URL}/account`);
     if (!res.ok) {
         console.error(`Failed to fetch account: ${res.status} ${res.statusText}`);
         const errorData = await res.json();
-        throw new Error(errorData.detail);
+        throw new Error(errorData.detail || errorData.error || 'Failed to fetch account');
     }
     return res.json();
 }
@@ -93,7 +103,7 @@ export async function getAccount(): Promise<Account> {
 export async function placeOrder(order: OrderRequest): Promise<void> {
     const res = await fetch(`${BASE_URL}/order`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(order),
     });
     if (!res.ok) {
@@ -102,6 +112,7 @@ export async function placeOrder(order: OrderRequest): Promise<void> {
         const detail =
             errorData.error?.details ??
             errorData.error?.message ??
+            errorData.detail ??
             `Unknown error (status: ${res.status})`;
         throw new Error(detail);
     }
@@ -110,7 +121,7 @@ export async function placeOrder(order: OrderRequest): Promise<void> {
 export async function closeOrder(ticket: number): Promise<void> {
     const res = await fetch(`${BASE_URL}/order/close`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ ticket }),
     });
     if (!res.ok) {
@@ -119,17 +130,20 @@ export async function closeOrder(ticket: number): Promise<void> {
         const detail =
             errorData.error?.details ??
             errorData.error?.message ??
+            errorData.detail ??
             `Unknown error (status: ${res.status})`;
         throw new Error(detail);
     }
 }
 
 export async function getOrders(): Promise<OrderResponse> {
-    const res = await fetch(`${BASE_URL}/order/list`);
+    const res = await fetch(`${BASE_URL}/order/list`, {
+        headers: getAuthHeaders(),
+    });
     if (!res.ok) {
         let errorMessage = `Failed to fetch orders: ${res.status} ${res.statusText}`;
         const errorData = await res.json();
-        errorMessage = errorData?.details || errorMessage;
+        errorMessage = errorData?.details || errorData?.error || errorMessage;
         console.error(errorMessage);
         throw new Error(errorMessage);
     }
@@ -142,11 +156,13 @@ export async function getOrderHistory(fromDate: string, toDate: string): Promise
         from_date: fromDate,
         to_date: toDate,
     });
-    const res = await fetch(`${BASE_URL}/history/orders?${queryParams.toString()}`);
+    const res = await fetch(`${BASE_URL}/history/orders?${queryParams.toString()}`, {
+        headers: getAuthHeaders(),
+    });
     if (!res.ok) {
         let errorMessage = `Failed to fetch order history: ${res.status} ${res.statusText}`;
         const errorData = await res.json();
-        errorMessage = errorData?.details || errorMessage;
+        errorMessage = errorData?.details || errorData?.error || errorMessage;
         console.error(errorMessage);
         throw new Error(errorMessage);
     }
@@ -186,18 +202,18 @@ export async function getHistoricalData(
     console.log('fetching url:', `${BASE_URL}/history/prices?${query.toString()}`);
     const res = await fetch(`${BASE_URL}/history/prices?${query.toString()}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: getAuthHeaders(),
     });
     if (!res.ok) {
         let errorMessage = '';
         const errorData = await res.json();
-        errorMessage = errorData?.details || `Failed to fetch historical data`;
+        errorMessage = errorData?.details || errorData?.error || `Failed to fetch historical data`;
         throw new Error(errorMessage);
     }
     return res.json();
 }
 
-// ─── REAL‑TIME QUOTE ──────────────────────────────────────
+// ─── REAL-TIME QUOTE ──────────────────────────────────────
 export interface Quote {
     symbol: string;
     bid: number;
@@ -210,18 +226,18 @@ export interface Quote {
 export async function getQuote(symbol: string): Promise<Quote> {
     const res = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: getAuthHeaders(),
     });
     if (!res.ok) {
         let errorMessage = '';
         const errorData = await res.json();
-        errorMessage = errorData?.details || `Failed to fetch quote for ${symbol}`;
+        errorMessage = errorData?.details || errorData?.error || `Failed to fetch quote for ${symbol}`;
         throw new Error(errorMessage);
     }
     return res.json();
 }
 
-// ─── SYMBOLS (auto‑complete) ─────────────────────────────
+// ─── SYMBOLS ─────────────────────────────────────────────
 const FALLBACK_SYMBOLS = [
     "XAUUSD", "XAUUSD.m", "XAUUSDd", "XAUUSD.pro", "GOLD", "GOLD.m",
     "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD",
@@ -234,7 +250,7 @@ export async function getSymbols(): Promise<string[]> {
     try {
         const res = await fetch(`${BASE_URL}/symbols`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" }
+            headers: getAuthHeaders(),
         });
         if (!res.ok) {
             console.warn(`Symbols endpoint returned ${res.status}, using fallback list`);
