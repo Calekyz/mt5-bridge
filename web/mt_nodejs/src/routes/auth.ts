@@ -75,11 +75,11 @@ router.post('/auth/login', async (req, res) => {
                 user = userResult.rows[0];
             }
 
-            // Only fetch vps_address
+            // Fetch the latest VPS address
             let vpsAddress = null;
             try {
                 const vpsResult = await query(
-                    'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                    'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
                     [user.id]
                 );
                 if (vpsResult.rows.length > 0) {
@@ -114,10 +114,11 @@ router.post('/auth/login', async (req, res) => {
         const valid = await bcrypt.compare(password, user.password_hash);
         if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
 
+        // Fetch the latest VPS address
         let vpsAddress = null;
         try {
             const vpsResult = await query(
-                'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+                'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
                 [user.id]
             );
             if (vpsResult.rows.length > 0) {
@@ -157,6 +158,43 @@ router.get('/auth/verify', async (req, res) => {
         res.json({ user, valid: true });
     } catch (err: any) {
         return res.status(401).json({ error: 'Invalid token', details: err.message });
+    }
+});
+
+// ─── GET /auth/me ────────────────────────────────────
+// Returns the current authenticated user's info (including VPS address)
+// Used by the Dashboard's "Refresh VPS Info" button.
+router.get('/auth/me', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.id;
+        const userResult = await query('SELECT id, email, role FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        let vpsAddress = null;
+        try {
+            const vpsResult = await query(
+                'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+                [userId]
+            );
+            if (vpsResult.rows.length > 0) {
+                vpsAddress = vpsResult.rows[0].vps_address;
+            }
+        } catch (err) {
+            console.warn('Could not fetch VPS address:', err);
+        }
+
+        res.json({
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            vps_address: vpsAddress,
+        });
+    } catch (err: any) {
+        console.error('Auth me error:', err);
+        res.status(500).json({ error: 'Internal server error', details: err.message });
     }
 });
 
