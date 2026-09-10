@@ -34,7 +34,7 @@ async function callEA(baseUrl: string, url: string, data: any) {
     }
 }
 
-// ─── QUOTE (used by OrderRequest.tsx) ─────────────────────
+// ─── QUOTE ────────────────────────────────────────────────
 router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
@@ -50,7 +50,7 @@ router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── SYMBOLS (used by OrderRequest.tsx) ────────────────────
+// ─── SYMBOLS ──────────────────────────────────────────────
 router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
@@ -69,7 +69,6 @@ router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
             res.json([]);
         }
     } catch (err) {
-        // Fallback list if EA unreachable
         res.json([
             'XAUUSD', 'XAUUSD.m', 'EURUSD', 'GBPUSD', 'USDJPY',
             'AUDUSD', 'USDCAD', 'NZDUSD', 'BTCUSD', 'ETHUSD'
@@ -77,7 +76,7 @@ router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── GLOBAL SET (used by Dashboard "Start Algo") ──────────
+// ─── GLOBAL SET (Start Algo) ──────────────────────────────
 router.post('/global/set', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
