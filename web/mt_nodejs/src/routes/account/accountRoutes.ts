@@ -9,7 +9,7 @@ router.get('/account', authMiddleware, async (req: AuthRequest, res, next) => {
     try {
         const userId = req.user!.id;
         const result = await query(
-            'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+            'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
             [userId]
         );
         const vpsAccount = result.rows[0];
