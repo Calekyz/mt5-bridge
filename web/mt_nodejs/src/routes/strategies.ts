@@ -4,18 +4,28 @@ import { authMiddleware, AuthRequest } from '../auth';
 import axios from 'axios';
 
 const router = Router();
-const MT5_HOST = process.env.MT5_HOST || 'localhost';
-const MT5_PORT = process.env.MT5_PORT || '8890';
-const EA_BASE_URL = `http://${MT5_HOST}:${MT5_PORT}/v1`;
 
-async function setGlobalVariable(name: string, value: any) {
+// ─── Helper: Get the user's assigned VPS address ──────────
+async function getUserVps(userId: number): Promise<string | null> {
+    const result = await query(
+        'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+        [userId]
+    );
+    return result.rows[0]?.vps_address || null;
+}
+
+// ─── Helper: Send a global variable command to a specific VPS ──
+async function setGlobalVariable(baseUrl: string, name: string, value: any) {
+    const cleanBase = baseUrl.replace(/\/$/, '');
     try {
-        await axios.post(`${EA_BASE_URL}/global/set`, {
-            name,
-            value: typeof value === 'boolean' ? (value ? 1 : 0) : value
-        });
-    } catch (err) {
-        console.error(`Failed to set ${name}:`, err);
+        await axios.post(
+            `${cleanBase}/v1/global/set`,
+            { name, value: typeof value === 'boolean' ? (value ? 1 : 0) : value },
+            { timeout: 5000, headers: { 'Content-Type': 'application/json' } }
+        );
+    } catch (err: any) {
+        console.error(`Failed to set ${name} at ${baseUrl}:`, err.message);
+        throw new Error(`Failed to send command to EA at ${baseUrl}: ${err.message}`);
     }
 }
 
@@ -23,7 +33,7 @@ async function setGlobalVariable(name: string, value: any) {
 router.get('/strategies', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const result = await query(
-            `SELECT s.*, a.login, a.server, a.label as account_label 
+            `SELECT s.*, a.label as account_label 
              FROM user_strategies s
              JOIN user_mt5_accounts a ON a.id = s.account_id
              WHERE s.user_id = $1`,
@@ -42,10 +52,13 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
     const { enabled } = req.body;
 
     try {
+        const vpsAddress = await getUserVps(req.user!.id);
+        if (!vpsAddress) {
+            return res.status(400).json({ error: 'No VPS assigned to your account' });
+        }
+
         const result = await query(
-            `SELECT s.*, a.login, a.password, a.server 
-             FROM user_strategies s
-             JOIN user_mt5_accounts a ON a.id = s.account_id
+            `SELECT s.* FROM user_strategies s
              WHERE s.id = $1 AND s.user_id = $2`,
             [id, req.user!.id]
         );
@@ -57,7 +70,7 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
         const strategy = result.rows[0];
         const varName = strategy.ea_name === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
 
-        await setGlobalVariable(varName, enabled ? 1 : 0);
+        await setGlobalVariable(vpsAddress, varName, enabled ? 1 : 0);
 
         await query(
             'UPDATE user_strategies SET is_active = $1, updated_at = NOW() WHERE id = $2',
@@ -65,10 +78,10 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
         );
 
         if (enabled) {
-            const settings = strategy.settings;
+            const settings = strategy.settings || {};
             const prefix = strategy.ea_name === 'pipnex' ? 'PipNex_' : 'Nova_';
             for (const [key, value] of Object.entries(settings)) {
-                await setGlobalVariable(`${prefix}${key}`, value);
+                await setGlobalVariable(vpsAddress, `${prefix}${key}`, value);
             }
         }
 
@@ -77,12 +90,12 @@ router.post('/strategies/:id/toggle', authMiddleware, async (req: AuthRequest, r
             [req.user!.id]
         );
         const hasActive = parseInt(activeCheck.rows[0].count) > 0;
-        await setGlobalVariable('Master_Enabled', hasActive ? 1 : 0);
+        await setGlobalVariable(vpsAddress, 'Master_Enabled', hasActive ? 1 : 0);
 
         res.json({ success: true, enabled });
-    } catch (err) {
+    } catch (err: any) {
         console.error('Toggle strategy error:', err);
-        res.status(500).json({ error: 'Failed to toggle strategy' });
+        res.status(500).json({ error: err.message || 'Failed to toggle strategy' });
     }
 });
 
@@ -92,6 +105,11 @@ router.post('/strategies/:id/settings', authMiddleware, async (req: AuthRequest,
     const updates = req.body;
 
     try {
+        const vpsAddress = await getUserVps(req.user!.id);
+        if (!vpsAddress) {
+            return res.status(400).json({ error: 'No VPS assigned to your account' });
+        }
+
         const result = await query(
             'SELECT * FROM user_strategies WHERE id = $1 AND user_id = $2',
             [id, req.user!.id]
@@ -102,7 +120,7 @@ router.post('/strategies/:id/settings', authMiddleware, async (req: AuthRequest,
         }
 
         const strategy = result.rows[0];
-        const newSettings = { ...strategy.settings, ...updates };
+        const newSettings = { ...(strategy.settings || {}), ...updates };
 
         await query(
             'UPDATE user_strategies SET settings = $1, updated_at = NOW() WHERE id = $2',
@@ -112,14 +130,14 @@ router.post('/strategies/:id/settings', authMiddleware, async (req: AuthRequest,
         if (strategy.is_active) {
             const prefix = strategy.ea_name === 'pipnex' ? 'PipNex_' : 'Nova_';
             for (const [key, value] of Object.entries(updates)) {
-                await setGlobalVariable(`${prefix}${key}`, value);
+                await setGlobalVariable(vpsAddress, `${prefix}${key}`, value);
             }
         }
 
         res.json({ success: true, settings: newSettings });
-    } catch (err) {
+    } catch (err: any) {
         console.error('Update settings error:', err);
-        res.status(500).json({ error: 'Failed to update settings' });
+        res.status(500).json({ error: err.message || 'Failed to update settings' });
     }
 });
 
