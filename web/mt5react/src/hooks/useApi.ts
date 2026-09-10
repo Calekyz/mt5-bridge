@@ -31,9 +31,13 @@ export function useAccount(intervalMs: number = 2000) {
 
 export async function sendCommand(command: string, value: any) {
     try {
+        const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/global/set`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ name: command, value: typeof value === 'boolean' ? (value ? 1 : 0) : value }),
         });
         if (!res.ok) {
