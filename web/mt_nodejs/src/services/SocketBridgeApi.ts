@@ -3,9 +3,8 @@ import { apiRequest } from '../utils/apiClient';
 // ─── ORDER ────────────────────────────────────────────────
 export const fetchOrderList = async (baseUrl: string) => {
     return apiRequest({
-        method: 'POST',
+        method: 'GET',
         url: '/v1/order/list',
-        data: {},
         baseUrl,
     });
 };
@@ -44,17 +43,16 @@ export const closeSendOrder = async (body: CloseOrderRequest, baseUrl: string) =
     });
 };
 
-// ─── ACCOUNT ──────────────────────────────────────────────
+// ─── ACCOUNT (GET) ────────────────────────────────────────
 export const fetchAccount = async (baseUrl: string) => {
     return apiRequest({
-        method: 'POST',
+        method: 'GET',
         url: '/v1/account',
-        data: {},
         baseUrl,
     });
 };
 
-// ─── HISTORY ──────────────────────────────────────────────
+// ─── HISTORY (GET with query params) ─────────────────────
 export interface OrderHistoryParams {
     mode?: string;
     from_date?: string;
@@ -62,10 +60,14 @@ export interface OrderHistoryParams {
 }
 
 export const fetchOrderHistory = async (params: OrderHistoryParams, baseUrl: string) => {
+    const query = new URLSearchParams();
+    if (params.mode) query.set('mode', params.mode);
+    if (params.from_date) query.set('from_date', params.from_date);
+    if (params.to_date) query.set('to_date', params.to_date);
+
     return apiRequest({
-        method: 'POST',
-        url: '/v1/history/orders',
-        data: params,
+        method: 'GET',
+        url: `/v1/history/orders?${query.toString()}`,
         baseUrl,
     });
 };
@@ -78,15 +80,20 @@ export interface PriceHistoryParams {
 }
 
 export const fetchPriceHistory = async (params: PriceHistoryParams, baseUrl: string) => {
+    const query = new URLSearchParams();
+    if (params.symbol) query.set('symbol', params.symbol);
+    if (params.time_frame) query.set('time_frame', params.time_frame);
+    if (params.from_date) query.set('from_date', params.from_date);
+    if (params.to_date) query.set('to_date', params.to_date);
+
     return apiRequest({
-        method: 'POST',
-        url: '/v1/history/prices',
-        data: params,
+        method: 'GET',
+        url: `/v1/history/prices?${query.toString()}`,
         baseUrl,
     });
 };
 
-// ─── TRACK ──────────────────────────────────────────────────
+// ─── TRACK (POST) ──────────────────────────────────────────
 export const postTrackPrices = async (body: { symbol: string[] }, baseUrl: string) => {
     return apiRequest({
         method: 'POST',
@@ -123,12 +130,24 @@ export const postTrackOrders = async (body: { enabled: string }, baseUrl: string
     });
 };
 
-// ─── QUOTE ──────────────────────────────────────────────────
+// ─── QUOTE (GET) ──────────────────────────────────────────
 export const getQuote = async (symbol: string, baseUrl: string) => {
     return apiRequest({
+        method: 'GET',
+        url: `/v1/quote?symbol=${encodeURIComponent(symbol)}`,
+        baseUrl,
+    });
+};
+
+// ─── GLOBAL SET (POST) – for Start Algo ───────────────────
+export const setGlobalVariable = async (name: string, value: any, baseUrl: string) => {
+    return apiRequest({
         method: 'POST',
-        url: '/v1/quote',
-        data: { symbol },
+        url: '/v1/global/set',
+        data: {
+            name,
+            value: typeof value === 'boolean' ? (value ? 1 : 0) : value,
+        },
         baseUrl,
     });
 };
