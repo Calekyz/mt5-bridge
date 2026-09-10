@@ -30,35 +30,28 @@ export const Dashboard: React.FC = () => {
 
     const accessKey = localStorage.getItem('accessKey') || '';
 
-    // ─── Load user and VPS address from localStorage ──────────
+    // ─── Load user from localStorage (instant) ──────────────
     const loadUserFromStorage = () => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
-                if (user.vps_address) {
-                    setVpsAddress(user.vps_address);
-                } else {
-                    setVpsAddress(null);
-                }
+                setVpsAddress(user.vps_address || null);
             } catch (e) {
                 console.error('Failed to parse user', e);
             }
         }
     };
 
-    useEffect(() => {
-        loadUserFromStorage();
-    }, []);
-
-    // ─── Refresh user info from backend ──────────────────────────
-    const refreshUserInfo = async () => {
+    // ─── Refresh user info from backend ──────────────────────
+    const refreshUserInfo = async (showToast = false) => {
         setRefreshingUser(true);
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+            const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/auth/me`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Authorization': `Bearer ${token}`,
                 },
             });
             if (!response.ok) {
@@ -72,19 +65,30 @@ export const Dashboard: React.FC = () => {
             // Update state
             if (user.vps_address) {
                 setVpsAddress(user.vps_address);
-                toast.success('VPS address updated: ' + user.vps_address);
+                if (showToast) toast.success('VPS address updated: ' + user.vps_address);
             } else {
                 setVpsAddress(null);
-                toast.info('No VPS assigned yet');
+                if (showToast) toast.info('No VPS assigned yet');
             }
         } catch (err: any) {
-            toast.error('Failed to refresh user info: ' + err.message);
+            console.error('Refresh user info error:', err);
+            if (showToast) toast.error('Failed to refresh user info: ' + err.message);
         } finally {
             setRefreshingUser(false);
         }
     };
 
-    // ─── Check EA health using the VPS ──────────────────────────
+    // ─── On mount: load from localStorage, then fetch fresh ──
+    useEffect(() => {
+        loadUserFromStorage();
+        refreshUserInfo(false); // silent auto-refresh
+
+        // Auto-refresh every 30s (silent)
+        const interval = setInterval(() => refreshUserInfo(false), 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // ─── Check EA health using the VPS ────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -93,11 +97,12 @@ export const Dashboard: React.FC = () => {
             }
             try {
                 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+                const token = localStorage.getItem('token');
                 const response = await fetch(`${API_URL}/ea/status`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
                 if (response.ok) {
@@ -115,7 +120,7 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // ─── Poll account every 1 second ────────────────────────
+    // ─── Poll account every 1 second ─────────────────────────
     useEffect(() => {
         if (!vpsAddress) return;
         const interval = setInterval(() => {
@@ -258,7 +263,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── EA Not Configured screen ──────────────────────────
+    // ─── EA Not Configured screen ────────────────────────────
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
@@ -268,7 +273,7 @@ export const Dashboard: React.FC = () => {
                         Please contact the administrator to set up your VPS and EA configuration.
                     </p>
                     <button
-                        onClick={refreshUserInfo}
+                        onClick={() => refreshUserInfo(true)}
                         disabled={refreshingUser}
                         className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50 mx-auto"
                     >
@@ -280,7 +285,7 @@ export const Dashboard: React.FC = () => {
         );
     }
 
-    // ─── Normal dashboard ──────────────────────────
+    // ─── Normal dashboard ────────────────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -305,7 +310,7 @@ export const Dashboard: React.FC = () => {
                                 {vpsAddress}
                             </code>
                             <button
-                                onClick={refreshUserInfo}
+                                onClick={() => refreshUserInfo(true)}
                                 disabled={refreshingUser}
                                 className="ml-2 text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
                                 title="Refresh VPS info"
