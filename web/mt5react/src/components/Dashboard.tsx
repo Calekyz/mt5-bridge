@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
 import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown } from 'lucide-react';
@@ -25,7 +25,7 @@ interface RiskSession {
     is_active: boolean;
     trigger_reason: string | null;
     triggered_at: string | null;
-    created_at: string;   // ← NEW FIELD
+    created_at: string;
 }
 
 interface RiskCurrent {
@@ -50,14 +50,22 @@ export const Dashboard: React.FC = () => {
     const [refreshingUser, setRefreshingUser] = useState(false);
 
     // ─── Risk Guard State ───────────────────────────────────
-    const [slInput, setSlInput] = useState<string>('');
-    const [tpInput, setTpInput] = useState<string>('');
+    const [slInput, setSlInput] = useState<string>(() => localStorage.getItem('riskSl') || '');
+    const [tpInput, setTpInput] = useState<string>(() => localStorage.getItem('riskTp') || '');
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
     const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
 
+    // Track which session IDs have already fired their toast, so it never re-fires
+    const dismissedTriggers = useRef<Set<number>>(new Set());
+    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const accessKey = localStorage.getItem('accessKey') || '';
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+
+    // ─── Persist SL/TP inputs to localStorage ────────────────
+    useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
+    useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
 
     // ─── Load user from localStorage (instant) ──────────────
     const loadUserFromStorage = () => {
@@ -109,33 +117,49 @@ export const Dashboard: React.FC = () => {
             });
             if (!res.ok) return;
             const data = await res.json();
+
             if (data.session) {
                 setRiskSession(data.session);
                 setRiskCurrent(data.current || null);
 
-                // Check if a trigger just happened
-                if (data.session.trigger_reason === 'sl_hit' && triggerAlert !== 'sl_hit') {
-                    setTriggerAlert('sl_hit');
+                const sessionId = data.session.id;
+                const reason = data.session.trigger_reason;
+
+                // Only fire the alert ONCE per session
+                if (
+                    (reason === 'sl_hit' || reason === 'tp_hit') &&
+                    !dismissedTriggers.current.has(sessionId)
+                ) {
+                    dismissedTriggers.current.add(sessionId);
+                    setTriggerAlert(reason);
                     setPipnexEnabled(false);
                     setNovaEnabled(false);
                     setStoredState('pipnexEnabled', false);
                     setStoredState('novaEnabled', false);
-                    toast.error(`⚠️ STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`, {
-                        autoClose: 15000,
-                        position: 'top-center',
-                    });
-                } else if (data.session.trigger_reason === 'tp_hit' && triggerAlert !== 'tp_hit') {
-                    setTriggerAlert('tp_hit');
-                    setPipnexEnabled(false);
-                    setNovaEnabled(false);
-                    setStoredState('pipnexEnabled', false);
-                    setStoredState('novaEnabled', false);
-                    toast.success(`🎯 TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`, {
-                        autoClose: 15000,
-                        position: 'top-center',
-                    });
-                } else if (!data.session.trigger_reason) {
-                    setTriggerAlert(null);
+
+                    if (reason === 'sl_hit') {
+                        toast.error(
+                            `⚠️ STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
+                            { autoClose: 8000, position: 'top-center' }
+                        );
+                    } else {
+                        toast.success(
+                            `🎯 TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`,
+                            { autoClose: 8000, position: 'top-center' }
+                        );
+                    }
+
+                    // Tell the backend to clear trigger_reason so it won't re-fire
+                    fetch(`${API_URL}/risk/dismiss`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                    }).catch(() => {});
+
+                    // Auto-hide the banner after 30 seconds
+                    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+                    bannerTimeoutRef.current = setTimeout(() => {
+                        setTriggerAlert(null);
+                    }, 30000);
                 }
             } else {
                 setRiskSession(null);
@@ -158,6 +182,7 @@ export const Dashboard: React.FC = () => {
         return () => {
             clearInterval(userInterval);
             clearInterval(riskInterval);
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
         };
     }, []);
 
@@ -215,7 +240,6 @@ export const Dashboard: React.FC = () => {
         const tp = parseFloat(tpInput);
 
         if ((!sl || sl <= 0) && (!tp || tp <= 0)) {
-            // No SL/TP set → no session needed
             return true;
         }
 
@@ -269,11 +293,9 @@ export const Dashboard: React.FC = () => {
         setIsToggling(type);
         setCommandError(null);
         try {
-            // If ENABLING: start risk session first (if SL/TP set)
             if (enable) {
                 const currentPipnex = type === 'pipnex' ? true : pipnexEnabled;
                 const currentNova = type === 'nova' ? true : novaEnabled;
-                // Only start a session if none is active AND we're enabling something
                 if (!riskSession?.is_active && (currentPipnex || currentNova)) {
                     const ok = await startRiskSession();
                     if (!ok) {
@@ -302,7 +324,6 @@ export const Dashboard: React.FC = () => {
                 }
             }
 
-            // If DISABLING and both are now off → stop risk session
             if (!enable) {
                 const stillEnabled = type === 'pipnex' ? novaEnabled : pipnexEnabled;
                 if (!stillEnabled) {
