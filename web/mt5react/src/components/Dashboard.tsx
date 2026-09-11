@@ -25,6 +25,7 @@ interface RiskSession {
     is_active: boolean;
     trigger_reason: string | null;
     triggered_at: string | null;
+    created_at: string;   // ← NEW FIELD
 }
 
 interface RiskCurrent {
