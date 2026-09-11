@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { query } from '../db';
 import { authMiddleware, AuthRequest } from '../auth';
-import { fetchAccount, setGlobalVariable } from '../services/SocketBridgeApi';
+import {
+    fetchAccount,
+    setGlobalVariable,
+    fetchOrderList,
+    closeSendOrder,
+} from '../services/SocketBridgeApi';
 
 const router = Router();
 
@@ -15,7 +20,6 @@ async function getUserVps(userId: number): Promise<string | null> {
 }
 
 // ─── POST /v1/risk/start ──────────────────────────────────
-// Called when user starts an algo. Captures starting balance/equity + SL/TP.
 router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -26,7 +30,6 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
             return res.status(400).json({ error: 'No VPS assigned' });
         }
 
-        // Fetch current account state
         let account;
         try {
             account = await fetchAccount(vpsAddress);
@@ -34,18 +37,16 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
             return res.status(503).json({ error: 'Cannot reach EA: ' + err.message });
         }
 
-        // Close any existing active session for this user
         await query(
             'UPDATE user_risk_settings SET is_active = false, trigger_reason = $1 WHERE user_id = $2 AND is_active = true',
             ['replaced', userId]
         );
 
-        // Create new session
         const result = await query(
             `INSERT INTO user_risk_settings 
              (user_id, starting_balance, starting_equity, sl_amount, tp_amount, is_active)
              VALUES ($1, $2, $3, $4, $5, true)
-             RETURNING id, starting_balance, starting_equity, sl_amount, tp_amount`,
+             RETURNING id, starting_balance, starting_equity, sl_amount, tp_amount, created_at`,
             [
                 userId,
                 account.balance,
@@ -70,7 +71,6 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // ─── POST /v1/risk/stop ───────────────────────────────────
-// Called when user stops all algos manually.
 router.post('/risk/stop', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -88,7 +88,6 @@ router.post('/risk/stop', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // ─── GET /v1/risk/status ─────────────────────────────────
-// Frontend polls this every few seconds.
 router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -108,7 +107,6 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
 
         const session = result.rows[0];
 
-        // If active, fetch current equity to compute drawdown/profit
         let current = null;
         if (session.is_active) {
             const vpsAddress = await getUserVps(userId);
@@ -143,7 +141,6 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // ─── POST /v1/risk/dismiss ────────────────────────────────
-// After frontend shows the toast, it calls this to acknowledge.
 router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -160,7 +157,42 @@ router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── Internal monitor function (exported for index.ts) ───
+// ─── Helper: Close all open positions on a VPS ────────────
+async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; failed: number }> {
+    let closed = 0;
+    let failed = 0;
+
+    try {
+        // Get list of open positions from EA
+        const orders = await fetchOrderList(vpsAddress);
+        const opened = orders?.opened || [];
+
+        if (opened.length === 0) {
+            console.log(`   → No open positions to close`);
+            return { closed: 0, failed: 0 };
+        }
+
+        console.log(`   → Closing ${opened.length} open position(s)...`);
+
+        // Close each sequentially
+        for (const order of opened) {
+            try {
+                await closeSendOrder({ ticket: order.ticket }, vpsAddress);
+                console.log(`   ✓ Closed ticket #${order.ticket}`);
+                closed++;
+            } catch (closeErr: any) {
+                console.error(`   ✗ Failed to close ticket #${order.ticket}: ${closeErr.message}`);
+                failed++;
+            }
+        }
+    } catch (err: any) {
+        console.error(`   ⚠ Failed to fetch open orders: ${err.message}`);
+    }
+
+    return { closed, failed };
+}
+
+// ─── Internal monitor function ────────────────────────────
 export async function monitorRiskSessions() {
     try {
         const sessions = await query(`
@@ -180,27 +212,30 @@ export async function monitorRiskSessions() {
                 let trigger: string | null = null;
                 let message = '';
 
-                // Check Stop Loss (drawdown)
                 if (s.sl_amount && drawdown >= s.sl_amount) {
                     trigger = 'sl_hit';
                     message = `Drawdown of $${drawdown.toFixed(2)} exceeded SL of $${s.sl_amount.toFixed(2)}`;
-                }
-                // Check Take Profit
-                else if (s.tp_amount && profit >= s.tp_amount) {
+                } else if (s.tp_amount && profit >= s.tp_amount) {
                     trigger = 'tp_hit';
                     message = `Profit of $${profit.toFixed(2)} hit TP of $${s.tp_amount.toFixed(2)}`;
                 }
 
                 if (trigger) {
-                    // Send stop command to the EA
+                    console.log(`🛑 Risk triggered for user ${s.user_id}: ${message}`);
+
+                    // Step 1: Stop the master EA FIRST (prevents new trades during close loop)
                     try {
                         await setGlobalVariable('Master_Enabled', 0, s.vps_address);
-                        console.log(`🛑 Risk triggered for user ${s.user_id}: ${message}`);
+                        console.log(`   → Master_Enabled set to 0`);
                     } catch (err: any) {
-                        console.error(`Failed to stop EA for user ${s.user_id}:`, err.message);
+                        console.error(`   ⚠ Failed to stop master: ${err.message}`);
                     }
 
-                    // Mark session triggered
+                    // Step 2: Close all open positions
+                    const result = await closeAllPositions(s.vps_address);
+                    console.log(`   ✅ Closed ${result.closed} position(s), ${result.failed} failed`);
+
+                    // Step 3: Mark session as triggered
                     await query(
                         `UPDATE user_risk_settings 
                          SET is_active = false, trigger_reason = $1, triggered_at = NOW() 
