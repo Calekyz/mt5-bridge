@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -16,6 +16,26 @@ function setStoredState(key: string, value: boolean) {
     localStorage.setItem(key, String(value));
 }
 
+interface RiskSession {
+    id: number;
+    starting_balance: number;
+    starting_equity: number;
+    sl_amount: number | null;
+    tp_amount: number | null;
+    is_active: boolean;
+    trigger_reason: string | null;
+    triggered_at: string | null;
+}
+
+interface RiskCurrent {
+    balance: number;
+    equity: number;
+    drawdown: number;
+    profit: number;
+    raw_drawdown: number;
+    raw_profit: number;
+}
+
 export const Dashboard: React.FC = () => {
     const { account, loading, error, refetch } = useAccount();
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
@@ -28,7 +48,15 @@ export const Dashboard: React.FC = () => {
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
 
+    // ─── Risk Guard State ───────────────────────────────────
+    const [slInput, setSlInput] = useState<string>('');
+    const [tpInput, setTpInput] = useState<string>('');
+    const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
+    const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
+    const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
+
     const accessKey = localStorage.getItem('accessKey') || '';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
     // ─── Load user from localStorage (instant) ──────────────
     const loadUserFromStorage = () => {
@@ -43,26 +71,19 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Refresh user info from backend ──────────────────────
+    // ─── Refresh user info ───────────────────────────────────
     const refreshUserInfo = async (showToast = false) => {
         setRefreshingUser(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers: { 'Authorization': `Bearer ${token}` },
             });
-            if (!response.ok) {
-                throw new Error('Failed to fetch user info');
-            }
+            if (!response.ok) throw new Error('Failed to fetch user info');
             const user = await response.json();
-            // Update localStorage
             const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
             const updatedUser = { ...existingUser, ...user };
             localStorage.setItem('user', JSON.stringify(updatedUser));
-            // Update state
             if (user.vps_address) {
                 setVpsAddress(user.vps_address);
                 if (showToast) toast.success('VPS address updated: ' + user.vps_address);
@@ -78,17 +99,68 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── On mount: load from localStorage, then fetch fresh ──
+    // ─── Fetch risk status ───────────────────────────────────
+    const fetchRiskStatus = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/risk/status`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.session) {
+                setRiskSession(data.session);
+                setRiskCurrent(data.current || null);
+
+                // Check if a trigger just happened
+                if (data.session.trigger_reason === 'sl_hit' && triggerAlert !== 'sl_hit') {
+                    setTriggerAlert('sl_hit');
+                    setPipnexEnabled(false);
+                    setNovaEnabled(false);
+                    setStoredState('pipnexEnabled', false);
+                    setStoredState('novaEnabled', false);
+                    toast.error(`⚠️ STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`, {
+                        autoClose: 15000,
+                        position: 'top-center',
+                    });
+                } else if (data.session.trigger_reason === 'tp_hit' && triggerAlert !== 'tp_hit') {
+                    setTriggerAlert('tp_hit');
+                    setPipnexEnabled(false);
+                    setNovaEnabled(false);
+                    setStoredState('pipnexEnabled', false);
+                    setStoredState('novaEnabled', false);
+                    toast.success(`🎯 TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`, {
+                        autoClose: 15000,
+                        position: 'top-center',
+                    });
+                } else if (!data.session.trigger_reason) {
+                    setTriggerAlert(null);
+                }
+            } else {
+                setRiskSession(null);
+                setRiskCurrent(null);
+            }
+        } catch (err) {
+            // silent
+        }
+    };
+
+    // ─── On mount ─────────────────────────────────────────────
     useEffect(() => {
         loadUserFromStorage();
-        refreshUserInfo(false); // silent auto-refresh
+        refreshUserInfo(false);
+        fetchRiskStatus();
 
-        // Auto-refresh every 30s (silent)
-        const interval = setInterval(() => refreshUserInfo(false), 30000);
-        return () => clearInterval(interval);
+        const userInterval = setInterval(() => refreshUserInfo(false), 30000);
+        const riskInterval = setInterval(fetchRiskStatus, 5000);
+
+        return () => {
+            clearInterval(userInterval);
+            clearInterval(riskInterval);
+        };
     }, []);
 
-    // ─── Check EA health using the VPS ────────────────────────
+    // ─── Check EA health ─────────────────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -96,7 +168,6 @@ export const Dashboard: React.FC = () => {
                 return;
             }
             try {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${API_URL}/ea/status`, {
                     method: 'GET',
@@ -120,31 +191,75 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // ─── Poll account every 1 second ─────────────────────────
+    // ─── Poll account ────────────────────────────────────────
     useEffect(() => {
         if (!vpsAddress) return;
-        const interval = setInterval(() => {
-            refetch();
-        }, 1000);
+        const interval = setInterval(() => { refetch(); }, 1000);
         return () => clearInterval(interval);
     }, [vpsAddress, refetch]);
 
-    // ─── State persistence ────────────────────────────────────
-    useEffect(() => {
-        setStoredState('pipnexEnabled', pipnexEnabled);
-    }, [pipnexEnabled]);
+    // ─── State persistence ───────────────────────────────────
+    useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
+    useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
-    useEffect(() => {
-        setStoredState('novaEnabled', novaEnabled);
-    }, [novaEnabled]);
-
-    // ─── Send Master_Enabled command ──────────────────────────
+    // ─── Send Master_Enabled command ─────────────────────────
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
     }, [pipnexEnabled, novaEnabled]);
 
-    // ─── Toggle strategy ──────────────────────────────────────
+    // ─── Start risk session ──────────────────────────────────
+    const startRiskSession = async (): Promise<boolean> => {
+        const sl = parseFloat(slInput);
+        const tp = parseFloat(tpInput);
+
+        if ((!sl || sl <= 0) && (!tp || tp <= 0)) {
+            // No SL/TP set → no session needed
+            return true;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/risk/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    sl: sl > 0 ? sl : null,
+                    tp: tp > 0 ? tp : null,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to start risk session');
+            }
+            await fetchRiskStatus();
+            return true;
+        } catch (err: any) {
+            toast.error('Risk guard failed: ' + err.message);
+            return false;
+        }
+    };
+
+    // ─── Stop risk session ───────────────────────────────────
+    const stopRiskSession = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            await fetch(`${API_URL}/risk/stop`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            setRiskSession(null);
+            setRiskCurrent(null);
+            setTriggerAlert(null);
+        } catch (err: any) {
+            console.error('Stop risk session error:', err);
+        }
+    };
+
+    // ─── Toggle strategy ─────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
         if (!vpsAddress || !eaConnected) {
             toast.error('VPS not configured or EA not reachable');
@@ -153,6 +268,20 @@ export const Dashboard: React.FC = () => {
         setIsToggling(type);
         setCommandError(null);
         try {
+            // If ENABLING: start risk session first (if SL/TP set)
+            if (enable) {
+                const currentPipnex = type === 'pipnex' ? true : pipnexEnabled;
+                const currentNova = type === 'nova' ? true : novaEnabled;
+                // Only start a session if none is active AND we're enabling something
+                if (!riskSession?.is_active && (currentPipnex || currentNova)) {
+                    const ok = await startRiskSession();
+                    if (!ok) {
+                        setIsToggling(null);
+                        return;
+                    }
+                }
+            }
+
             const varName = type === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
             await sendCommand(varName, enable ? 1 : 0);
 
@@ -171,6 +300,15 @@ export const Dashboard: React.FC = () => {
                     }
                 }
             }
+
+            // If DISABLING and both are now off → stop risk session
+            if (!enable) {
+                const stillEnabled = type === 'pipnex' ? novaEnabled : pipnexEnabled;
+                if (!stillEnabled) {
+                    await stopRiskSession();
+                }
+            }
+
             toast.success(`${type === 'pipnex' ? 'PipNex' : 'NOVA'} ${enable ? 'started' : 'stopped'}`);
         } catch (err: any) {
             setCommandError(err.message || 'Failed to toggle strategy');
@@ -195,7 +333,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Local input states ──────────────────────────────────
+    // ─── Local inputs ────────────────────────────────────────
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
         pipnex: {},
         nova: {},
@@ -212,10 +350,7 @@ export const Dashboard: React.FC = () => {
                     inputs[def.key] = String(val);
                 }
             }
-            setLocalInputs(prev => ({
-                ...prev,
-                [type]: inputs,
-            }));
+            setLocalInputs(prev => ({ ...prev, [type]: inputs }));
         };
         initLocal('pipnex');
         initLocal('nova');
@@ -224,10 +359,7 @@ export const Dashboard: React.FC = () => {
     const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
         setLocalInputs(prev => ({
             ...prev,
-            [type]: {
-                ...prev[type],
-                [key]: rawValue,
-            },
+            [type]: { ...prev[type], [key]: rawValue },
         }));
     };
 
@@ -244,10 +376,7 @@ export const Dashboard: React.FC = () => {
                 const currentVal = settings[key] ?? def.default;
                 setLocalInputs(prev => ({
                     ...prev,
-                    [type]: {
-                        ...prev[type],
-                        [key]: String(currentVal),
-                    },
+                    [type]: { ...prev[type], [key]: String(currentVal) },
                 }));
             }
         }
@@ -263,7 +392,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── EA Not Configured screen ────────────────────────────
+    // ─── EA Not Configured ───────────────────────────────────
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
@@ -289,6 +418,38 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* Trigger Alert Banner */}
+                {triggerAlert && (
+                    <div className={`rounded-xl p-4 border flex items-center gap-3 ${
+                        triggerAlert === 'sl_hit'
+                            ? 'bg-red-900/30 border-red-500/50 text-red-300'
+                            : 'bg-emerald-900/30 border-emerald-500/50 text-emerald-300'
+                    }`}>
+                        {triggerAlert === 'sl_hit' ? (
+                            <TrendingDown size={24} />
+                        ) : (
+                            <TrendingUp size={24} />
+                        )}
+                        <div className="flex-1">
+                            <div className="font-bold">
+                                {triggerAlert === 'sl_hit' ? '⚠️ Stop Loss Hit' : '🎯 Target Profit Hit'}
+                            </div>
+                            <div className="text-sm opacity-80">
+                                {triggerAlert === 'sl_hit'
+                                    ? `Your algo was stopped automatically to protect your account.`
+                                    : `Your algo was stopped automatically — profit target reached.`}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => { setTriggerAlert(null); }}
+                            className="text-xs underline opacity-70 hover:opacity-100"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -313,7 +474,6 @@ export const Dashboard: React.FC = () => {
                                 onClick={() => refreshUserInfo(true)}
                                 disabled={refreshingUser}
                                 className="ml-2 text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
-                                title="Refresh VPS info"
                             >
                                 <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
                             </button>
@@ -360,6 +520,98 @@ export const Dashboard: React.FC = () => {
                         currency={account.currency || '$'}
                     />
                 ) : null}
+
+                {/* ─── RISK GUARD CARD ──────────────────────────── */}
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg">
+                                <Shield size={20} className="text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white">Risk Guard</h2>
+                                <p className="text-slate-400 text-xs">
+                                    Auto-stops your algo when your account hits SL or TP
+                                </p>
+                            </div>
+                        </div>
+                        {riskSession?.is_active && (
+                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                                Active
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">
+                                Stop Loss ($) — Max Drawdown
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={slInput}
+                                onChange={(e) => setSlInput(e.target.value)}
+                                placeholder="e.g. 100"
+                                disabled={riskSession?.is_active}
+                                className="w-full bg-slate-700/50 border border-red-700/50 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:opacity-50"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Algo stops if equity drops by this amount</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">
+                                Take Profit ($) — Target Profit
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={tpInput}
+                                onChange={(e) => setTpInput(e.target.value)}
+                                placeholder="e.g. 200"
+                                disabled={riskSession?.is_active}
+                                className="w-full bg-slate-700/50 border border-green-700/50 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Algo stops when equity rises by this amount</p>
+                        </div>
+                    </div>
+
+                    {/* Live risk status */}
+                    {riskSession?.is_active && riskCurrent && (
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="bg-slate-700/30 rounded-lg p-3">
+                                <div className="text-xs text-slate-400">Start Balance</div>
+                                <div className="font-mono text-white">${riskSession.starting_balance.toFixed(2)}</div>
+                            </div>
+                            <div className="bg-slate-700/30 rounded-lg p-3">
+                                <div className="text-xs text-slate-400">Current Equity</div>
+                                <div className="font-mono text-white">${riskCurrent.equity.toFixed(2)}</div>
+                            </div>
+                            <div className="bg-slate-700/30 rounded-lg p-3">
+                                <div className="text-xs text-slate-400">Drawdown</div>
+                                <div className={`font-mono ${riskCurrent.raw_drawdown > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                                    ${riskCurrent.raw_drawdown.toFixed(2)}
+                                    {riskSession.sl_amount && <span className="text-xs opacity-60"> / ${riskSession.sl_amount.toFixed(0)}</span>}
+                                </div>
+                            </div>
+                            <div className="bg-slate-700/30 rounded-lg p-3">
+                                <div className="text-xs text-slate-400">Profit</div>
+                                <div className={`font-mono ${riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                    ${riskCurrent.raw_profit.toFixed(2)}
+                                    {riskSession.tp_amount && <span className="text-xs opacity-60"> / ${riskSession.tp_amount.toFixed(0)}</span>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {riskSession?.is_active && (
+                        <div className="mt-3 text-xs text-slate-400">
+                            Risk Guard started at {new Date(riskSession.created_at || '').toLocaleTimeString()}. Values locked until you stop all algos.
+                        </div>
+                    )}
+                </div>
 
                 {commandError && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
@@ -443,20 +695,9 @@ interface StrategyCardProps {
 }
 
 const StrategyCard: React.FC<StrategyCardProps> = ({
-    type,
-    label,
-    icon,
-    description,
-    enabled,
-    settings,
-    localInputs,
-    onToggle,
-    onInputChange,
-    onInputBlur,
-    onCheckboxChange,
-    isToggling,
-    settingsDef,
-    disabled = false,
+    type, label, icon, description, enabled, settings, localInputs,
+    onToggle, onInputChange, onInputBlur, onCheckboxChange,
+    isToggling, settingsDef, disabled = false,
 }) => {
     return (
         <div className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
