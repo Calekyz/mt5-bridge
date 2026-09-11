@@ -8,6 +8,7 @@ import accountRoutes from './routes/account/accountRoutes';
 import orderRoutes from './routes/order/orderRoutes';
 import historyRoutes from './routes/history/historyRoutes';
 import eaRoutes from './routes/eaRoutes';
+import riskRoutes, { monitorRiskSessions } from './routes/risk';  // ← NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -23,30 +24,16 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// API routes — order matters!
-// dataRoute provides: /quote, /symbols, /global/set
+// API routes
 app.use('/v1', dataRoute);
-
-// Auth: /auth/login, /auth/register, /auth/me, /auth/verify
 app.use('/v1', authRoutes);
-
-// Strategy management: /strategies/*, /strategies/:id/toggle
 app.use('/v1', strategiesRoutes);
-
-// Admin: /admin/*
 app.use('/v1/admin', adminRoutes);
-
-// Account: /account
 app.use('/v1', accountRoutes);
-
-// Orders: /order/list, /order, /order/close
 app.use('/v1', orderRoutes);
-
-// History: /history/orders, /history/prices
 app.use('/v1', historyRoutes);
-
-// EA status: /ea/status
 app.use('/v1', eaRoutes);
+app.use('/v1', riskRoutes);   // ← NEW: risk management endpoints
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -70,4 +57,14 @@ app.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     await restoreStrategyStates();
     console.log('✅ Strategy states restored');
+
+    // ─── Risk Monitor: runs every 15 seconds ───
+    setInterval(async () => {
+        try {
+            await monitorRiskSessions();
+        } catch (err) {
+            console.error('Risk monitor tick error:', err);
+        }
+    }, 15000);
+    console.log('🛡️ Risk monitor started (every 15s)');
 });
