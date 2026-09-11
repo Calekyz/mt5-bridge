@@ -26,9 +26,7 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
         const { sl, tp } = req.body;
 
         const vpsAddress = await getUserVps(userId);
-        if (!vpsAddress) {
-            return res.status(400).json({ error: 'No VPS assigned' });
-        }
+        if (!vpsAddress) return res.status(400).json({ error: 'No VPS assigned' });
 
         let account;
         try {
@@ -59,10 +57,7 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
         res.json({
             success: true,
             session: result.rows[0],
-            current: {
-                balance: account.balance,
-                equity: account.equity,
-            },
+            current: { balance: account.balance, equity: account.equity },
         });
     } catch (err: any) {
         console.error('Risk start error:', err);
@@ -82,7 +77,6 @@ router.post('/risk/stop', authMiddleware, async (req: AuthRequest, res) => {
         );
         res.json({ success: true });
     } catch (err: any) {
-        console.error('Risk stop error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -101,9 +95,7 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
             [userId]
         );
 
-        if (result.rows.length === 0) {
-            return res.json({ active: false, session: null });
-        }
+        if (result.rows.length === 0) return res.json({ active: false, session: null });
 
         const session = result.rows[0];
 
@@ -124,16 +116,12 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
                         raw_profit: profit,
                     };
                 } catch (err) {
-                    // EA offline — skip
+                    // EA offline
                 }
             }
         }
 
-        res.json({
-            active: session.is_active,
-            session,
-            current,
-        });
+        res.json({ active: session.is_active, session, current });
     } catch (err: any) {
         console.error('Risk status error:', err);
         res.status(500).json({ error: err.message });
@@ -141,6 +129,7 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // ─── POST /v1/risk/dismiss ────────────────────────────────
+// Frontend calls this after showing the toast, so it won't re-fire.
 router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -158,38 +147,49 @@ router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // ─── Helper: Close all open positions on a VPS ────────────
-async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; failed: number }> {
+async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; failed: number; total: number }> {
     let closed = 0;
     let failed = 0;
 
     try {
-        // Get list of open positions from EA
+        console.log(`   🔍 Fetching open positions from ${vpsAddress}...`);
         const orders = await fetchOrderList(vpsAddress);
-        const opened = orders?.opened || [];
+        console.log(`   📋 Raw response keys:`, Object.keys(orders || {}));
 
-        if (opened.length === 0) {
-            console.log(`   → No open positions to close`);
-            return { closed: 0, failed: 0 };
-        }
+        // Try multiple possible keys
+        const opened: any[] =
+            orders?.opened ||
+            orders?.data?.opened ||
+            orders?.positions ||
+            (Array.isArray(orders) ? orders : []);
 
-        console.log(`   → Closing ${opened.length} open position(s)...`);
+        console.log(`   📊 Found ${opened.length} open position(s)`);
 
-        // Close each sequentially
+        if (opened.length === 0) return { closed: 0, failed: 0, total: 0 };
+
         for (const order of opened) {
+            const ticket = order.ticket;
+            const symbol = order.symbol;
+            const volume = order.volume;
+            console.log(`   → Closing ticket #${ticket} (${symbol}, ${volume})...`);
+
             try {
-                await closeSendOrder({ ticket: order.ticket }, vpsAddress);
-                console.log(`   ✓ Closed ticket #${order.ticket}`);
+                const result = await closeSendOrder({ ticket }, vpsAddress);
+                console.log(`   ✓ Closed ticket #${ticket}. Response:`, JSON.stringify(result));
                 closed++;
             } catch (closeErr: any) {
-                console.error(`   ✗ Failed to close ticket #${order.ticket}: ${closeErr.message}`);
+                console.error(`   ✗ Failed to close ticket #${ticket}: ${closeErr.message}`);
                 failed++;
             }
+
+            // Small delay between closes to let the EA process
+            await new Promise(r => setTimeout(r, 300));
         }
     } catch (err: any) {
         console.error(`   ⚠ Failed to fetch open orders: ${err.message}`);
     }
 
-    return { closed, failed };
+    return { closed, failed, total: closed + failed };
 }
 
 // ─── Internal monitor function ────────────────────────────
@@ -221,30 +221,35 @@ export async function monitorRiskSessions() {
                 }
 
                 if (trigger) {
+                    console.log(`🛑 ==========================================`);
                     console.log(`🛑 Risk triggered for user ${s.user_id}: ${message}`);
+                    console.log(`🛑 VPS: ${s.vps_address}`);
 
-                    // Step 1: Stop the master EA FIRST (prevents new trades during close loop)
+                    // Step 1: Stop master EA FIRST
                     try {
                         await setGlobalVariable('Master_Enabled', 0, s.vps_address);
-                        console.log(`   → Master_Enabled set to 0`);
+                        console.log(`   ✓ Master_Enabled set to 0`);
                     } catch (err: any) {
-                        console.error(`   ⚠ Failed to stop master: ${err.message}`);
+                        console.error(`   ✗ Failed to stop master: ${err.message}`);
                     }
+
+                    // Small delay so the EA processes the master stop
+                    await new Promise(r => setTimeout(r, 500));
 
                     // Step 2: Close all open positions
                     const result = await closeAllPositions(s.vps_address);
-                    console.log(`   ✅ Closed ${result.closed} position(s), ${result.failed} failed`);
+                    console.log(`   ✅ Close summary: ${result.closed} closed, ${result.failed} failed, ${result.total} total`);
 
-                    // Step 3: Mark session as triggered
+                    // Step 3: Mark session triggered
                     await query(
                         `UPDATE user_risk_settings 
                          SET is_active = false, trigger_reason = $1, triggered_at = NOW() 
                          WHERE id = $2`,
                         [trigger, s.id]
                     );
+                    console.log(`🛑 ==========================================`);
                 }
             } catch (err: any) {
-                // EA offline — skip this session
                 console.warn(`Risk monitor: cannot reach VPS ${s.vps_address} for user ${s.user_id}:`, err.message);
             }
         }
