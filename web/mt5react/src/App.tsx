@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { 
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users
 } from "lucide-react";
 
 // ---- Components ----
@@ -18,8 +18,6 @@ import OrderHistory from "./components/OrderHistory";
 import { CandleChart } from "./components/CandleStickChartComp";
 import WsStreaming from "./components/WsStreaming";
 import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
-import Guide from "./components/Guide";
-import InstallPrompt from "./components/InstallPrompt";
 
 // ---- Logo URL ----
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
@@ -41,27 +39,22 @@ function App() {
     const [showLoader, setShowLoader] = useState(true);
     const [user, setUser] = useState<any>(null);
 
-    // ─── Loader (4 seconds) ──────────────────────────────────
     useEffect(() => {
         const timer = setTimeout(() => setShowLoader(false), 4000);
         return () => clearTimeout(timer);
     }, []);
 
-    // ─── Initial token check ──────────────────────────────────
     useEffect(() => {
         const token = getToken();
         if (!token) {
             setAuthChecked(true);
             return;
         }
-
         verifyToken(token);
     }, []);
 
-    // ─── Keep‑alive: verify every 10 seconds ─────────────────
     useEffect(() => {
         if (!isAuthenticated) return;
-
         const interval = setInterval(() => {
             const token = getToken();
             if (!token) {
@@ -69,12 +62,10 @@ function App() {
                 return;
             }
             verifyToken(token);
-        }, 10000); // 10 seconds
-
+        }, 10000);
         return () => clearInterval(interval);
     }, [isAuthenticated]);
 
-    // ─── Verify token helper ──────────────────────────────────
     const verifyToken = async (token: string) => {
         try {
             const res = await fetch(`${API_URL}/auth/verify`, {
@@ -100,7 +91,6 @@ function App() {
 
     const handleLogin = (data: { token: string; user: any }) => {
         localStorage.setItem('token', data.token);
-        // Store user object with all data (vps_address, etc)
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.user.mt5) {
             localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
@@ -123,7 +113,6 @@ function App() {
 
     const navItems = [
         { path: "/", label: "Home", icon: Home },
-        { path: "/guide", label: "Guide", icon: BookOpen },
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
         { path: "/account", label: "Account", icon: User },
@@ -147,45 +136,24 @@ function App() {
                     <>
                         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md border-b border-slate-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <img 
-                                    src={LOGO_URL}
-                                    alt="PipTrader AI Logo" 
-                                    className="h-8 w-auto"
-                                />
+                                <img src={LOGO_URL} alt="PipTrader AI Logo" className="h-8 w-auto" />
                                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                                     PipTrader AI
                                 </span>
                                 <span className="text-xs text-slate-400 font-light hidden sm:inline">v2.0</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <NavLink
-                                    to="/guide"
-                                    className={({ isActive }) =>
-                                        `flex items-center gap-2 text-sm transition px-3 py-1.5 rounded-lg ${
-                                            isActive
-                                                ? 'text-blue-400 bg-slate-700/50'
-                                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                                        }`
-                                    }
-                                    title="User Guide"
-                                >
-                                    <BookOpen size={18} />
-                                    <span className="hidden sm:inline">Guide</span>
-                                </NavLink>
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
-                                >
-                                    <LogOut size={18} />
-                                    <span className="hidden sm:inline">Logout</span>
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
+                            >
+                                <LogOut size={18} />
+                                <span className="hidden sm:inline">Logout</span>
+                            </button>
                         </header>
 
                         <main className="flex-1 mt-14 mb-16 overflow-y-auto p-4">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
-                                <Route path="/guide" element={<Guide />} />
                                 <Route path="/orders" element={<OrdersList />} />
                                 <Route path="/request" element={<OrderRequest />} />
                                 <Route path="/account" element={<AccountInfo />} />
@@ -235,8 +203,6 @@ function App() {
                             draggable
                             theme="dark"
                         />
-
-                        <InstallPrompt />
                     </>
                 ) : (
                     <LoginPage onLogin={handleLogin} />
