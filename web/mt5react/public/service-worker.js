@@ -1,70 +1,66 @@
 // Service Worker for PipTrader AI PWA
-// This handles caching and — later — push notifications.
+// IMPORTANT: Never cache HTML — always fetch fresh from network.
 
-const CACHE_NAME = 'piptrader-v1';
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-];
+const CACHE_NAME = 'piptrader-v2'; // Bumped version → old cache cleared
 
 // ─── Install ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing...');
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(urlsToCache).catch((err) => {
-                console.warn('[SW] Cache addAll failed (probably OK):', err);
-            });
-        })
-    );
+    console.log('[SW] Installing v2...');
     self.skipWaiting();
 });
 
-// ─── Activate ─────────────────────────────────────────────
+// ─── Activate — delete ALL old caches ─────────────────────
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating...');
+    console.log('[SW] Activating, clearing old caches...');
     event.waitUntil(
         caches.keys().then((cacheNames) =>
             Promise.all(
-                cacheNames
-                    .filter((name) => name !== CACHE_NAME)
-                    .map((name) => caches.delete(name))
+                cacheNames.map((name) => {
+                    console.log('[SW] Deleting cache:', name);
+                    return caches.delete(name);
+                })
             )
-        )
+        ).then(() => self.clients.claim())
     );
-    self.clients.claim();
 });
 
-// ─── Fetch (network-first, fall back to cache) ───────────
+// ─── Fetch — network-first for HTML, cache-first for assets
 self.addEventListener('fetch', (event) => {
-    // Skip non-GET requests
+    const url = new URL(event.request.url);
+
     if (event.request.method !== 'GET') return;
+    if (url.pathname.startsWith('/v1/')) return;
+    if (url.origin !== self.location.origin) return;
 
-    // Skip API calls (always go live)
-    if (event.request.url.includes('/v1/')) return;
+    // ⚠️ NEVER cache HTML
+    if (
+        event.request.headers.get('accept')?.includes('text/html') ||
+        url.pathname === '/' ||
+        url.pathname.endsWith('.html')
+    ) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
 
-    // Skip external URLs
-    if (!event.request.url.startsWith(self.location.origin)) return;
-
+    // Cache-first for assets (JS, CSS, images)
     event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                // Clone and cache a copy
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
-                });
+        caches.match(event.request).then((cached) => {
+            const fetchPromise = fetch(event.request).then((response) => {
+                if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
                 return response;
-            })
-            .catch(() => {
-                // Network failed → try cache
-                return caches.match(event.request);
-            })
+            }).catch(() => cached);
+
+            return cached || fetchPromise;
+        })
     );
 });
 
-// ─── Push Notification Handler (will be used later) ──────
+// ─── Push Notification Handler ───────────────────────────
 self.addEventListener('push', (event) => {
     if (!event.data) return;
 
@@ -93,7 +89,6 @@ self.addEventListener('push', (event) => {
 // ─── Notification Click Handler ──────────────────────────
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-
     const urlToOpen = self.location.origin + '/';
 
     event.waitUntil(
