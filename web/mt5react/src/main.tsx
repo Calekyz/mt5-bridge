@@ -3,35 +3,25 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// ─── Register Service Worker for PWA ────────────────
+// ─── Service Worker (with aggressive update check) ──────
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/service-worker.js')
-            .then((registration) => {
-                console.log('✅ Service Worker registered:', registration.scope);
+    // On load — register + check for updates
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('✅ SW registered:', registration.scope);
 
-                // Check for updates every 60 seconds
-                setInterval(() => {
-                    registration.update();
-                }, 60000);
+            // Force an immediate update check (ignores HTTP cache)
+            await registration.update();
+            console.log('✅ SW update check done');
 
-                // If a new SW is waiting, activate it immediately
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    if (newWorker) {
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('🔄 New version available — reloading...');
-                                window.location.reload();
-                            }
-                        });
-                    }
-                });
-            })
-            .catch((err) => {
-                console.warn('⚠ Service Worker registration failed:', err);
-            });
+            // Check for updates every 30 seconds
+            setInterval(() => {
+                registration.update().catch(() => {});
+            }, 30000);
+        } catch (err) {
+            console.warn('⚠ SW registration failed:', err);
+        }
     });
 }
 
