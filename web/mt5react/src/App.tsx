@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { 
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen
 } from "lucide-react";
 
 // ---- Components ----
@@ -18,11 +18,11 @@ import OrderHistory from "./components/OrderHistory";
 import { CandleChart } from "./components/CandleStickChartComp";
 import WsStreaming from "./components/WsStreaming";
 import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
+import Guide from "./components/Guide";
+import InstallPrompt from "./components/InstallPrompt";
 
-// ---- Logo URL ----
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
-// ---- Auth helpers ----
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 function getToken(): string | null {
@@ -113,6 +113,7 @@ function App() {
 
     const navItems = [
         { path: "/", label: "Home", icon: Home },
+        { path: "/guide", label: "Guide", icon: BookOpen },
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
         { path: "/account", label: "Account", icon: User },
@@ -142,18 +143,35 @@ function App() {
                                 </span>
                                 <span className="text-xs text-slate-400 font-light hidden sm:inline">v2.0</span>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
-                            >
-                                <LogOut size={18} />
-                                <span className="hidden sm:inline">Logout</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <NavLink
+                                    to="/guide"
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-2 text-sm transition px-3 py-1.5 rounded-lg ${
+                                            isActive
+                                                ? 'text-blue-400 bg-slate-700/50'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                        }`
+                                    }
+                                    title="User Guide"
+                                >
+                                    <BookOpen size={18} />
+                                    <span className="hidden sm:inline">Guide</span>
+                                </NavLink>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
+                                >
+                                    <LogOut size={18} />
+                                    <span className="hidden sm:inline">Logout</span>
+                                </button>
+                            </div>
                         </header>
 
                         <main className="flex-1 mt-14 mb-16 overflow-y-auto p-4">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
+                                <Route path="/guide" element={<Guide />} />
                                 <Route path="/orders" element={<OrdersList />} />
                                 <Route path="/request" element={<OrderRequest />} />
                                 <Route path="/account" element={<AccountInfo />} />
@@ -203,6 +221,8 @@ function App() {
                             draggable
                             theme="dark"
                         />
+
+                        <InstallPrompt />
                     </>
                 ) : (
                     <LoginPage onLogin={handleLogin} />
