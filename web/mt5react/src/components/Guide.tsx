@@ -4,7 +4,7 @@ import {
     Shield, TrendingUp, TrendingDown, BarChart3, HelpCircle,
     Wrench, Star, MessageCircle, ChevronRight, Search, X,
     AlertTriangle, CheckCircle2, XCircle, DollarSign, Server,
-    Wifi, WifiOff, Info, ListOrdered, LineChart, Award, Zap
+    Info, ListOrdered, LineChart, Zap
 } from 'lucide-react';
 
 interface GuideSection {
@@ -196,7 +196,6 @@ const Guide: React.FC = () => {
                         {[
                             {
                                 title: 'Top Bar',
-                                color: 'blue',
                                 icon: <Server size={16} />,
                                 items: [
                                     'Access Key — your personal identifier (do not share)',
@@ -207,17 +206,15 @@ const Guide: React.FC = () => {
                             },
                             {
                                 title: 'Account Stats',
-                                color: 'green',
                                 icon: <DollarSign size={16} />,
                                 items: [
                                     'Balance — money from closed trades',
                                     'Equity — current total value (balance + floating P/L)',
-                                    'Profit — how much you\'ve made or lost so far',
+                                    "Profit — how much you've made or lost so far",
                                 ],
                             },
                             {
                                 title: 'Risk Guard',
-                                color: 'orange',
                                 icon: <Shield size={16} />,
                                 items: [
                                     'Stop Loss — maximum drawdown before algo auto-stops',
@@ -227,7 +224,6 @@ const Guide: React.FC = () => {
                             },
                             {
                                 title: 'Strategy Cards',
-                                color: 'purple',
                                 icon: <Zap size={16} />,
                                 items: [
                                     'Start/Stop button — enables or disables the algo',
@@ -421,42 +417,15 @@ const Guide: React.FC = () => {
 
                     <div className="space-y-3">
                         {[
-                            {
-                                q: 'Do I need to keep my computer on?',
-                                a: 'No. Everything runs on our cloud servers.',
-                            },
-                            {
-                                q: 'Can I close my browser?',
-                                a: 'Yes. The algo keeps running, and Risk Guard keeps monitoring.',
-                            },
-                            {
-                                q: 'What happens if I forget my password?',
-                                a: 'Contact your administrator to reset it.',
-                            },
-                            {
-                                q: 'What is the access key for?',
-                                a: 'It identifies your account. Never share it with anyone.',
-                            },
-                            {
-                                q: 'Can I run both algorithms at the same time?',
-                                a: 'Yes, but they share the account\'s buying power. Not recommended for beginners.',
-                            },
-                            {
-                                q: 'What\'s the minimum balance I need?',
-                                a: 'PipNex: $200+. NOVA: $500+. Depends on your broker.',
-                            },
-                            {
-                                q: 'What if the EA shows "Disconnected"?',
-                                a: 'Wait 30 seconds and refresh. If it stays disconnected, contact admin.',
-                            },
-                            {
-                                q: 'Will the bot trade while I sleep?',
-                                a: 'Yes. That\'s the point of automation.',
-                            },
-                            {
-                                q: 'Can I withdraw profits?',
-                                a: 'Yes, directly from your MetaTrader 5 or the broker\'s portal.',
-                            },
+                            { q: 'Do I need to keep my computer on?', a: 'No. Everything runs on our cloud servers.' },
+                            { q: 'Can I close my browser?', a: 'Yes. The algo keeps running, and Risk Guard keeps monitoring.' },
+                            { q: 'What happens if I forget my password?', a: 'Contact your administrator to reset it.' },
+                            { q: 'What is the access key for?', a: 'It identifies your account. Never share it with anyone.' },
+                            { q: 'Can I run both algorithms at the same time?', a: "Yes, but they share the account's buying power. Not recommended for beginners." },
+                            { q: "What's the minimum balance I need?", a: 'PipNex: $200+. NOVA: $500+. Depends on your broker.' },
+                            { q: 'What if the EA shows "Disconnected"?', a: 'Wait 30 seconds and refresh. If it stays disconnected, contact admin.' },
+                            { q: 'Will the bot trade while I sleep?', a: "Yes. That's the point of automation." },
+                            { q: 'Can I withdraw profits?', a: "Yes, directly from your MetaTrader 5 or the broker's portal." },
                         ].map((item, i) => (
                             <details key={i} className="bg-slate-800/60 rounded-xl border border-slate-700/50 overflow-hidden group">
                                 <summary className="cursor-pointer p-4 font-medium text-white hover:bg-slate-700/30 transition flex items-center justify-between">
@@ -489,53 +458,21 @@ const Guide: React.FC = () => {
 
                     <div className="space-y-4">
                         {[
-                            {
-                                problem: 'EA Not Configured',
-                                cause: 'Your VPS hasn\'t been assigned yet.',
-                                fix: 'Click "Refresh VPS Info". If it persists, contact admin.',
-                            },
-                            {
-                                problem: 'EA Disconnected (red)',
-                                cause: 'The bot server is offline, or your broker is down.',
-                                fix: 'Wait 30s and refresh. If it persists 10+ minutes, contact admin.',
-                            },
-                            {
-                                problem: 'Failed to send command',
-                                cause: 'EA busy, or command didn\'t reach the server.',
-                                fix: 'Wait 5s, try again. If it keeps failing, refresh the page.',
-                            },
-                            {
-                                problem: 'Risk Guard failed',
-                                cause: 'Could not reach the EA to capture starting balance.',
-                                fix: 'Ensure EA shows Connected. Try starting the algo again.',
-                            },
-                            {
-                                problem: 'Algo won\'t start',
-                                cause: 'VPS not set, EA offline, or button not clicked.',
-                                fix: 'Check VPS Address, EA status, and click Start Algo again.',
-                            },
-                            {
-                                problem: 'Trades aren\'t opening',
-                                cause: 'Algo running but market conditions haven\'t triggered a signal.',
-                                fix: 'Wait — PipNex can wait 30+ mins. NOVA might wait hours.',
-                            },
-                            {
-                                problem: 'Order history is empty',
-                                cause: 'No trades in the selected date range.',
-                                fix: 'Widen the date range (try 90 days).',
-                            },
+                            { problem: 'EA Not Configured', cause: "Your VPS hasn't been assigned yet.", fix: 'Click "Refresh VPS Info". If it persists, contact admin.' },
+                            { problem: 'EA Disconnected (red)', cause: 'The bot server is offline, or your broker is down.', fix: 'Wait 30s and refresh. If it persists 10+ minutes, contact admin.' },
+                            { problem: 'Failed to send command', cause: "EA busy, or command didn't reach the server.", fix: 'Wait 5s, try again. If it keeps failing, refresh the page.' },
+                            { problem: 'Risk Guard failed', cause: 'Could not reach the EA to capture starting balance.', fix: 'Ensure EA shows Connected. Try starting the algo again.' },
+                            { problem: "Algo won't start", cause: 'VPS not set, EA offline, or button not clicked.', fix: 'Check VPS Address, EA status, and click Start Algo again.' },
+                            { problem: "Trades aren't opening", cause: "Algo running but market conditions haven't triggered a signal.", fix: 'Wait — PipNex can wait 30+ mins. NOVA might wait hours.' },
+                            { problem: 'Order history is empty', cause: 'No trades in the selected date range.', fix: 'Widen the date range (try 90 days).' },
                         ].map((item, i) => (
                             <div key={i} className="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
                                 <h4 className="font-semibold text-red-300 mb-2 flex items-center gap-2">
                                     <XCircle size={16} /> {item.problem}
                                 </h4>
                                 <div className="space-y-1 text-sm">
-                                    <p className="text-slate-400">
-                                        <span className="text-slate-500">Cause:</span> {item.cause}
-                                    </p>
-                                    <p className="text-emerald-300">
-                                        <span className="text-slate-500">Fix:</span> {item.fix}
-                                    </p>
+                                    <p className="text-slate-400"><span className="text-slate-500">Cause:</span> {item.cause}</p>
+                                    <p className="text-emerald-300"><span className="text-slate-500">Fix:</span> {item.fix}</p>
                                 </div>
                             </div>
                         ))}
@@ -599,11 +536,29 @@ const Guide: React.FC = () => {
                     </h2>
 
                     <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6">
-                        <h3 className="font-semibold text-blue-300 mb-3">Contact your administrator</h3>
-                        <div className="space-y-2 text-slate-300">
-                            <p>📧 <strong>Email:</strong> support@piptrader.ai</p>
-                            <p>💬 <strong>Telegram:</strong> @piptrader_support</p>
-                            <p>🕐 <strong>Hours:</strong> 9am–6pm EAT, Mon–Fri</p>
+                        <h3 className="font-semibold text-blue-300 mb-3">Contact Support</h3>
+                        <div className="space-y-3 text-slate-300">
+                            <p className="flex items-center gap-2">
+                                📧 <strong>Email:</strong>
+                                <a
+                                    href="mailto:pipnexcustomer@gmail.com"
+                                    className="text-blue-400 hover:text-blue-300 underline"
+                                >
+                                    pipnexcustomer@gmail.com
+                                </a>
+                            </p>
+                            <p className="flex items-center gap-2">
+                                💬 <strong>Telegram:</strong>
+                                <a
+                                    href="https://t.me/calekyz"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 underline"
+                                >
+                                    t.me/calekyz
+                                </a>
+                            </p>
+                            <p>🕐 <strong>Availability:</strong> 24/7 (Telegram is fastest)</p>
                         </div>
                     </div>
 
@@ -633,7 +588,6 @@ const Guide: React.FC = () => {
         },
     ];
 
-    // Filter sections by search term
     const filteredSections = searchTerm
         ? sections.filter(s =>
             s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -646,7 +600,6 @@ const Guide: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between gap-4 mb-4">
                         <div className="flex items-center gap-3">
@@ -670,7 +623,6 @@ const Guide: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Search Bar */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
@@ -692,7 +644,6 @@ const Guide: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    {/* Sidebar */}
                     <div className={`lg:col-span-1 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
                         <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-3 sticky top-6">
                             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 py-2">
@@ -725,7 +676,6 @@ const Guide: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="lg:col-span-3">
                         <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 md:p-8">
                             {activeContent ? (
@@ -743,7 +693,6 @@ const Guide: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Prev / Next Navigation */}
                             {activeContent && (
                                 <div className="mt-8 pt-6 border-t border-slate-700/50 flex justify-between">
                                     {(() => {
