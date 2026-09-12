@@ -19,6 +19,10 @@ import { CandleChart } from "./components/CandleStickChartComp";
 import WsStreaming from "./components/WsStreaming";
 import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
 import Guide from "./components/Guide";
+import InstallPrompt from "./components/InstallPrompt";
+
+// ---- Logo URL ----
+const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
 // ---- Auth helpers ----
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -141,7 +145,7 @@ function App() {
             <div 
                 className="text-white min-h-screen flex flex-col"
                 style={{
-                    backgroundImage: `url('https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png')`,
+                    backgroundImage: `url('${LOGO_URL}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
@@ -153,7 +157,7 @@ function App() {
                         <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-b border-gray-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img 
-                                    src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" 
+                                    src={LOGO_URL}
                                     alt="PipTrader AI Logo" 
                                     className="h-8 w-auto"
                                 />
@@ -240,6 +244,8 @@ function App() {
                             draggable
                             theme="dark"
                         />
+
+                        <InstallPrompt />
                     </>
                 ) : (
                     <LoginPage onLogin={handleLogin} />
