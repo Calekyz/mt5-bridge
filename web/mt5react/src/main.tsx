@@ -10,6 +10,24 @@ if ('serviceWorker' in navigator) {
             .register('/service-worker.js')
             .then((registration) => {
                 console.log('✅ Service Worker registered:', registration.scope);
+
+                // Check for updates every 60 seconds
+                setInterval(() => {
+                    registration.update();
+                }, 60000);
+
+                // If a new SW is waiting, activate it immediately
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('🔄 New version available — reloading...');
+                                window.location.reload();
+                            }
+                        });
+                    }
+                });
             })
             .catch((err) => {
                 console.warn('⚠ Service Worker registration failed:', err);
