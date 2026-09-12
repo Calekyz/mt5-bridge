@@ -68,21 +68,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* ─── SCROLLBAR STYLING ─────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #1e293b;
-}
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
+/* ─── SCROLLBAR ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 /* ─── LOADER ANIMATIONS ─────────────────────────────────── */
 @keyframes spin-slow {
@@ -106,23 +96,11 @@ button:focus-visible {
     50% { transform: translateY(-8px); opacity: 1; }
 }
 
-.animate-spin-slow {
-    animation: spin-slow 1.5s linear infinite;
-}
-.animate-spin-reverse {
-    animation: spin-reverse 1.2s linear infinite;
-}
-.animate-pulse-soft {
-    animation: pulse-soft 1.8s ease-in-out infinite;
-}
-.animate-shimmer {
-    animation: shimmer 3s linear infinite;
-}
-.animate-bounce-dot {
-    animation: bounce-dot 0.8s ease-in-out infinite;
-}
+.animate-spin-slow { animation: spin-slow 1.5s linear infinite; }
+.animate-spin-reverse { animation: spin-reverse 1.2s linear infinite; }
+.animate-pulse-soft { animation: pulse-soft 1.8s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 3s linear infinite; }
+.animate-bounce-dot { animation: bounce-dot 0.8s ease-in-out infinite; }
 
 /* ─── iOS input zoom fix ────────────────────────────────── */
-input, select, textarea {
-  font-size: 16px;
-}
+input, select, textarea { font-size: 16px; }
