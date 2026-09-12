@@ -142,19 +142,10 @@ function App() {
 
     return (
         <Router>
-            <div 
-                className="text-white min-h-screen flex flex-col"
-                style={{
-                    backgroundImage: `url('${LOGO_URL}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundAttachment: 'fixed'
-                }}
-            >
+            <div className="text-white min-h-screen flex flex-col bg-slate-900">
                 {isAuthenticated ? (
                     <>
-                        <header className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+                        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md border-b border-slate-700 px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img 
                                     src={LOGO_URL}
@@ -172,8 +163,8 @@ function App() {
                                     className={({ isActive }) =>
                                         `flex items-center gap-2 text-sm transition px-3 py-1.5 rounded-lg ${
                                             isActive
-                                                ? 'text-blue-400 bg-gray-700/50'
-                                                : 'text-slate-400 hover:text-white hover:bg-gray-700/50'
+                                                ? 'text-blue-400 bg-slate-700/50'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                                         }`
                                     }
                                     title="User Guide"
@@ -183,7 +174,7 @@ function App() {
                                 </NavLink>
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-gray-700/50"
+                                    className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
                                 >
                                     <LogOut size={18} />
                                     <span className="hidden sm:inline">Logout</span>
@@ -209,7 +200,7 @@ function App() {
                             </Routes>
                         </main>
 
-                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur-md border-t border-gray-700 flex justify-around items-center py-1 px-2 overflow-x-auto">
+                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md border-t border-slate-700 flex justify-around items-center py-1 px-2 overflow-x-auto">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -220,7 +211,7 @@ function App() {
                                             `flex flex-col items-center px-2 py-1 rounded-lg transition-all duration-200 ${
                                                 isActive
                                                     ? 'text-blue-400 scale-105'
-                                                    : 'text-slate-400 hover:text-white hover:bg-gray-700/50'
+                                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                                             }`
                                         }
                                     >
