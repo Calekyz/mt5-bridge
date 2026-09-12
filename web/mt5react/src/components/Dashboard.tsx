@@ -596,7 +596,7 @@ export const Dashboard: React.FC = () => {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={slInput}
+                                value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
                                 onChange={(e) => setSlInput(e.target.value)}
                                 placeholder="e.g. 100"
                                 disabled={riskSession?.is_active}
@@ -612,7 +612,7 @@ export const Dashboard: React.FC = () => {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={tpInput}
+                                value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
                                 onChange={(e) => setTpInput(e.target.value)}
                                 placeholder="e.g. 200"
                                 disabled={riskSession?.is_active}
@@ -637,14 +637,14 @@ export const Dashboard: React.FC = () => {
                                 <div className="text-xs text-slate-400">Drawdown</div>
                                 <div className={`font-mono ${riskCurrent.raw_drawdown > 0 ? 'text-red-400' : 'text-slate-500'}`}>
                                     ${riskCurrent.raw_drawdown.toFixed(2)}
-                                    {riskSession.sl_amount && <span className="text-xs opacity-60"> / ${riskSession.sl_amount.toFixed(0)}</span>}
+                                    {riskSession.sl_amount && <span className="text-xs opacity-60"> / ${riskSession.sl_amount.toFixed(2)}</span>}
                                 </div>
                             </div>
                             <div className="bg-slate-700/30 rounded-lg p-3">
                                 <div className="text-xs text-slate-400">Profit</div>
                                 <div className={`font-mono ${riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
                                     ${riskCurrent.raw_profit.toFixed(2)}
-                                    {riskSession.tp_amount && <span className="text-xs opacity-60"> / ${riskSession.tp_amount.toFixed(0)}</span>}
+                                    {riskSession.tp_amount && <span className="text-xs opacity-60"> / ${riskSession.tp_amount.toFixed(2)}</span>}
                                 </div>
                             </div>
                         </div>
