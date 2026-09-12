@@ -1,66 +1,113 @@
-type WsListener = (data: any) => void;
+// Service Worker for PipTrader AI PWA
+// IMPORTANT: Never cache HTML — always fetch fresh from network.
 
-class WsService {
-    private ws: WebSocket | null = null;
-    private listeners: WsListener[] = [];
-    private isConnected = false;
+const CACHE_NAME = 'piptrader-v2'; // Bumped version → old cache cleared
 
-    connect() {
-        if (this.ws) {
-            console.log("WsService: Already connected, skipping connect");
-            return;
-        }
+// ─── Install ──────────────────────────────────────────────
+self.addEventListener('install', (event) => {
+    console.log('[SW] Installing v2...');
+    self.skipWaiting();
+});
 
-        console.log("WsService: Creating new WebSocket connection");
+// ─── Activate — delete ALL old caches ─────────────────────
+self.addEventListener('activate', (event) => {
+    console.log('[SW] Activating, clearing old caches...');
+    event.waitUntil(
+        caches.keys().then((cacheNames) =>
+            Promise.all(
+                cacheNames.map((name) => {
+                    console.log('[SW] Deleting cache:', name);
+                    return caches.delete(name);
+                })
+            )
+        ).then(() => self.clients.claim())
+    );
+});
 
-        this.ws = new WebSocket("ws://127.0.0.1:8890");
+// ─── Fetch — network-first for HTML, cache-first for assets
+self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
 
-        this.ws.onopen = () => {
-            this.isConnected = true;
-            console.log("WsService: WebSocket connected");
-        };
+    // Skip non-GET
+    if (event.request.method !== 'GET') return;
 
-        this.ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                this.listeners.forEach((listener) => listener(data));
-            } catch (e) {
-                console.error("WsService: Failed to parse WS message:", e);
+    // Skip API calls — always network
+    if (url.pathname.startsWith('/v1/')) return;
+
+    // Skip cross-origin
+    if (url.origin !== self.location.origin) return;
+
+    // ⚠️ NEVER cache HTML — always go to network
+    // This prevents the "unstyled page" bug after deploys
+    if (
+        event.request.headers.get('accept')?.includes('text/html') ||
+        url.pathname === '/' ||
+        url.pathname.endsWith('.html')
+    ) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // For assets (JS, CSS, images) — cache-first with background update
+    event.respondWith(
+        caches.match(event.request).then((cached) => {
+            const fetchPromise = fetch(event.request).then((response) => {
+                // Only cache successful responses
+                if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            }).catch(() => cached);
+
+            return cached || fetchPromise;
+        })
+    );
+});
+
+// ─── Push Notification Handler (for later) ───────────────
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch {
+        payload = { title: 'PipTrader AI', body: event.data.text() };
+    }
+
+    const options = {
+        body: payload.body || '',
+        icon: payload.icon || '/icon-192.png',
+        badge: payload.badge || '/icon-192.png',
+        tag: payload.tag,
+        data: payload.data || {},
+        requireInteraction: payload.requireInteraction || false,
+        vibrate: [200, 100, 200],
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title || 'PipTrader AI', options)
+    );
+});
+
+// ─── Notification Click Handler ──────────────────────────
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const urlToOpen = self.location.origin + '/';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url === urlToOpen && 'focus' in client) {
+                    return client.focus();
+                }
             }
-        };
-
-        this.ws.onerror = (e) => {
-            console.error("WsService: WebSocket error:", e);
-        };
-
-        this.ws.onclose = () => {
-            this.isConnected = false;
-            console.log("WsService: WebSocket disconnected");
-            this.ws = null;
-        };
-    }
-
-    disconnect() {
-        if (this.ws) {
-            console.log("WsService: Closing WebSocket connection");
-            this.ws.close();
-            this.ws = null;
-            this.isConnected = false;
-        }
-    }
-
-    addListener(listener: WsListener) {
-        this.listeners.push(listener);
-    }
-
-    removeListener(listener: WsListener) {
-        this.listeners = this.listeners.filter((l) => l !== listener);
-    }
-
-    getConnectedStatus() {
-        return this.isConnected;
-    }
-}
-
-const singletonWsService = new WsService();
-export default singletonWsService;
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
+    );
+});
