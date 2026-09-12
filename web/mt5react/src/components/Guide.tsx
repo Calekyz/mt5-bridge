@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     BookOpen, Rocket, Key, LayoutDashboard, Play, Square,
-    Shield, TrendingUp, TrendingDown, BarChart3, HelpCircle,
+    Shield, TrendingDown, BarChart3, HelpCircle,
     Wrench, Star, MessageCircle, ChevronRight, Search, X,
     AlertTriangle, CheckCircle2, XCircle, DollarSign, Server,
     Info, ListOrdered, LineChart, Zap
