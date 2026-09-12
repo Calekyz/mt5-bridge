@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown, BookOpen, X as XIcon } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -39,7 +38,6 @@ interface RiskCurrent {
 }
 
 export const Dashboard: React.FC = () => {
-    const navigate = useNavigate();
     const { account, loading, error, refetch } = useAccount();
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
     const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
@@ -51,48 +49,21 @@ export const Dashboard: React.FC = () => {
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
 
-    // ─── Risk Guard State ───────────────────────────────────
     const [slInput, setSlInput] = useState<string>(() => localStorage.getItem('riskSl') || '');
     const [tpInput, setTpInput] = useState<string>(() => localStorage.getItem('riskTp') || '');
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
     const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
 
-    // ─── First-Visit Guide Modal ───────────────────────────
-    const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
-
-    // Track which session IDs have already fired their toast, so it never re-fires
     const dismissedTriggers = useRef<Set<number>>(new Set());
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const accessKey = localStorage.getItem('accessKey') || '';
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
-    // ─── Persist SL/TP inputs to localStorage ────────────────
     useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
     useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
 
-    // ─── Check if user is new (for welcome modal) ────────────
-    useEffect(() => {
-        const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
-        if (!hasSeenGuide) {
-            const timer = setTimeout(() => setShowWelcomeGuide(true), 800);
-            return () => clearTimeout(timer);
-        }
-    }, []);
-
-    const dismissWelcomeGuide = () => {
-        localStorage.setItem('hasSeenWelcomeGuide', 'true');
-        setShowWelcomeGuide(false);
-    };
-
-    const goToGuide = () => {
-        localStorage.setItem('hasSeenWelcomeGuide', 'true');
-        setShowWelcomeGuide(false);
-        navigate('/guide');
-    };
-
-    // ─── Load user from localStorage (instant) ──────────────
     const loadUserFromStorage = () => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -105,7 +76,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Refresh user info ───────────────────────────────────
     const refreshUserInfo = async (showToast = false) => {
         setRefreshingUser(true);
         try {
@@ -133,7 +103,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Fetch risk status ───────────────────────────────────
     const fetchRiskStatus = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -187,12 +156,9 @@ export const Dashboard: React.FC = () => {
                 setRiskSession(null);
                 setRiskCurrent(null);
             }
-        } catch (err) {
-            // silent
-        }
+        } catch (err) {}
     };
 
-    // ─── On mount ─────────────────────────────────────────────
     useEffect(() => {
         loadUserFromStorage();
         refreshUserInfo(false);
@@ -208,7 +174,6 @@ export const Dashboard: React.FC = () => {
         };
     }, []);
 
-    // ─── Check EA health ─────────────────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -239,24 +204,20 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // ─── Poll account ────────────────────────────────────────
     useEffect(() => {
         if (!vpsAddress) return;
         const interval = setInterval(() => { refetch(); }, 1000);
         return () => clearInterval(interval);
     }, [vpsAddress, refetch]);
 
-    // ─── State persistence ───────────────────────────────────
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
-    // ─── Send Master_Enabled command ─────────────────────────
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
     }, [pipnexEnabled, novaEnabled]);
 
-    // ─── Start risk session ──────────────────────────────────
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
         const tp = parseFloat(tpInput);
@@ -290,7 +251,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Stop risk session ───────────────────────────────────
     const stopRiskSession = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -306,7 +266,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Toggle strategy ─────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
         if (!vpsAddress || !eaConnected) {
             toast.error('VPS not configured or EA not reachable');
@@ -377,7 +336,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Local inputs ────────────────────────────────────────
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
         pipnex: {},
         nova: {},
@@ -436,7 +394,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── EA Not Configured ───────────────────────────────────
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
@@ -458,23 +415,17 @@ export const Dashboard: React.FC = () => {
         );
     }
 
-    // ─── Normal dashboard ────────────────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
 
-                {/* Trigger Alert Banner */}
                 {triggerAlert && (
                     <div className={`rounded-xl p-4 border flex items-center gap-3 ${
                         triggerAlert === 'sl_hit'
                             ? 'bg-red-900/30 border-red-500/50 text-red-300'
                             : 'bg-emerald-900/30 border-emerald-500/50 text-emerald-300'
                     }`}>
-                        {triggerAlert === 'sl_hit' ? (
-                            <TrendingDown size={24} />
-                        ) : (
-                            <TrendingUp size={24} />
-                        )}
+                        {triggerAlert === 'sl_hit' ? <TrendingDown size={24} /> : <TrendingUp size={24} />}
                         <div className="flex-1">
                             <div className="font-bold">
                                 {triggerAlert === 'sl_hit' ? '⚠️ Stop Loss Hit' : '🎯 Target Profit Hit'}
@@ -565,7 +516,6 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                {/* ─── RISK GUARD CARD ──────────────────────────── */}
                 <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -622,7 +572,6 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Live risk status */}
                     {riskSession?.is_active && riskCurrent && (
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div className="bg-slate-700/30 rounded-lg p-3">
@@ -699,85 +648,10 @@ export const Dashboard: React.FC = () => {
                     />
                 </div>
             </div>
-
-            {/* ─── First-Visit Welcome Guide Modal ───────────── */}
-            {showWelcomeGuide && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl max-w-lg w-full p-6 md:p-8 relative">
-                        <button
-                            onClick={dismissWelcomeGuide}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
-                        >
-                            <XIcon size={20} />
-                        </button>
-
-                        <div className="flex justify-center mb-4">
-                            <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
-                                <BookOpen className="text-white" size={32} />
-                            </div>
-                        </div>
-
-                        <h2 className="text-2xl font-bold text-white text-center mb-2">
-                            Welcome to PipTrader AI! 🚀
-                        </h2>
-                        <p className="text-slate-400 text-sm text-center mb-6">
-                            You're all set up. Here's what you need to know.
-                        </p>
-
-                        <div className="space-y-3 mb-6">
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">1.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Set Risk Guard first</strong> — enter your Stop Loss and Take Profit amounts below.
-                                </p>
-                            </div>
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">2.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Click Start Algo</strong> on PipNex or NOVA to begin trading.
-                                </p>
-                            </div>
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">3.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Track performance</strong> in the Orders and History pages.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 mb-6">
-                            <p className="text-xs text-blue-300 text-center">
-                                📖 Need more help? Check out the full User Guide anytime from the top bar.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <button
-                                onClick={goToGuide}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <BookOpen size={18} />
-                                Read the Guide
-                            </button>
-                            <button
-                                onClick={dismissWelcomeGuide}
-                                className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition"
-                            >
-                                I'm Ready to Trade
-                            </button>
-                        </div>
-
-                        <p className="text-[10px] text-slate-500 text-center mt-4">
-                            You can reopen this guide anytime from the 📖 Guide button in the top bar.
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
-// ---- Settings Definitions ----
 const PIPNEX_SETTINGS = [
     { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
@@ -794,7 +668,6 @@ const NOVA_SETTINGS = [
     { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
 ];
 
-// ---- Strategy Card ----
 interface StrategyCardProps {
     type: StrategyType;
     label: string;
@@ -842,13 +715,9 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                         {isToggling ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : enabled ? (
-                            <>
-                                <Square size={18} /> Stop Algo
-                            </>
+                            <><Square size={18} /> Stop Algo</>
                         ) : (
-                            <>
-                                <Play size={18} /> Start Algo
-                            </>
+                            <><Play size={18} /> Start Algo</>
                         )}
                     </button>
                 </div>
