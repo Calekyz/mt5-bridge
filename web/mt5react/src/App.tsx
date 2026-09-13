@@ -192,7 +192,6 @@ function App() {
                                             to={item.path}
                                             className={({ isActive }) => {
                                                 if (isHome) {
-                                                    // ─── HOME BUTTON — Yellow/Orange gradient, always on ───
                                                     return `flex flex-col items-center justify-center mx-1
                                                         w-16 h-16 -mt-8 rounded-2xl
                                                         bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600
@@ -203,7 +202,6 @@ function App() {
                                                         ${isActive ? 'ring-4 ring-yellow-300/50 scale-105' : ''}`;
                                                 }
 
-                                                // ─── OTHER BUTTONS — Rounded square, active = green gradient ───
                                                 return `flex flex-col items-center justify-center
                                                     w-14 h-14 rounded-xl mx-0.5
                                                     transition-all duration-300
@@ -213,20 +211,16 @@ function App() {
                                                     }`;
                                             }}
                                         >
-                                            {({ isActive }) => (
-                                                <>
-                                                    <Icon
-                                                        size={isHome ? 28 : 20}
-                                                        strokeWidth={isHome ? 2.5 : 2}
-                                                        className={isHome ? 'drop-shadow-lg' : ''}
-                                                    />
-                                                    <span className={`text-[9px] font-bold mt-1 tracking-wide ${
-                                                        isHome ? 'text-white text-[10px]' : ''
-                                                    }`}>
-                                                        {item.label}
-                                                    </span>
-                                                </>
-                                            )}
+                                            <Icon
+                                                size={isHome ? 28 : 20}
+                                                strokeWidth={isHome ? 2.5 : 2}
+                                                className={isHome ? 'drop-shadow-lg' : ''}
+                                            />
+                                            <span className={`text-[9px] font-bold mt-1 tracking-wide ${
+                                                isHome ? 'text-white text-[10px]' : ''
+                                            }`}>
+                                                {item.label}
+                                            </span>
                                         </NavLink>
                                     );
                                 })}
