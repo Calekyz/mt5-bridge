@@ -8,25 +8,30 @@ const InstallPrompt: React.FC = () => {
     const [showInstructions, setShowInstructions] = useState(false);
     const [manualInstall, setManualInstall] = useState(false);
 
+    // Show the banner on every login (session-based dismiss)
     useEffect(() => {
-        // Show the banner every time the user logs in (per session)
-        // Skip only if already installed
         if (isInstalled) {
             setShowBanner(false);
             return;
         }
-
-        // Use sessionStorage (not localStorage) — dismiss lasts only for the session
         const dismissedThisSession = sessionStorage.getItem('installPromptDismissed');
         if (dismissedThisSession === 'true') {
             setShowBanner(false);
             return;
         }
-
-        // Show the banner after a short delay
         const timer = setTimeout(() => setShowBanner(true), 1500);
         return () => clearTimeout(timer);
     }, [isInstalled]);
+
+    // Handle the header "Install" button click
+    useEffect(() => {
+        const handleTrigger = () => {
+            setShowBanner(true);
+            handleInstall();
+        };
+        window.addEventListener('trigger-install', handleTrigger);
+        return () => window.removeEventListener('trigger-install', handleTrigger);
+    }, [deferredPrompt, isIOS]);
 
     const handleInstall = async () => {
         // On iOS — always show manual instructions
@@ -57,8 +62,8 @@ const InstallPrompt: React.FC = () => {
 
     return (
         <>
-            {/* Install Banner — Always shows on login */}
-            <div className="fixed bottom-24 left-4 right-4 z-40 md:left-auto md:right-4 md:max-w-md animate-in slide-in-from-bottom duration-500">
+            {/* Install Banner */}
+            <div className="fixed bottom-24 left-4 right-4 z-40 md:left-auto md:right-4 md:max-w-md">
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-blue-500/40 rounded-2xl shadow-2xl p-4 flex items-start gap-3">
                     <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex-shrink-0">
                         <Download size={20} className="text-white" />
@@ -120,7 +125,6 @@ const InstallPrompt: React.FC = () => {
                         </div>
 
                         {isIOS ? (
-                            /* ─── iOS Instructions ─── */
                             <ol className="space-y-3 text-sm text-slate-300">
                                 <li className="flex gap-3">
                                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
@@ -139,7 +143,6 @@ const InstallPrompt: React.FC = () => {
                                 </li>
                             </ol>
                         ) : (
-                            /* ─── Desktop Chrome / Edge Instructions ─── */
                             <div className="space-y-4 text-sm text-slate-300">
                                 {manualInstall && (
                                     <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
