@@ -1,38 +1,64 @@
-import React, { useState } from 'react';
-import { Download, X, Share, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, X, Share, Smartphone, Info } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
 const InstallPrompt: React.FC = () => {
     const { deferredPrompt, isInstalled, isIOS, promptInstall } = useInstallPrompt();
-    const [dismissed, setDismissed] = useState(() => {
-        return localStorage.getItem('installPromptDismissed') === 'true';
-    });
-    const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+    const [showBanner, setShowBanner] = useState(false);
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [manualInstall, setManualInstall] = useState(false);
 
-    const shouldShow = !dismissed && !isInstalled && (deferredPrompt || isIOS);
-
-    if (!shouldShow) return null;
-
-    const handleInstall = async () => {
-        if (isIOS) {
-            setShowIOSInstructions(true);
+    useEffect(() => {
+        // Show the banner every time the user logs in (per session)
+        // Skip only if already installed
+        if (isInstalled) {
+            setShowBanner(false);
             return;
         }
-        const accepted = await promptInstall();
-        if (accepted) {
-            localStorage.setItem('installPromptDismissed', 'true');
+
+        // Use sessionStorage (not localStorage) — dismiss lasts only for the session
+        const dismissedThisSession = sessionStorage.getItem('installPromptDismissed');
+        if (dismissedThisSession === 'true') {
+            setShowBanner(false);
+            return;
+        }
+
+        // Show the banner after a short delay
+        const timer = setTimeout(() => setShowBanner(true), 1500);
+        return () => clearTimeout(timer);
+    }, [isInstalled]);
+
+    const handleInstall = async () => {
+        // On iOS — always show manual instructions
+        if (isIOS) {
+            setShowInstructions(true);
+            return;
+        }
+
+        // Try browser's native install prompt
+        if (deferredPrompt) {
+            const accepted = await promptInstall();
+            if (accepted) {
+                setShowBanner(false);
+            }
+        } else {
+            // Browser hasn't provided the prompt yet — show manual instructions
+            setManualInstall(true);
+            setShowInstructions(true);
         }
     };
 
     const handleDismiss = () => {
-        localStorage.setItem('installPromptDismissed', 'true');
-        setDismissed(true);
+        sessionStorage.setItem('installPromptDismissed', 'true');
+        setShowBanner(false);
     };
+
+    if (!showBanner) return null;
 
     return (
         <>
-            {/* Install Banner */}
-            <div className="fixed bottom-20 left-4 right-4 z-40 md:left-auto md:right-4 md:max-w-sm">
+            {/* Install Banner — Always shows on login */}
+            <div className="fixed bottom-24 left-4 right-4 z-40 md:left-auto md:right-4 md:max-w-md animate-in slide-in-from-bottom duration-500">
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-blue-500/40 rounded-2xl shadow-2xl p-4 flex items-start gap-3">
                     <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex-shrink-0">
                         <Download size={20} className="text-white" />
@@ -42,7 +68,9 @@ const InstallPrompt: React.FC = () => {
                             Install PipTrader App
                         </p>
                         <p className="text-slate-400 text-xs mt-0.5">
-                            Get the full-screen experience on your phone
+                            {isIOS
+                                ? 'Add to home screen for the full-screen experience'
+                                : 'Get alerts when SL or TP hits, like WhatsApp'}
                         </p>
                         <div className="flex gap-2 mt-3">
                             <button
@@ -52,8 +80,14 @@ const InstallPrompt: React.FC = () => {
                                 Install
                             </button>
                             <button
+                                onClick={() => setShowInstructions(true)}
+                                className="text-slate-400 hover:text-white text-xs px-3 py-2 transition underline"
+                            >
+                                How?
+                            </button>
+                            <button
                                 onClick={handleDismiss}
-                                className="text-slate-400 hover:text-white text-xs px-3 py-2 transition"
+                                className="text-slate-400 hover:text-white text-xs px-2 transition"
                             >
                                 Later
                             </button>
@@ -68,40 +102,69 @@ const InstallPrompt: React.FC = () => {
                 </div>
             </div>
 
-            {/* iOS Instructions Modal */}
-            {showIOSInstructions && (
+            {/* Instructions Modal */}
+            {showInstructions && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <Smartphone size={18} className="text-blue-400" />
-                                Install on iPhone
+                                {isIOS ? 'Install on iPhone' : 'Install PipTrader App'}
                             </h3>
                             <button
-                                onClick={() => setShowIOSInstructions(false)}
+                                onClick={() => { setShowInstructions(false); setManualInstall(false); }}
                                 className="text-slate-400 hover:text-white"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <ol className="space-y-3 text-sm text-slate-300">
-                            <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-                                <div>
-                                    <p>Tap the <Share size={14} className="inline mx-1 text-blue-400" /> <strong>Share</strong> button</p>
-                                    <p className="text-xs text-slate-400 mt-0.5">(bottom toolbar of Safari)</p>
-                                </div>
-                            </li>
-                            <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">2</span>
-                                <p>Scroll down and tap <strong>Add to Home Screen</strong></p>
-                            </li>
-                            <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">3</span>
-                                <p>Tap <strong>Add</strong> in the top-right</p>
-                            </li>
-                        </ol>
+                        {isIOS ? (
+                            /* ─── iOS Instructions ─── */
+                            <ol className="space-y-3 text-sm text-slate-300">
+                                <li className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                                    <div>
+                                        <p>Tap the <Share size={14} className="inline mx-1 text-blue-400" /> <strong>Share</strong> button</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">(bottom toolbar of Safari)</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                                    <p>Scroll down and tap <strong>Add to Home Screen</strong></p>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+                                    <p>Tap <strong>Add</strong> in the top-right</p>
+                                </li>
+                            </ol>
+                        ) : (
+                            /* ─── Desktop Chrome / Edge Instructions ─── */
+                            <div className="space-y-4 text-sm text-slate-300">
+                                {manualInstall && (
+                                    <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
+                                        <Info size={16} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+                                        <p className="text-xs text-yellow-200">
+                                            Your browser hasn't offered auto-install yet. Follow the steps below to install manually.
+                                        </p>
+                                    </div>
+                                )}
+                                <ol className="space-y-3">
+                                    <li className="flex gap-3">
+                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                                        <p>Look at the <strong>address bar</strong> (top of Chrome)</p>
+                                    </li>
+                                    <li className="flex gap-3">
+                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                                        <p>Click the <strong>⊕ Install icon</strong> on the right side (or the ⋮ menu → <em>Install PipTrader AI</em>)</p>
+                                    </li>
+                                    <li className="flex gap-3">
+                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+                                        <p>Click <strong>Install</strong> in the popup</p>
+                                    </li>
+                                </ol>
+                            </div>
+                        )}
 
                         <div className="mt-4 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
                             <p className="text-xs text-blue-300">
@@ -110,7 +173,7 @@ const InstallPrompt: React.FC = () => {
                         </div>
 
                         <button
-                            onClick={() => setShowIOSInstructions(false)}
+                            onClick={() => { setShowInstructions(false); setManualInstall(false); }}
                             className="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition"
                         >
                             Got it
