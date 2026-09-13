@@ -111,20 +111,25 @@ function App() {
 
     const isAdmin = user?.email === 'caleborenge8@gmail.com';
 
-    const navItems = [
-        { path: "/", label: "Home", icon: Home },
-        { path: "/guide", label: "Guide", icon: BookOpen },
+    // ─── Build nav items with HOME in the middle ────────────────
+    const sideItems = [
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
         { path: "/account", label: "Account", icon: User },
         { path: "/history", label: "History", icon: Clock },
         { path: "/chart", label: "Chart", icon: BarChart3 },
+        { path: "/strategies", label: "Algos", icon: Settings },
         { path: "/ws", label: "WS", icon: Zap },
-        { path: "/strategies", label: "Strategies", icon: Settings },
+        { path: "/guide", label: "Guide", icon: BookOpen },
     ];
     if (isAdmin) {
-        navItems.push({ path: "/admin", label: "Admin", icon: Users });
+        sideItems.push({ path: "/admin", label: "Admin", icon: Users });
     }
+
+    // Insert Home in the middle of the array
+    const middleIndex = Math.floor(sideItems.length / 2);
+    const navItems: any[] = [...sideItems];
+    navItems.splice(middleIndex, 0, { path: "/", label: "Home", icon: Home, isHome: true });
 
     if (!authChecked || showLoader) {
         return <Loader />;
@@ -144,20 +149,6 @@ function App() {
                                 <span className="text-xs text-slate-400 font-light hidden sm:inline">v2.0</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <NavLink
-                                    to="/guide"
-                                    className={({ isActive }) =>
-                                        `flex items-center gap-2 text-sm transition px-3 py-1.5 rounded-lg ${
-                                            isActive
-                                                ? 'text-blue-400 bg-slate-700/50'
-                                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                                        }`
-                                    }
-                                    title="User Guide"
-                                >
-                                    <BookOpen size={18} />
-                                    <span className="hidden sm:inline">Guide</span>
-                                </NavLink>
                                 <button
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
@@ -168,7 +159,7 @@ function App() {
                             </div>
                         </header>
 
-                        <main className="flex-1 mt-14 mb-16 overflow-y-auto p-4">
+                        <main className="flex-1 mt-14 mb-24 overflow-y-auto p-4">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/guide" element={<Guide />} />
@@ -186,28 +177,60 @@ function App() {
                             </Routes>
                         </main>
 
-                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md border-t border-slate-700 flex justify-around items-center py-1 px-2 overflow-x-auto">
-                            {navItems.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <NavLink
-                                        key={item.path}
-                                        to={item.path}
-                                        className={({ isActive }) =>
-                                            `flex flex-col items-center px-2 py-1 rounded-lg transition-all duration-200 ${
-                                                isActive
-                                                    ? 'text-blue-400 scale-105'
-                                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                                            }`
-                                        }
-                                    >
-                                        <Icon size={22} strokeWidth={2} />
-                                        <span className="text-[10px] font-medium mt-0.5 whitespace-nowrap">
-                                            {item.label}
-                                        </span>
-                                    </NavLink>
-                                );
-                            })}
+                        {/* ══════════════════════════════════════════════════ */}
+                        {/*  BOTTOM NAVIGATION — Professional Redesign         */}
+                        {/* ══════════════════════════════════════════════════ */}
+                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-lg border-t border-slate-700/60 px-1 py-2">
+                            <div className="flex justify-around items-end max-w-4xl mx-auto overflow-x-auto">
+                                {navItems.map((item) => {
+                                    const Icon = item.icon;
+                                    const isHome = item.isHome;
+
+                                    return (
+                                        <NavLink
+                                            key={item.path}
+                                            to={item.path}
+                                            className={({ isActive }) => {
+                                                if (isHome) {
+                                                    // ─── HOME BUTTON — Yellow/Orange gradient, always on ───
+                                                    return `flex flex-col items-center justify-center mx-1
+                                                        w-16 h-16 -mt-8 rounded-2xl
+                                                        bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600
+                                                        text-white shadow-2xl shadow-orange-500/40
+                                                        border-2 border-yellow-300/40
+                                                        transition-all duration-300
+                                                        hover:scale-105 active:scale-95
+                                                        ${isActive ? 'ring-4 ring-yellow-300/50 scale-105' : ''}`;
+                                                }
+
+                                                // ─── OTHER BUTTONS — Rounded square, active = green gradient ───
+                                                return `flex flex-col items-center justify-center
+                                                    w-14 h-14 rounded-xl mx-0.5
+                                                    transition-all duration-300
+                                                    ${isActive
+                                                        ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white shadow-lg shadow-emerald-600/40 scale-105 ring-2 ring-emerald-400/30'
+                                                        : 'text-slate-400 hover:text-white hover:bg-slate-700/40 active:bg-slate-700/60'
+                                                    }`;
+                                            }}
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    <Icon
+                                                        size={isHome ? 28 : 20}
+                                                        strokeWidth={isHome ? 2.5 : 2}
+                                                        className={isHome ? 'drop-shadow-lg' : ''}
+                                                    />
+                                                    <span className={`text-[9px] font-bold mt-1 tracking-wide ${
+                                                        isHome ? 'text-white text-[10px]' : ''
+                                                    }`}>
+                                                        {item.label}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </NavLink>
+                                    );
+                                })}
+                            </div>
                         </nav>
 
                         <ToastContainer
