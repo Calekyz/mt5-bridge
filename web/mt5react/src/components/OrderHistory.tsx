@@ -32,7 +32,7 @@ interface HistoryOrder {
 }
 
 type SortKey = keyof HistoryOrder | "side";
-type RangePreset = "24h" | "7d" | "30d" | "90d" | "custom";
+type RangePreset = "24h" | "48h" | "7d" | "30d" | "90d" | "custom";
 
 const OrderHistory: React.FC = () => {
     const [orders, setOrders] = useState<HistoryOrder[]>([]);
@@ -42,7 +42,7 @@ const OrderHistory: React.FC = () => {
     const [toDate, setToDate] = useState<string>("");
     const [sortKey, setSortKey] = useState<SortKey>("close_time");
     const [sortAsc, setSortAsc] = useState(false);
-    const [preset, setPreset] = useState<RangePreset>("24h");
+    const [preset, setPreset] = useState<RangePreset>("48h");
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     const userStr = localStorage.getItem('user');
@@ -64,8 +64,10 @@ const OrderHistory: React.FC = () => {
 
         switch (p) {
             case "24h":
-                // Same day — last 24 hours (today only)
-                from = new Date(today);
+                from.setDate(today.getDate() - 1);
+                break;
+            case "48h":
+                from.setDate(today.getDate() - 2);
                 break;
             case "7d":
                 from.setDate(today.getDate() - 7);
@@ -86,12 +88,14 @@ const OrderHistory: React.FC = () => {
         setPreset(p);
     };
 
-    // Initialize with 24h default
+    // Initialize with 48h default
     useEffect(() => {
         const today = new Date();
+        const twoDaysAgo = new Date(today);
+        twoDaysAgo.setDate(today.getDate() - 2);
         setToDate(fmtDate(today));
-        setFromDate(fmtDate(today));
-        setPreset("24h");
+        setFromDate(fmtDate(twoDaysAgo));
+        setPreset("48h");
     }, []);
 
     // Fetch when dates change
@@ -416,7 +420,8 @@ const OrderHistory: React.FC = () => {
                         <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-2">
                             Quick Range:
                         </span>
-                        <PresetButton value="24h" label="⚡ Last 24h" />
+                        <PresetButton value="24h" label="Last 24h" />
+                        <PresetButton value="48h" label="⚡ Last 48h" />
                         <PresetButton value="7d" label="7 days" />
                         <PresetButton value="30d" label="30 days" />
                         <PresetButton value="90d" label="90 days" />
@@ -456,7 +461,7 @@ const OrderHistory: React.FC = () => {
                             Apply Filter
                         </button>
                         <button
-                            onClick={() => applyPreset("24h")}
+                            onClick={() => applyPreset("48h")}
                             className="text-slate-400 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                         >
                             Reset
