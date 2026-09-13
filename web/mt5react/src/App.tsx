@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { 
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download
 } from "lucide-react";
 
 // ---- Components ----
@@ -150,6 +150,17 @@ function App() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
+                                    onClick={() => {
+                                        const event = new CustomEvent('trigger-install');
+                                        window.dispatchEvent(event);
+                                    }}
+                                    className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition px-3 py-1.5 rounded-lg hover:bg-blue-500/10 border border-blue-500/30"
+                                    title="Install App"
+                                >
+                                    <Download size={16} />
+                                    <span className="hidden sm:inline">Install</span>
+                                </button>
+                                <button
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
                                 >
@@ -177,9 +188,7 @@ function App() {
                             </Routes>
                         </main>
 
-                        {/* ══════════════════════════════════════════════════ */}
-                        {/*  BOTTOM NAVIGATION — Professional Redesign         */}
-                        {/* ══════════════════════════════════════════════════ */}
+                        {/* Bottom Navigation */}
                         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-lg border-t border-slate-700/60 px-1 py-2">
                             <div className="flex justify-around items-end max-w-4xl mx-auto overflow-x-auto">
                                 {navItems.map((item) => {
