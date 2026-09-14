@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
     Users, Shield, Crown, Server, CheckCircle2, XCircle, Search,
-    Eye, EyeOff, Sparkles
+    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 
 interface User {
@@ -23,6 +23,8 @@ interface AccessKey {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'my-super-secret-admin-key-2024';
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -54,6 +56,10 @@ export const AdminPanel: React.FC = () => {
     // Search
     const [userSearch, setUserSearch] = useState('');
     const [keySearch, setKeySearch] = useState('');
+
+    // Pagination
+    const [userPage, setUserPage] = useState(1);
+    const [userPageSize, setUserPageSize] = useState(25);
 
     const fetchUsers = async () => {
         try {
@@ -98,6 +104,9 @@ export const AdminPanel: React.FC = () => {
     };
 
     useEffect(() => { loadData(); }, []);
+
+    // Reset to page 1 whenever the search term or page size changes
+    useEffect(() => { setUserPage(1); }, [userSearch, userPageSize]);
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -285,13 +294,26 @@ export const AdminPanel: React.FC = () => {
         return { totalUsers, admins, withVps, totalKeys, usedKeys, unusedKeys };
     }, [users, keys]);
 
-    const filteredUsers = userSearch
-        ? users.filter(u =>
-            u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-            String(u.id).includes(userSearch)
-        )
-        : users;
+    // ─── Filtered + Paginated Users ──────────────────────────
+    const filteredUsers = useMemo(() => {
+        const q = userSearch.trim().toLowerCase();
+        if (!q) return users;
+        return users.filter(u =>
+            u.email.toLowerCase().includes(q) ||
+            String(u.id).includes(q) ||
+            (u.vps_address || '').toLowerCase().includes(q) ||
+            u.role.toLowerCase().includes(q)
+        );
+    }, [users, userSearch]);
 
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / userPageSize));
+    const safePage = Math.min(userPage, totalPages);
+    const paginatedUsers = useMemo(() => {
+        const start = (safePage - 1) * userPageSize;
+        return filteredUsers.slice(start, start + userPageSize);
+    }, [filteredUsers, safePage, userPageSize]);
+
+    // ─── Filtered Keys ───────────────────────────────────────
     const filteredKeys = keySearch
         ? keys.filter(k =>
             k.key_code.toLowerCase().includes(keySearch.toLowerCase()) ||
@@ -397,6 +419,74 @@ export const AdminPanel: React.FC = () => {
                         <span>{vpsUpdateMessage}</span>
                     </div>
                 )}
+
+                {/* ═══════════════════════════════════════════════════ */}
+                {/*  SEARCH BAR — TOP LEVEL (always visible)             */}
+                {/* ═══════════════════════════════════════════════════ */}
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl border border-slate-700/50 p-4 sm:p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                            <Search size={14} className="text-white" />
+                        </div>
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                            Find User
+                        </h2>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                            Search by email, ID, VPS, or role
+                        </span>
+                    </div>
+
+                    <div className="relative">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                            placeholder="Type an email, ID, VPS address or role (admin/user)..."
+                            className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                            autoComplete="off"
+                            spellCheck={false}
+                        />
+                        {/* Live count badge inside input */}
+                        <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                            <span className={`text-xs font-bold px-2 py-1 rounded-md border ${
+                                userSearch
+                                    ? filteredUsers.length > 0
+                                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                        : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    : 'bg-slate-700/40 text-slate-400 border-slate-600/40'
+                            }`}>
+                                {userSearch ? `${filteredUsers.length} match${filteredUsers.length !== 1 ? 'es' : ''}` : `${stats.totalUsers} total`}
+                            </span>
+                        </div>
+                        {/* Clear button */}
+                        {userSearch && (
+                            <button
+                                onClick={() => setUserSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-white bg-slate-800/60 hover:bg-rose-500/20 rounded-lg transition"
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Quick hints */}
+                    {!userSearch && (
+                        <div className="mt-2.5 flex flex-wrap gap-2 text-[10px]">
+                            <span className="text-slate-500 uppercase tracking-wider font-semibold">Try:</span>
+                            {['@gmail.com', 'admin', 'http://', '1500'].map((hint) => (
+                                <button
+                                    key={hint}
+                                    onClick={() => setUserSearch(hint)}
+                                    className="px-2 py-0.5 bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/50 rounded-md font-mono transition"
+                                >
+                                    {hint}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* ADD NEW CLIENT */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
@@ -584,18 +674,36 @@ export const AdminPanel: React.FC = () => {
                             </div>
                             <h2 className="text-sm font-bold text-white uppercase tracking-wider">All Users</h2>
                             <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
-                                {filteredUsers.length}
+                                {filteredUsers.length === users.length
+                                    ? `${users.length}`
+                                    : `${filteredUsers.length} / ${users.length}`}
                             </span>
+                            {userSearch && (
+                                <span className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                                    <Search size={9} />
+                                    Filtered
+                                    <button onClick={() => setUserSearch('')} className="hover:text-white">
+                                        <X size={9} />
+                                    </button>
+                                </span>
+                            )}
                         </div>
-                        <div className="relative w-full sm:w-64">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input
-                                type="text"
-                                value={userSearch}
-                                onChange={(e) => setUserSearch(e.target.value)}
-                                placeholder="Search users..."
-                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition"
-                            />
+
+                        {/* Page size selector */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                Per page
+                            </label>
+                            <select
+                                value={userPageSize}
+                                onChange={(e) => setUserPageSize(Number(e.target.value))}
+                                className="bg-slate-900/60 border border-slate-700/60 rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition cursor-pointer"
+                                style={{ colorScheme: 'dark' }}
+                            >
+                                {PAGE_SIZE_OPTIONS.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -612,7 +720,7 @@ export const AdminPanel: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredUsers.map((user, idx) => {
+                                {paginatedUsers.map((user, idx) => {
                                     const currentVps = editingVps[user.id] || '';
                                     const isPending = !currentVps && !user.vps_address;
                                     const isAdminRow = user.role === 'admin';
@@ -703,16 +811,104 @@ export const AdminPanel: React.FC = () => {
                                 })}
                                 {filteredUsers.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-12 text-center">
-                                            <div className="text-slate-500 text-sm">
-                                                {userSearch ? 'No users match your search' : 'No users yet'}
+                                        <td colSpan={6} className="px-4 py-16 text-center">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/60 mb-3">
+                                                <Search size={28} className="text-slate-500" />
                                             </div>
+                                            <div className="text-slate-300 text-sm font-semibold mb-1">
+                                                {userSearch ? 'No users found' : 'No users yet'}
+                                            </div>
+                                            <div className="text-[11px] text-slate-500">
+                                                {userSearch
+                                                    ? <>No matches for "<span className="text-white font-mono">{userSearch}</span>"</>
+                                                    : 'Create your first client using the form above'}
+                                            </div>
+                                            {userSearch && (
+                                                <button
+                                                    onClick={() => setUserSearch('')}
+                                                    className="mt-4 inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                                                >
+                                                    <X size={12} />
+                                                    Clear search
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+
+                    {/* PAGINATION */}
+                    {filteredUsers.length > 0 && (
+                        <div className="px-5 py-3 bg-slate-900/40 border-t border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="text-xs text-slate-500">
+                                Showing{' '}
+                                <span className="text-white font-semibold">
+                                    {(safePage - 1) * userPageSize + 1}
+                                </span>
+                                {' '}–{' '}
+                                <span className="text-white font-semibold">
+                                    {Math.min(safePage * userPageSize, filteredUsers.length)}
+                                </span>
+                                {' '}of{' '}
+                                <span className="text-white font-semibold">
+                                    {filteredUsers.length}
+                                </span>
+                                {' '}user{filteredUsers.length !== 1 ? 's' : ''}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {/* First */}
+                                <button
+                                    onClick={() => setUserPage(1)}
+                                    disabled={safePage <= 1}
+                                    className="px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 border border-slate-700/50 text-slate-400 hover:text-white text-xs font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title="First page"
+                                >
+                                    «
+                                </button>
+
+                                {/* Prev */}
+                                <button
+                                    onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                                    disabled={safePage <= 1}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 border border-slate-700/50 text-slate-400 hover:text-white text-xs font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronLeft size={12} />
+                                    Prev
+                                </button>
+
+                                {/* Page indicator */}
+                                <div className="flex items-center gap-1 bg-slate-950/60 border border-slate-700/50 rounded-lg px-3 py-1.5">
+                                    <span className="text-xs text-slate-500">Page</span>
+                                    <span className="text-xs font-bold text-white font-mono">{safePage}</span>
+                                    <span className="text-xs text-slate-500">/</span>
+                                    <span className="text-xs font-mono text-slate-400">{totalPages}</span>
+                                </div>
+
+                                {/* Next */}
+                                <button
+                                    onClick={() => setUserPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={safePage >= totalPages}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 border border-slate-700/50 text-slate-400 hover:text-white text-xs font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                    <ChevronRight size={12} />
+                                </button>
+
+                                {/* Last */}
+                                <button
+                                    onClick={() => setUserPage(totalPages)}
+                                    disabled={safePage >= totalPages}
+                                    className="px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 border border-slate-700/50 text-slate-400 hover:text-white text-xs font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title="Last page"
+                                >
+                                    »
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ACCESS KEYS */}
