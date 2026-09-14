@@ -5,8 +5,8 @@ import { AccountStats } from './AccountStats';
 import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
-    BookOpen, X as XIcon, Zap, Activity, DollarSign, Target,
-    CheckCircle2, Info, Clock, Crown, BarChart3
+    BookOpen, X as XIcon, Zap, Activity,
+    Info, Clock, BarChart3
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
