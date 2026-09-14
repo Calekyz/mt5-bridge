@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
-import { 
-    Loader2, TrendingUp, 
-    AlertCircle, RefreshCw, 
-    Activity, Zap, Shield, 
-    Award, PieChart 
+import {
+    Loader2, TrendingUp, TrendingDown,
+    AlertCircle, RefreshCw,
+    Activity, Zap, Shield,
+    Award, PieChart, Target, DollarSign,
+    BarChart3, Percent, Clock, Flame,
+    CheckCircle2, Info, Wallet, LineChart
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -158,11 +160,13 @@ export const PipnexTradingSystem: React.FC = () => {
 
     const overall = getOverallStats();
 
+    // ─── EA Not Configured ───────────────────────────────────
     if (!vpsAddress) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="flex items-center justify-center min-h-[60vh] p-6">
                 <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
-                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <AlertCircle size={40} className="text-yellow-400 mx-auto mb-3" />
+                    <h2 className="text-xl font-bold text-white mb-2">EA Not Configured</h2>
                     <p className="text-slate-400 text-sm">
                         Please contact the administrator to set up your VPS and EA configuration.
                     </p>
@@ -171,90 +175,168 @@ export const PipnexTradingSystem: React.FC = () => {
         );
     }
 
+    // ─── Loading State ───────────────────────────────────────
     if (loading || accountLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-slate-900">
-                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-slate-400 text-sm">Loading performance analytics...</p>
+                </div>
             </div>
         );
     }
 
+    // ─── Metric Card Component ───────────────────────────────
+    const MetricCard: React.FC<{
+        icon: React.ReactNode;
+        label: string;
+        value: string;
+        sublabel?: string;
+        accent?: string;
+        iconBg?: string;
+    }> = ({ icon, label, value, sublabel, accent = "text-white", iconBg = "from-blue-600 to-indigo-700" }) => (
+        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                    {label}
+                </span>
+                <div className={`p-1.5 bg-gradient-to-br ${iconBg} rounded-lg`}>
+                    {icon}
+                </div>
+            </div>
+            <div className={`text-xl md:text-2xl font-bold ${accent}`}>{value}</div>
+            {sublabel && (
+                <div className="text-[10px] text-slate-500 mt-1">{sublabel}</div>
+            )}
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            📊 Statistics Center
-                        </h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            Deep performance analytics and risk management
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/20">
+                            <BarChart3 className="text-white" size={22} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-purple-100 to-pink-200 bg-clip-text text-transparent">
+                                Statistics Center
+                            </h1>
+                            <p className="text-slate-400 text-xs mt-0.5">
+                                Deep performance analytics & risk management
+                            </p>
+                        </div>
                     </div>
                     <button
                         onClick={fetchStatus}
                         disabled={refreshing}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50"
+                        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
                     >
-                        <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-                        Refresh
+                        <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                        <span className="hidden sm:inline">Refresh</span>
                     </button>
                 </div>
 
+                {/* ─── ACCOUNT SUMMARY ────────────────────────────── */}
                 {accountError ? (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
-                        <AlertCircle size={20} />
-                        <span>{accountError}</span>
-                        <button onClick={refetchAccount} className="ml-auto text-sm underline">Retry</button>
+                    <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 text-red-400 flex items-center gap-2">
+                        <AlertCircle size={18} />
+                        <span className="text-sm">{accountError}</span>
+                        <button onClick={refetchAccount} className="ml-auto text-xs underline">Retry</button>
                     </div>
                 ) : account ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-xs text-slate-400">Balance</div>
-                            <div className="text-xl font-bold text-white">${account.balance.toFixed(2)}</div>
-                        </div>
-                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-xs text-slate-400">Equity</div>
-                            <div className="text-xl font-bold text-white">${account.equity.toFixed(2)}</div>
-                        </div>
-                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-xs text-slate-400">Profit</div>
-                            <div className={`text-xl font-bold ${(account.equity - account.balance) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                ${(account.equity - account.balance).toFixed(2)}
-                            </div>
-                        </div>
-                        <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-xs text-slate-400">Active EAs</div>
-                            <div className="text-xl font-bold text-white">{overall.activeCount}</div>
-                        </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <MetricCard
+                            icon={<Wallet size={14} className="text-white" />}
+                            label="Balance"
+                            value={`$${account.balance.toFixed(2)}`}
+                            iconBg="from-blue-600 to-indigo-700"
+                        />
+                        <MetricCard
+                            icon={<Activity size={14} className="text-white" />}
+                            label="Equity"
+                            value={`$${account.equity.toFixed(2)}`}
+                            iconBg="from-emerald-600 to-teal-700"
+                        />
+                        <MetricCard
+                            icon={
+                                (account.equity - account.balance) >= 0
+                                    ? <TrendingUp size={14} className="text-white" />
+                                    : <TrendingDown size={14} className="text-white" />
+                            }
+                            label="Floating P/L"
+                            value={`${(account.equity - account.balance) >= 0 ? '+' : ''}$${(account.equity - account.balance).toFixed(2)}`}
+                            accent={(account.equity - account.balance) >= 0 ? "text-emerald-400" : "text-rose-400"}
+                            iconBg={
+                                (account.equity - account.balance) >= 0
+                                    ? "from-emerald-600 to-green-700"
+                                    : "from-rose-600 to-red-700"
+                            }
+                        />
+                        <MetricCard
+                            icon={<Flame size={14} className="text-white" />}
+                            label="Active EAs"
+                            value={String(overall.activeCount)}
+                            sublabel={overall.activeCount > 0 ? `${overall.activeCount} running` : "None running"}
+                            iconBg="from-amber-500 to-orange-600"
+                        />
                     </div>
                 ) : null}
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                        <div className="text-xs text-slate-400 flex items-center gap-1"><Activity size={14} /> Total Trades</div>
-                        <div className="text-xl font-bold text-white">{overall.totalTrades}</div>
+                {/* ─── OVERALL PERFORMANCE ────────────────────────── */}
+                <div>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Award size={16} className="text-purple-400" />
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                            Overall Performance
+                        </h2>
+                        <span className="text-[10px] text-slate-500 uppercase">
+                            · Active strategies combined
+                        </span>
                     </div>
-                    <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                        <div className="text-xs text-slate-400 flex items-center gap-1"><Award size={14} /> Win Rate</div>
-                        <div className={`text-xl font-bold ${overall.winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-                            {overall.winRate.toFixed(1)}%
-                        </div>
-                    </div>
-                    <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                        <div className="text-xs text-slate-400 flex items-center gap-1"><TrendingUp size={14} /> Total Profit</div>
-                        <div className={`text-xl font-bold ${overall.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            ${overall.totalProfit.toFixed(2)}
-                        </div>
-                    </div>
-                    <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
-                        <div className="text-xs text-slate-400 flex items-center gap-1"><PieChart size={14} /> W/L Ratio</div>
-                        <div className="text-xl font-bold text-white">
-                            {overall.losingTrades > 0 ? (overall.winningTrades / overall.losingTrades).toFixed(2) : '∞'}
-                        </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <MetricCard
+                            icon={<Activity size={14} className="text-white" />}
+                            label="Total Trades"
+                            value={String(overall.totalTrades)}
+                            sublabel={`W ${overall.winningTrades} / L ${overall.losingTrades}`}
+                            iconBg="from-blue-600 to-indigo-700"
+                        />
+                        <MetricCard
+                            icon={<Award size={14} className="text-white" />}
+                            label="Win Rate"
+                            value={`${overall.winRate.toFixed(1)}%`}
+                            accent={
+                                overall.winRate >= 60 ? "text-emerald-400"
+                                : overall.winRate >= 50 ? "text-blue-400"
+                                : overall.winRate >= 40 ? "text-amber-400"
+                                : "text-rose-400"
+                            }
+                            sublabel={overall.winRate >= 50 ? "✅ Profitable" : "📉 Needs work"}
+                            iconBg="from-purple-600 to-pink-700"
+                        />
+                        <MetricCard
+                            icon={<TrendingUp size={14} className="text-white" />}
+                            label="Today's Profit"
+                            value={`${overall.totalProfit >= 0 ? '+' : ''}$${overall.totalProfit.toFixed(2)}`}
+                            accent={overall.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}
+                            iconBg="from-emerald-600 to-green-700"
+                        />
+                        <MetricCard
+                            icon={<PieChart size={14} className="text-white" />}
+                            label="W/L Ratio"
+                            value={overall.losingTrades > 0 ? (overall.winningTrades / overall.losingTrades).toFixed(2) : '∞'}
+                            iconBg="from-amber-500 to-orange-600"
+                        />
                     </div>
                 </div>
 
+                {/* ─── EA CARDS ───────────────────────────────────── */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {Object.entries(EA_DEFS).map(([id, def]) => {
                         const strategy = strategies[id] || { enabled: false, settings: {}, stats: undefined };
@@ -265,135 +347,244 @@ export const PipnexTradingSystem: React.FC = () => {
                         return (
                             <div
                                 key={id}
-                                className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
+                                className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border transition-all duration-300 overflow-hidden ${
                                     isActive
-                                        ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg'
-                                        : 'border-slate-700/50 opacity-70'
+                                        ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                                        : 'border-slate-700/50 opacity-75'
                                 }`}
                             >
-                                <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
+                                {/* ─── Card Header ─── */}
+                                <div className="p-5 border-b border-slate-700/40 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-3xl">{def.icon}</span>
+                                        <div className={`p-2.5 rounded-xl text-2xl ${
+                                            isActive
+                                                ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40'
+                                                : 'bg-slate-800/60'
+                                        }`}>
+                                            {def.icon}
+                                        </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">{def.label}</h3>
+                                            <h3 className="text-lg font-bold text-white">{def.label}</h3>
                                             <p className="text-slate-400 text-xs">{def.description}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-                                        <span className="text-xs text-slate-400">{isActive ? 'Active' : 'Inactive'}</span>
+                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                        isActive
+                                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                            : 'bg-slate-700/40 text-slate-400 border border-slate-700'
+                                    }`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                            isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                                        }`} />
+                                        {isActive ? 'Active' : 'Inactive'}
                                     </div>
                                 </div>
 
-                                <div className="p-6 space-y-4">
+                                {/* ─── Card Body ─── */}
+                                <div className="p-5 space-y-4">
                                     {isActive && stats ? (
                                         <>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Win Rate</div>
-                                                    <div className="text-lg font-bold text-emerald-400">{stats.winRate}%</div>
-                                                </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Trades</div>
-                                                    <div className="text-lg font-bold text-white">{stats.totalTrades}</div>
-                                                    <div className="text-[10px] text-slate-400">W {stats.winningTrades} / L {stats.losingTrades}</div>
-                                                </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Daily P&L</div>
-                                                    <div className={`text-lg font-bold ${stats.dailyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        ${stats.dailyProfit?.toFixed(2)}
+                                            {/* Core Metrics */}
+                                            <div className="grid grid-cols-3 gap-2.5">
+                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <Award size={10} />
+                                                        Win Rate
+                                                    </div>
+                                                    <div className="text-lg font-bold text-emerald-400">
+                                                        {stats.winRate}%
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Uptime</div>
+                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <Activity size={10} />
+                                                        Trades
+                                                    </div>
                                                     <div className="text-lg font-bold text-white">
+                                                        {stats.totalTrades}
+                                                    </div>
+                                                    <div className="text-[9px] text-slate-500">
+                                                        W {stats.winningTrades} · L {stats.losingTrades}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <DollarSign size={10} />
+                                                        Daily P&L
+                                                    </div>
+                                                    <div className={`text-lg font-bold ${
+                                                        stats.dailyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                                                    }`}>
+                                                        {stats.dailyProfit! >= 0 ? '+' : ''}${stats.dailyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Performance Grid */}
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Weekly</div>
+                                                    <div className={`text-sm font-bold font-mono ${
+                                                        stats.weeklyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                                                    }`}>
+                                                        {stats.weeklyProfit! >= 0 ? '+' : ''}${stats.weeklyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Monthly</div>
+                                                    <div className={`text-sm font-bold font-mono ${
+                                                        stats.monthlyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                                                    }`}>
+                                                        {stats.monthlyProfit! >= 0 ? '+' : ''}${stats.monthlyProfit?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Best</div>
+                                                    <div className="text-sm font-bold font-mono text-emerald-400">
+                                                        +${stats.bestTrade?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Worst</div>
+                                                    <div className="text-sm font-bold font-mono text-rose-400">
+                                                        ${stats.worstTrade?.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Secondary Metrics */}
+                                            <div className="grid grid-cols-3 gap-2.5">
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <Clock size={9} />
+                                                        Uptime
+                                                    </div>
+                                                    <div className="text-xs font-bold text-white font-mono">
                                                         {Math.floor(stats.uptime! / 3600)}h {Math.floor((stats.uptime! % 3600) / 60)}m
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Profit Factor</div>
-                                                    <div className="text-lg font-bold text-white">{stats.profitFactor}</div>
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <Percent size={9} />
+                                                        Profit Factor
+                                                    </div>
+                                                    <div className="text-xs font-bold text-white font-mono">
+                                                        {stats.profitFactor}
+                                                    </div>
                                                 </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                                    <div className="text-xs text-slate-400">Max DD</div>
-                                                    <div className="text-lg font-bold text-red-400">{stats.maxDrawdown}%</div>
+                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
+                                                        <TrendingDown size={9} />
+                                                        Max DD
+                                                    </div>
+                                                    <div className="text-xs font-bold text-rose-400 font-mono">
+                                                        {stats.maxDrawdown}%
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
-                                                    <div className="text-xs text-slate-400">Weekly P&L</div>
-                                                    <div className={`text-sm font-bold ${stats.weeklyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        ${stats.weeklyProfit?.toFixed(2)}
+                                            {/* Avg Win/Loss Bar */}
+                                            <div className="grid grid-cols-3 gap-2 bg-slate-900/50 rounded-xl p-3 border border-slate-700/40">
+                                                <div className="text-center">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
+                                                        Avg Win
+                                                    </div>
+                                                    <div className="text-xs font-bold text-emerald-400 font-mono">
+                                                        +${stats.avgWin?.toFixed(2)}
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
-                                                    <div className="text-xs text-slate-400">Monthly P&L</div>
-                                                    <div className={`text-sm font-bold ${stats.monthlyProfit! >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        ${stats.monthlyProfit?.toFixed(2)}
+                                                <div className="text-center border-x border-slate-700/40">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
+                                                        Avg Loss
+                                                    </div>
+                                                    <div className="text-xs font-bold text-rose-400 font-mono">
+                                                        ${stats.avgLoss?.toFixed(2)}
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
-                                                    <div className="text-xs text-slate-400">Best Trade</div>
-                                                    <div className="text-sm font-bold text-green-400">+${stats.bestTrade?.toFixed(2)}</div>
-                                                </div>
-                                                <div className="bg-slate-700/20 rounded-lg p-2 text-center">
-                                                    <div className="text-xs text-slate-400">Worst Trade</div>
-                                                    <div className="text-sm font-bold text-red-400">${stats.worstTrade?.toFixed(2)}</div>
+                                                <div className="text-center">
+                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
+                                                        R:R
+                                                    </div>
+                                                    <div className="text-xs font-bold text-white font-mono">
+                                                        {(stats.avgWin! / Math.abs(stats.avgLoss!)).toFixed(2)}
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex justify-between text-xs text-slate-400 bg-slate-700/20 rounded-lg px-3 py-2">
-                                                <span>Avg Win: <span className="text-green-400">+${stats.avgWin?.toFixed(2)}</span></span>
-                                                <span>Avg Loss: <span className="text-red-400">${stats.avgLoss?.toFixed(2)}</span></span>
-                                                <span>Risk/Reward: <span className="text-white">{(stats.avgWin! / Math.abs(stats.avgLoss!)).toFixed(2)}</span></span>
-                                            </div>
-
-                                            <div className="border-t border-slate-700/50 pt-4">
-                                                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                                    <Shield size={14} /> Recommended Settings
+                                            {/* Recommended Settings */}
+                                            <div className="border-t border-slate-700/40 pt-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Shield size={12} className="text-emerald-400" />
+                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                                                        Recommended Lot Size
+                                                    </span>
+                                                    <span className="text-[9px] text-slate-500 ml-auto">
+                                                        Based on {account ? `$${account.balance.toFixed(0)}` : 'N/A'} balance
+                                                    </span>
                                                 </div>
-                                                <div className="bg-slate-700/30 rounded-lg p-3 text-sm">
-                                                    <div className="grid grid-cols-3 gap-2 text-center">
-                                                        <div>
-                                                            <div className="text-xs text-slate-400">Conservative</div>
-                                                            <div className="font-mono text-blue-400">
-                                                                {account ? getRecommendedLot(account.balance, 0.5).toFixed(2) : 'N/A'}
-                                                            </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition">
+                                                        <div className="text-[9px] text-blue-400 uppercase tracking-wider font-bold mb-1">
+                                                            Conservative
                                                         </div>
-                                                        <div>
-                                                            <div className="text-xs text-slate-400">Moderate</div>
-                                                            <div className="font-mono text-emerald-400">
-                                                                {account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : 'N/A'}
-                                                            </div>
-                                                            {currentLot === (account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : '') && (
-                                                                <span className="text-[10px] text-emerald-400">✓ Current</span>
-                                                            )}
+                                                        <div className="font-mono text-sm text-blue-400 font-bold">
+                                                            {account ? getRecommendedLot(account.balance, 0.5).toFixed(2) : 'N/A'}
                                                         </div>
-                                                        <div>
-                                                            <div className="text-xs text-slate-400">Aggressive</div>
-                                                            <div className="font-mono text-purple-400">
-                                                                {account ? getRecommendedLot(account.balance, 2.0).toFixed(2) : 'N/A'}
-                                                            </div>
-                                                        </div>
+                                                        <div className="text-[9px] text-slate-500 mt-0.5">0.5% risk</div>
                                                     </div>
-                                                    <p className="text-xs text-slate-400 mt-2 text-center">
-                                                        Based on 0.5%, 1%, 2% risk per trade
-                                                    </p>
+                                                    <div className={`bg-slate-900/60 rounded-lg p-3 border transition relative ${
+                                                        currentLot === (account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : '')
+                                                            ? 'border-emerald-500/60 bg-emerald-900/10'
+                                                            : 'border-emerald-500/20 hover:border-emerald-500/40'
+                                                    }`}>
+                                                        {currentLot === (account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : '') && (
+                                                            <div className="absolute -top-1.5 -right-1.5 bg-emerald-500 rounded-full p-0.5">
+                                                                <CheckCircle2 size={10} className="text-white" />
+                                                            </div>
+                                                        )}
+                                                        <div className="text-[9px] text-emerald-400 uppercase tracking-wider font-bold mb-1">
+                                                            Moderate
+                                                        </div>
+                                                        <div className="font-mono text-sm text-emerald-400 font-bold">
+                                                            {account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : 'N/A'}
+                                                        </div>
+                                                        <div className="text-[9px] text-slate-500 mt-0.5">1.0% risk</div>
+                                                    </div>
+                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition">
+                                                        <div className="text-[9px] text-purple-400 uppercase tracking-wider font-bold mb-1">
+                                                            Aggressive
+                                                        </div>
+                                                        <div className="font-mono text-sm text-purple-400 font-bold">
+                                                            {account ? getRecommendedLot(account.balance, 2.0).toFixed(2) : 'N/A'}
+                                                        </div>
+                                                        <div className="text-[9px] text-slate-500 mt-0.5">2.0% risk</div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="text-center py-8 text-slate-400">
-                                            <Zap size={32} className="mx-auto mb-2 opacity-30" />
-                                            <p className="text-sm">This algorithm is currently inactive</p>
-                                            <p className="text-xs text-slate-500">Start it from the Dashboard to see performance data</p>
+                                        <div className="text-center py-12">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/60 mb-3">
+                                                <Zap size={28} className="text-slate-500" />
+                                            </div>
+                                            <p className="text-slate-300 text-sm font-semibold mb-1">
+                                                Algorithm Inactive
+                                            </p>
+                                            <p className="text-slate-500 text-xs">
+                                                Start it from the Dashboard to see performance data
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         );
                     })}
+                </div>
+
+                {/* ─── INFO FOOTER ────────────────────────────────── */}
+                <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2">
+                    <Info size={10} className="text-blue-400" />
+                    <span>Performance metrics update in real-time as trades close</span>
                 </div>
             </div>
         </div>
