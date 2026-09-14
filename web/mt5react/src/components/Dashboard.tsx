@@ -22,6 +22,27 @@ function setStoredState(key: string, value: boolean) {
     localStorage.setItem(key, String(value));
 }
 
+// ─── Settings persistence helpers ─────────────────────────
+function loadStoredSettings(key: string): Record<string, any> {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+        return {};
+    } catch {
+        return {};
+    }
+}
+
+function saveStoredSettings(key: string, value: Record<string, any>) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+        // ignore storage errors
+    }
+}
+
 interface RiskSession {
     id: number;
     starting_balance: number;
@@ -49,8 +70,15 @@ export const Dashboard: React.FC = () => {
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
     const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
     const [novaEnabled, setNovaEnabled] = useState(() => getStoredState('novaEnabled', false));
-    const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>({});
-    const [novaSettings, setNovaSettings] = useState<Record<string, any>>({});
+
+    // ─── Settings now hydrate from localStorage ────────────
+    const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>(
+        () => loadStoredSettings('pipnexSettings')
+    );
+    const [novaSettings, setNovaSettings] = useState<Record<string, any>>(
+        () => loadStoredSettings('novaSettings')
+    );
+
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
@@ -76,6 +104,15 @@ export const Dashboard: React.FC = () => {
     // ─── Persist SL/TP inputs ────────────────────────────────
     useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
     useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
+
+    // ─── Persist strategy settings to localStorage ──────────
+    useEffect(() => {
+        saveStoredSettings('pipnexSettings', pipnexSettings);
+    }, [pipnexSettings]);
+
+    useEffect(() => {
+        saveStoredSettings('novaSettings', novaSettings);
+    }, [novaSettings]);
 
     // ─── Check if user is new ────────────────────────────────
     useEffect(() => {
@@ -249,8 +286,6 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
     // ─── Reconcile EA state on connect ───────────────────────
-    // If localStorage says OFF, force the EA OFF too.
-    // Prevents stale enabled-state from a previous session leaking through.
     useEffect(() => {
         if (!vpsAddress || !eaConnected) return;
         if (reconciledRef.current) return;
@@ -368,7 +403,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const updateSetting = async (type: StrategyType, key: string, value: number) => {
+    const updateSetting = async (type: StrategyType, key: string, value: number | boolean) => {
         try {
             const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
             await sendCommand(`${prefix}${key}`, value);
