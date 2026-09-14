@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
-import { Loader2, AlertCircle, Play, Square, Key, Wifi, WifiOff, Server, AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown, BookOpen, X as XIcon } from 'lucide-react';
+import {
+    AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
+    AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
+    BookOpen, X as XIcon, Zap, Activity, DollarSign, Target,
+    CheckCircle2, Info, Clock, Crown, BarChart3
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
@@ -71,7 +76,7 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
     useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
 
-    // ─── Check if user is new (for welcome modal) ────────────
+    // ─── Check if user is new ────────────────────────────────
     useEffect(() => {
         const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
         if (!hasSeenGuide) {
@@ -91,7 +96,6 @@ export const Dashboard: React.FC = () => {
         navigate('/guide');
     };
 
-    // ─── Load user from localStorage ─────────────────────────
     const loadUserFromStorage = () => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
@@ -104,7 +108,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Refresh user info ───────────────────────────────────
     const refreshUserInfo = async (showToast = false) => {
         setRefreshingUser(true);
         try {
@@ -132,7 +135,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Fetch risk status ───────────────────────────────────
     const fetchRiskStatus = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -162,12 +164,12 @@ export const Dashboard: React.FC = () => {
 
                     if (reason === 'sl_hit') {
                         toast.error(
-                            `⚠️ STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
+                            `STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
                             { autoClose: 8000, position: 'top-center' }
                         );
                     } else {
                         toast.success(
-                            `🎯 TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`,
+                            `TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`,
                             { autoClose: 8000, position: 'top-center' }
                         );
                     }
@@ -191,7 +193,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── On mount ─────────────────────────────────────────────
     useEffect(() => {
         loadUserFromStorage();
         refreshUserInfo(false);
@@ -207,7 +208,6 @@ export const Dashboard: React.FC = () => {
         };
     }, []);
 
-    // ─── Check EA health ─────────────────────────────────────
     useEffect(() => {
         const checkEaHealth = async () => {
             if (!vpsAddress) {
@@ -238,24 +238,20 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // ─── Poll account ────────────────────────────────────────
     useEffect(() => {
         if (!vpsAddress) return;
         const interval = setInterval(() => { refetch(); }, 1000);
         return () => clearInterval(interval);
     }, [vpsAddress, refetch]);
 
-    // ─── State persistence ───────────────────────────────────
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
-    // ─── Send Master_Enabled command ─────────────────────────
     useEffect(() => {
         const anyEnabled = pipnexEnabled || novaEnabled;
         sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
     }, [pipnexEnabled, novaEnabled]);
 
-    // ─── Start risk session ──────────────────────────────────
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
         const tp = parseFloat(tpInput);
@@ -289,7 +285,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Stop risk session ───────────────────────────────────
     const stopRiskSession = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -305,7 +300,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Toggle strategy ─────────────────────────────────────
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
         if (!vpsAddress || !eaConnected) {
             toast.error('VPS not configured or EA not reachable');
@@ -376,7 +370,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Local inputs ────────────────────────────────────────
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
         pipnex: {},
         nova: {},
@@ -438,16 +431,19 @@ export const Dashboard: React.FC = () => {
     // ─── EA Not Configured ───────────────────────────────────
     if (!vpsAddress) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6 flex items-center justify-center">
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
-                    <h2 className="text-2xl font-bold text-white mb-2">EA Not Configured</h2>
-                    <p className="text-slate-400 text-sm">
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6 flex items-center justify-center">
+                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 mb-4">
+                        <AlertCircle size={28} className="text-amber-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">EA Not Configured</h2>
+                    <p className="text-slate-400 text-sm mb-4">
                         Please contact the administrator to set up your VPS and EA configuration.
                     </p>
                     <button
                         onClick={() => refreshUserInfo(true)}
                         disabled={refreshingUser}
-                        className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50 mx-auto"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
                     >
                         <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
                         {refreshingUser ? 'Refreshing...' : 'Refresh VPS Info'}
@@ -457,98 +453,166 @@ export const Dashboard: React.FC = () => {
         );
     }
 
-    // ─── Normal dashboard ────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-5">
 
+                {/* ─── TRIGGER ALERT BANNER ───────────────────────── */}
                 {triggerAlert && (
-                    <div className={`rounded-xl p-4 border flex items-center gap-3 ${
+                    <div className={`rounded-2xl p-4 border flex items-center gap-3 backdrop-blur ${
                         triggerAlert === 'sl_hit'
-                            ? 'bg-red-900/30 border-red-500/50 text-red-300'
-                            : 'bg-emerald-900/30 border-emerald-500/50 text-emerald-300'
+                            ? 'bg-gradient-to-r from-rose-900/40 to-red-900/20 border-rose-500/50 text-rose-200'
+                            : 'bg-gradient-to-r from-emerald-900/40 to-green-900/20 border-emerald-500/50 text-emerald-200'
                     }`}>
-                        {triggerAlert === 'sl_hit' ? <TrendingDown size={24} /> : <TrendingUp size={24} />}
-                        <div className="flex-1">
-                            <div className="font-bold">
-                                {triggerAlert === 'sl_hit' ? '⚠️ Stop Loss Hit' : '🎯 Target Profit Hit'}
+                        <div className={`p-2 rounded-xl ${
+                            triggerAlert === 'sl_hit'
+                                ? 'bg-rose-500/20 border border-rose-500/30'
+                                : 'bg-emerald-500/20 border border-emerald-500/30'
+                        }`}>
+                            {triggerAlert === 'sl_hit'
+                                ? <TrendingDown size={20} className="text-rose-400" />
+                                : <TrendingUp size={20} className="text-emerald-400" />
+                            }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm uppercase tracking-wider">
+                                {triggerAlert === 'sl_hit' ? 'Stop Loss Hit' : 'Target Profit Hit'}
                             </div>
-                            <div className="text-sm opacity-80">
+                            <div className="text-xs opacity-80 mt-0.5">
                                 {triggerAlert === 'sl_hit'
                                     ? `Your algo was stopped automatically to protect your account.`
                                     : `Your algo was stopped automatically — profit target reached.`}
                             </div>
                         </div>
                         <button
-                            onClick={() => { setTriggerAlert(null); }}
-                            className="text-xs underline opacity-70 hover:opacity-100"
+                            onClick={() => setTriggerAlert(null)}
+                            className="text-xs underline opacity-70 hover:opacity-100 flex-shrink-0"
                         >
                             Dismiss
                         </button>
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            📊 Trading Dashboard
-                        </h1>
-                        {accessKey && (
-                            <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
-                                <Key size={18} className="text-blue-400" />
-                                <span className="text-slate-300 text-sm font-medium">Access Key:</span>
-                                <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
+                {/* ─── HEADER ─────────────────────────────────────── */}
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                            <BarChart3 className="text-white" size={22} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                                Trading Dashboard
+                            </h1>
+                            <p className="text-slate-400 text-xs mt-0.5">
+                                Live account · EA control · Risk management
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* EA Status Card */}
+                    <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur ${
+                        eaConnected === null
+                            ? 'bg-slate-800/60 border-slate-700/50'
+                            : eaConnected
+                                ? 'bg-emerald-900/20 border-emerald-500/30'
+                                : 'bg-rose-900/20 border-rose-500/30'
+                    }`}>
+                        {eaConnected === null ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-slate-500/40 border-t-slate-300 rounded-full animate-spin" />
+                                <span className="text-slate-300 text-xs font-semibold">Checking EA...</span>
+                            </>
+                        ) : eaConnected ? (
+                            <>
+                                <Wifi size={16} className="text-emerald-400" />
+                                <div>
+                                    <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                                        EA Connected
+                                    </div>
+                                    <div className="text-slate-500 text-[10px]">
+                                        {vpsAddress}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <WifiOff size={16} className="text-rose-400" />
+                                <div>
+                                    <div className="text-rose-400 text-xs font-bold uppercase tracking-wider">
+                                        EA Disconnected
+                                    </div>
+                                    <div className="text-slate-500 text-[10px]">
+                                        Check VPS or EA
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* ─── ACCOUNT INFO STRIP ─────────────────────────── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {accessKey && (
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border border-slate-700/50 flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex-shrink-0">
+                                <Key size={14} className="text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                    Access Key
+                                </div>
+                                <code className="text-white font-mono text-xs truncate block">
                                     {accessKey}
                                 </code>
                             </div>
-                        )}
-                        <div className="mt-2 flex items-center gap-3 bg-slate-700/40 px-4 py-2 rounded-xl border border-slate-600/50">
-                            <Server size={18} className="text-blue-400" />
-                            <span className="text-slate-300 text-sm font-medium">VPS Address:</span>
-                            <code className="font-mono text-sm text-white bg-slate-800/60 px-3 py-1 rounded-lg">
-                                {vpsAddress}
-                            </code>
-                            <button
-                                onClick={() => refreshUserInfo(true)}
-                                disabled={refreshingUser}
-                                className="ml-2 text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
-                            >
-                                <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
-                            </button>
                         </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-                        <div className="flex items-center gap-2 text-sm">
-                            {eaConnected === null ? (
-                                <span className="text-slate-400">Checking EA...</span>
-                            ) : eaConnected ? (
-                                <>
-                                    <Wifi size={16} className="text-green-400" />
-                                    <span className="text-green-400">EA Connected</span>
-                                </>
-                            ) : (
-                                <>
-                                    <WifiOff size={16} className="text-red-400" />
-                                    <span className="text-red-400">EA Disconnected</span>
-                                </>
-                            )}
+                    )}
+                    <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border flex items-center gap-3 ${
+                        vpsAddress ? 'border-slate-700/50' : 'border-amber-500/40'
+                    }`}>
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${
+                            vpsAddress
+                                ? 'bg-gradient-to-br from-emerald-600 to-teal-700'
+                                : 'bg-gradient-to-br from-amber-500 to-orange-600'
+                        }`}>
+                            <Server size={14} className="text-white" />
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            <span className="text-slate-300">Live (1s refresh)</span>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                VPS Address
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <code className={`font-mono text-xs truncate ${
+                                    vpsAddress ? 'text-white' : 'text-amber-400'
+                                }`}>
+                                    {vpsAddress || 'Pending assignment...'}
+                                </code>
+                                <button
+                                    onClick={() => refreshUserInfo(true)}
+                                    disabled={refreshingUser}
+                                    className="text-slate-500 hover:text-blue-400 transition disabled:opacity-50 flex-shrink-0"
+                                    title="Refresh VPS info"
+                                >
+                                    <RefreshCw size={12} className={refreshingUser ? 'animate-spin' : ''} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* ─── ACCOUNT STATS ──────────────────────────────── */}
                 {loading ? (
-                    <div className="flex justify-center py-8">
-                        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    <div className="flex justify-center py-12">
+                        <div className="text-center">
+                            <div className="w-10 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+                            <p className="text-slate-400 text-xs">Loading account data...</p>
+                        </div>
                     </div>
                 ) : error ? (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 flex items-center gap-2">
-                        <AlertCircle size={20} />
-                        <span>{error}</span>
-                        <button onClick={refetch} className="ml-auto text-sm underline">Retry</button>
+                    <div className="bg-rose-900/20 border border-rose-500/30 rounded-2xl p-4 text-rose-400 flex items-center gap-2">
+                        <AlertCircle size={18} />
+                        <span className="text-sm">{error}</span>
+                        <button onClick={refetch} className="ml-auto text-xs underline">Retry</button>
                     </div>
                 ) : account ? (
                     <AccountStats
@@ -559,104 +623,161 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-                    <div className="flex items-center justify-between mb-4">
+                {/* ─── RISK GUARD ─────────────────────────────────── */}
+                <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border overflow-hidden transition-all ${
+                    riskSession?.is_active
+                        ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                        : 'border-slate-700/50'
+                }`}>
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg">
-                                <Shield size={20} className="text-white" />
+                            <div className={`p-2 rounded-xl ${
+                                riskSession?.is_active
+                                    ? 'bg-gradient-to-br from-emerald-600 to-teal-700 shadow-lg shadow-emerald-600/20'
+                                    : 'bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-600/20'
+                            }`}>
+                                <Shield size={18} className="text-white" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-white">Risk Guard</h2>
-                                <p className="text-slate-400 text-xs">
-                                    Auto-stops your algo when your account hits SL or TP
+                                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    Risk Guard
+                                    {riskSession?.is_active && (
+                                        <span className="flex items-center gap-1 text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 normal-case tracking-normal">
+                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                                            ACTIVE
+                                        </span>
+                                    )}
+                                </h2>
+                                <p className="text-slate-500 text-[10px] mt-0.5">
+                                    Auto-stops your algo when SL or TP is hit
                                 </p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Input Fields */}
+                    <div className="p-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="flex items-center gap-1.5 text-[10px] text-rose-400 uppercase tracking-wider font-bold mb-1.5">
+                                    <TrendingDown size={11} />
+                                    Stop Loss ($)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
+                                    onChange={(e) => setSlInput(e.target.value)}
+                                    placeholder="e.g. 100"
+                                    disabled={riskSession?.is_active}
+                                    className="w-full bg-slate-900/60 border border-rose-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Algo stops if equity drops by this amount
+                                </p>
+                            </div>
+                            <div>
+                                <label className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase tracking-wider font-bold mb-1.5">
+                                    <TrendingUp size={11} />
+                                    Take Profit ($)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
+                                    onChange={(e) => setTpInput(e.target.value)}
+                                    placeholder="e.g. 200"
+                                    disabled={riskSession?.is_active}
+                                    className="w-full bg-slate-900/60 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Algo stops when equity rises by this amount
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Live Risk Status */}
+                        {riskSession?.is_active && riskCurrent && (
+                            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
+                                        Start Balance
+                                    </div>
+                                    <div className="font-mono text-sm text-white font-bold">
+                                        ${riskSession.starting_balance.toFixed(2)}
+                                    </div>
+                                </div>
+                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
+                                        Current Equity
+                                    </div>
+                                    <div className="font-mono text-sm text-white font-bold">
+                                        ${riskCurrent.equity.toFixed(2)}
+                                    </div>
+                                </div>
+                                <div className={`rounded-xl p-3 border ${
+                                    riskCurrent.raw_drawdown > 0
+                                        ? 'bg-rose-900/20 border-rose-500/30'
+                                        : 'bg-slate-900/60 border-slate-700/40'
+                                }`}>
+                                    <div className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1">
+                                        Drawdown
+                                    </div>
+                                    <div className={`font-mono text-sm font-bold ${
+                                        riskCurrent.raw_drawdown > 0 ? 'text-rose-400' : 'text-slate-500'
+                                    }`}>
+                                        ${riskCurrent.raw_drawdown.toFixed(2)}
+                                        {riskSession.sl_amount && (
+                                            <span className="text-[10px] opacity-60 ml-1">
+                                                / ${riskSession.sl_amount.toFixed(2)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className={`rounded-xl p-3 border ${
+                                    riskCurrent.raw_profit > 0
+                                        ? 'bg-emerald-900/20 border-emerald-500/30'
+                                        : 'bg-slate-900/60 border-slate-700/40'
+                                }`}>
+                                    <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">
+                                        Profit
+                                    </div>
+                                    <div className={`font-mono text-sm font-bold ${
+                                        riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'
+                                    }`}>
+                                        ${riskCurrent.raw_profit.toFixed(2)}
+                                        {riskSession.tp_amount && (
+                                            <span className="text-[10px] opacity-60 ml-1">
+                                                / ${riskSession.tp_amount.toFixed(2)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {riskSession?.is_active && (
-                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                                Active
-                            </span>
+                            <div className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-500">
+                                <Clock size={10} />
+                                Started at {new Date(riskSession.created_at || '').toLocaleTimeString()} · Values locked until you stop all algos
+                            </div>
                         )}
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">
-                                Stop Loss ($) — Max Drawdown
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
-                                onChange={(e) => setSlInput(e.target.value)}
-                                placeholder="e.g. 100"
-                                disabled={riskSession?.is_active}
-                                className="w-full bg-slate-700/50 border border-red-700/50 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:opacity-50"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">Algo stops if equity drops by this amount</p>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">
-                                Take Profit ($) — Target Profit
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
-                                onChange={(e) => setTpInput(e.target.value)}
-                                placeholder="e.g. 200"
-                                disabled={riskSession?.is_active}
-                                className="w-full bg-slate-700/50 border border-green-700/50 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">Algo stops when equity rises by this amount</p>
-                        </div>
-                    </div>
-
-                    {riskSession?.is_active && riskCurrent && (
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div className="bg-slate-700/30 rounded-lg p-3">
-                                <div className="text-xs text-slate-400">Start Balance</div>
-                                <div className="font-mono text-white">${riskSession.starting_balance.toFixed(2)}</div>
-                            </div>
-                            <div className="bg-slate-700/30 rounded-lg p-3">
-                                <div className="text-xs text-slate-400">Current Equity</div>
-                                <div className="font-mono text-white">${riskCurrent.equity.toFixed(2)}</div>
-                            </div>
-                            <div className="bg-slate-700/30 rounded-lg p-3">
-                                <div className="text-xs text-slate-400">Drawdown</div>
-                                <div className={`font-mono ${riskCurrent.raw_drawdown > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                                    ${riskCurrent.raw_drawdown.toFixed(2)}
-                                    {riskSession.sl_amount && <span className="text-xs opacity-60"> / ${riskSession.sl_amount.toFixed(2)}</span>}
-                                </div>
-                            </div>
-                            <div className="bg-slate-700/30 rounded-lg p-3">
-                                <div className="text-xs text-slate-400">Profit</div>
-                                <div className={`font-mono ${riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                    ${riskCurrent.raw_profit.toFixed(2)}
-                                    {riskSession.tp_amount && <span className="text-xs opacity-60"> / ${riskSession.tp_amount.toFixed(2)}</span>}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {riskSession?.is_active && (
-                        <div className="mt-3 text-xs text-slate-400">
-                            Risk Guard started at {new Date(riskSession.created_at || '').toLocaleTimeString()}. Values locked until you stop all algos.
-                        </div>
-                    )}
                 </div>
 
+                {/* ─── COMMAND ERROR ──────────────────────────────── */}
                 {commandError && (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
+                    <div className="bg-rose-900/20 border border-rose-500/30 rounded-2xl p-3 text-rose-400 text-sm flex items-center gap-2">
                         <AlertCircle size={16} />
                         <span>{commandError}</span>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* ─── STRATEGY CARDS ─────────────────────────────── */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     <StrategyCard
                         type="pipnex"
                         label="PipNex Algo"
@@ -692,7 +813,7 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* ─── First-Visit Welcome Guide Modal ───────────── */}
+            {/* ─── FIRST-VISIT WELCOME MODAL ─────────────────────── */}
             {showWelcomeGuide && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl max-w-lg w-full p-6 md:p-8 relative">
@@ -704,64 +825,70 @@ export const Dashboard: React.FC = () => {
                         </button>
 
                         <div className="flex justify-center mb-4">
-                            <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
+                            <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-600/30">
                                 <BookOpen className="text-white" size={32} />
                             </div>
                         </div>
 
                         <h2 className="text-2xl font-bold text-white text-center mb-2">
-                            Welcome to PipTrader AI! 🚀
+                            Welcome to PipTrader AI
                         </h2>
                         <p className="text-slate-400 text-sm text-center mb-6">
                             You're all set up. Here's what you need to know.
                         </p>
 
                         <div className="space-y-3 mb-6">
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">1.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Set Risk Guard first</strong> — enter your Stop Loss and Take Profit amounts below.
-                                </p>
+                            <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
+                                <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30">
+                                    <Shield size={14} className="text-emerald-400" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-white mb-0.5">Set Risk Guard first</div>
+                                    <div className="text-[11px] text-slate-400">Enter Stop Loss and Take Profit amounts</div>
+                                </div>
                             </div>
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">2.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Click Start Algo</strong> on PipNex or NOVA to begin trading.
-                                </p>
+                            <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
+                                <div className="p-1.5 bg-blue-500/20 rounded-lg flex-shrink-0 border border-blue-500/30">
+                                    <Play size={14} className="text-blue-400" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-white mb-0.5">Click Start Algo</div>
+                                    <div className="text-[11px] text-slate-400">Enable PipNex or NOVA to begin trading</div>
+                                </div>
                             </div>
-                            <div className="flex items-start gap-3 bg-slate-700/30 rounded-lg p-3">
-                                <span className="text-emerald-400 font-bold flex-shrink-0">3.</span>
-                                <p className="text-sm text-slate-300">
-                                    <strong className="text-white">Track performance</strong> in the Orders and History pages.
-                                </p>
+                            <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
+                                <div className="p-1.5 bg-purple-500/20 rounded-lg flex-shrink-0 border border-purple-500/30">
+                                    <Activity size={14} className="text-purple-400" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-white mb-0.5">Track performance</div>
+                                    <div className="text-[11px] text-slate-400">Monitor trades in Orders and History pages</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 mb-6">
-                            <p className="text-xs text-blue-300 text-center">
-                                📖 Need more help? Check out the full User Guide anytime from the top bar.
+                        <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 mb-6 flex items-start gap-2">
+                            <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-blue-200">
+                                Need more help? Check out the full User Guide anytime from the top bar.
                             </p>
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={goToGuide}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20"
                             >
                                 <BookOpen size={18} />
                                 Read the Guide
                             </button>
                             <button
                                 onClick={dismissWelcomeGuide}
-                                className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition"
+                                className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition border border-slate-700/60"
                             >
                                 I'm Ready to Trade
                             </button>
                         </div>
-
-                        <p className="text-[10px] text-slate-500 text-center mt-4">
-                            You can reopen this guide anytime from the 📖 Guide button in the top bar.
-                        </p>
                     </div>
                 </div>
             )}
@@ -809,77 +936,133 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     isToggling, settingsDef, disabled = false,
 }) => {
     return (
-        <div className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
-            enabled ? 'border-emerald-500/50 shadow-emerald-500/10 shadow-lg' : 'border-slate-700/50 hover:border-slate-600'
+        <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border transition-all duration-300 overflow-hidden ${
+            enabled
+                ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                : 'border-slate-700/50 hover:border-slate-600/60'
         } ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
-            <div className="p-6 border-b border-slate-700/50">
+
+            {/* Header */}
+            <div className="p-5 border-b border-slate-700/40">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <span className="text-3xl">{icon}</span>
+                        <div className={`p-2.5 rounded-xl text-2xl ${
+                            enabled
+                                ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40'
+                                : 'bg-slate-800/60'
+                        }`}>
+                            {icon}
+                        </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">{label}</h3>
+                            <h3 className="text-lg font-bold text-white">{label}</h3>
                             <p className="text-slate-400 text-xs">{description}</p>
                         </div>
                     </div>
                     <button
                         onClick={() => onToggle(type, !enabled)}
                         disabled={isToggling || disabled}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${
                             enabled
-                                ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20'
-                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
+                                ? 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-rose-600/20'
+                                : 'bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white shadow-emerald-600/20'
                         } ${(isToggling || disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {isToggling ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                Working...
+                            </>
                         ) : enabled ? (
-                            <><Square size={18} /> Stop Algo</>
+                            <>
+                                <Square size={16} /> Stop Algo
+                            </>
                         ) : (
-                            <><Play size={18} /> Start Algo</>
+                            <>
+                                <Play size={16} /> Start Algo
+                            </>
                         )}
                     </button>
                 </div>
                 {enabled && (
-                    <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400/80">
+                    <div className="mt-3 flex items-center gap-2 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
                         <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        Algorithm running
+                        Algorithm Running
                     </div>
                 )}
                 {disabled && (
-                    <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400/80">
-                        <AlertTriangle size={14} />
-                        <span>EA offline</span>
+                    <div className="mt-3 flex items-center gap-2 text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                        <AlertTriangle size={12} />
+                        EA Offline
                     </div>
                 )}
             </div>
-            <div className="p-6">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Parameters</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Parameters */}
+            <div className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                    <Zap size={12} className="text-blue-400" />
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                        Parameters
+                    </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {settingsDef.map((setting) => {
                         const isBool = setting.type === 'checkbox';
                         const rawValue = localInputs[setting.key] ?? String(settings[setting.key] ?? setting.default);
+                        const currentValue = settings[setting.key] ?? setting.default;
+                        const isChanged = currentValue !== setting.default;
 
                         if (isBool) {
+                            const checked = !!settings[setting.key];
                             return (
-                                <div key={setting.key} className="flex flex-col">
-                                    <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={!!settings[setting.key]}
-                                            onChange={(e) => onCheckboxChange(type, setting.key, e.target.checked)}
-                                            disabled={disabled}
-                                            className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50"
-                                        />
-                                        <span className="text-sm text-slate-300">Enabled</span>
-                                    </label>
+                                <div
+                                    key={setting.key}
+                                    className={`bg-slate-900/40 rounded-xl p-3.5 border transition-all ${
+                                        checked
+                                            ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                                            : 'border-slate-700/40'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                            {setting.label}
+                                        </label>
+                                        <label className="cursor-pointer flex-shrink-0 ml-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={(e) => onCheckboxChange(type, setting.key, e.target.checked)}
+                                                disabled={disabled}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-10 h-5.5 rounded-full transition-all relative ${
+                                                checked ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-slate-700'
+                                            }`}>
+                                                <div className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white shadow-md transition-all transform ${
+                                                    checked ? 'translate-x-4.5' : 'translate-x-0'
+                                                }`} />
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             );
                         }
 
                         return (
-                            <div key={setting.key} className="flex flex-col">
-                                <label className="text-xs text-slate-400 uppercase tracking-wider mb-1">{setting.label}</label>
+                            <div
+                                key={setting.key}
+                                className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-700/40 hover:border-slate-600/60 transition-all"
+                            >
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                        {setting.label}
+                                    </label>
+                                    {isChanged && (
+                                        <span className="text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30 font-bold">
+                                            changed
+                                        </span>
+                                    )}
+                                </div>
                                 <input
                                     type="text"
                                     inputMode="decimal"
@@ -887,7 +1070,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                                     onChange={(e) => onInputChange(type, setting.key, e.target.value)}
                                     onBlur={() => onInputBlur(type, setting.key)}
                                     disabled={disabled}
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+                                    className="w-full bg-slate-950/60 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition disabled:opacity-50"
                                     placeholder={String(setting.default)}
                                 />
                             </div>
@@ -898,3 +1081,5 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
         </div>
     );
 };
+
+export default Dashboard;
