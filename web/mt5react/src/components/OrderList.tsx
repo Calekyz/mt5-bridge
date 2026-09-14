@@ -21,6 +21,9 @@ interface RiskSession {
     created_at: string;
 }
 
+const SWEEP_COOLDOWN_MS = 5000;    // retry every 5s while positions remain
+const SWEEP_FRESHNESS_MIN = 15;    // don't sweep sessions older than 15 min
+
 export const OrdersList: React.FC = () => {
     const [orders, setOrders] = useState<OrderResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,10 +39,12 @@ export const OrdersList: React.FC = () => {
 
     // ─── Risk Guard Auto-Close State ────────────────────────
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
-    const handledAutoCloseRef = useRef<Set<number>>(new Set());
-    const handledAlgoStopRef = useRef<Set<number>>(new Set());
-    const prevRiskActiveRef = useRef<boolean | null | undefined>(undefined);
     const autoCloseInProgressRef = useRef(false);
+    const lastSweepAttemptRef = useRef<number>(0);
+    const sweepToastShownRef = useRef<Set<number>>(new Set());
+
+    // ★ Per-session sweep state: 'pending' = sweeping, 'completed' = done (locked)
+    const sweepStateRef = useRef<Map<number, 'pending' | 'completed'>>(new Map());
 
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
@@ -173,100 +178,66 @@ export const OrdersList: React.FC = () => {
         await performCloseAll('manual');
     };
 
-    // ─── AUTO-CLOSE #1: SL / TP TRIGGERED ────────────────────
+    // ─── UNIFIED AUTO-CLOSE SWEEP ────────────────────────────
     useEffect(() => {
         if (!riskSession) return;
         if (riskSession.is_active) return;
 
+        const sessionId = riskSession.id;
+
         const reason = riskSession.trigger_reason;
         const isSL = reason === 'sl_hit';
         const isTP = reason === 'tp_hit';
-        if (!isSL && !isTP) return;
+        const isStop = !reason;
+
+        if (!isSL && !isTP && !isStop) return;
 
         if (isSL && (!riskSession.sl_amount || riskSession.sl_amount <= 0)) return;
         if (isTP && (!riskSession.tp_amount || riskSession.tp_amount <= 0)) return;
 
-        if (autoCloseInProgressRef.current) return;
-        if (handledAutoCloseRef.current.has(riskSession.id)) return;
-
-        if (riskSession.triggered_at) {
-            const triggeredAt = new Date(riskSession.triggered_at).getTime();
-            const ageMinutes = (Date.now() - triggeredAt) / 60000;
-            if (ageMinutes > 10) {
-                handledAutoCloseRef.current.add(riskSession.id);
-                return;
-            }
+        const stamp = riskSession.triggered_at || riskSession.created_at;
+        if (stamp) {
+            const ageMinutes = (Date.now() - new Date(stamp).getTime()) / 60000;
+            if (ageMinutes > SWEEP_FRESHNESS_MIN) return;
         }
 
         const opened = orders?.opened || [];
-        if (opened.length === 0) return;
 
-        handledAutoCloseRef.current.add(riskSession.id);
-        autoCloseInProgressRef.current = true;
-
-        const label = isSL ? 'Stop Loss' : 'Take Profit';
-        const emoji = isSL ? '🛑' : '🎯';
-
-        toast.warning(
-            `${emoji} ${label} triggered — auto-closing ${opened.length} position${opened.length !== 1 ? 's' : ''}...`,
-            { autoClose: 6000, position: 'top-center' }
-        );
-
-        performCloseAll(isSL ? 'stop_loss' : 'take_profit').finally(() => {
-            autoCloseInProgressRef.current = false;
-        });
-    }, [riskSession, orders]);
-
-    // ─── AUTO-CLOSE #2: ALGO MANUALLY STOPPED ────────────────
-    useEffect(() => {
-        // Track "no session" state
-        if (!riskSession) {
-            prevRiskActiveRef.current = null;
+        // ★ If positions are gone, mark sweep as COMPLETE (if it was pending)
+        if (opened.length === 0) {
+            const state = sweepStateRef.current.get(sessionId);
+            if (state === 'pending') {
+                sweepStateRef.current.set(sessionId, 'completed');
+                console.log(`[Sweep] Session ${sessionId} — completed, subsequent positions are user-owned`);
+            }
             return;
         }
 
-        const wasActive = prevRiskActiveRef.current;
-        const isNowActive = riskSession.is_active;
-        const reason = riskSession.trigger_reason;
+        // ★ If sweep already completed for this session, leave new positions alone
+        const state = sweepStateRef.current.get(sessionId);
+        if (state === 'completed') return;
 
-        // Update ref for next comparison
-        prevRiskActiveRef.current = isNowActive;
-
-        // Only handle when it just became inactive
-        if (isNowActive) return;
-
-        // Skip if SL/TP — handled by effect #1
-        if (reason === 'sl_hit' || reason === 'tp_hit') return;
-
-        // Detect: was active → now inactive (in-session transition)
-        const isTransition = wasActive === true;
-
-        // Detect: page loaded with a recently-created but already-stopped session
-        let isFreshlyStopped = false;
-        if (wasActive === undefined || wasActive === null) {
-            if (riskSession.created_at) {
-                const createdAge = (Date.now() - new Date(riskSession.created_at).getTime()) / 60000;
-                isFreshlyStopped = createdAge < 30;
-            }
-        }
-
-        if (!isTransition && !isFreshlyStopped) return;
-
-        if (handledAlgoStopRef.current.has(riskSession.id)) return;
         if (autoCloseInProgressRef.current) return;
+        if (Date.now() - lastSweepAttemptRef.current < SWEEP_COOLDOWN_MS) return;
 
-        const opened = orders?.opened || [];
-        if (opened.length === 0) return;
-
-        handledAlgoStopRef.current.add(riskSession.id);
+        lastSweepAttemptRef.current = Date.now();
         autoCloseInProgressRef.current = true;
 
-        toast.warning(
-            `⏹️ Algo stopped — auto-closing ${opened.length} position${opened.length !== 1 ? 's' : ''}...`,
-            { autoClose: 6000, position: 'top-center' }
-        );
+        // Mark as pending (so we can detect completion later)
+        sweepStateRef.current.set(sessionId, 'pending');
 
-        performCloseAll('algo_stopped').finally(() => {
+        const label = isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped';
+        const emoji = isSL ? '🛑' : isTP ? '🎯' : '⏹️';
+
+        if (!sweepToastShownRef.current.has(sessionId)) {
+            sweepToastShownRef.current.add(sessionId);
+            toast.warning(
+                `${emoji} ${label} — auto-closing ${opened.length} position${opened.length !== 1 ? 's' : ''}...`,
+                { autoClose: 6000, position: 'top-center' }
+            );
+        }
+
+        performCloseAll(isSL ? 'stop_loss' : isTP ? 'take_profit' : 'algo_stopped').finally(() => {
             autoCloseInProgressRef.current = false;
         });
     }, [riskSession, orders]);
@@ -319,7 +290,6 @@ export const OrdersList: React.FC = () => {
         riskSession.tp_amount > 0
     );
 
-    // Algo stopped = inactive session with no SL/TP trigger
     const algoStopped = !!(
         riskSession &&
         !riskSession.is_active &&
@@ -329,7 +299,6 @@ export const OrdersList: React.FC = () => {
 
     const anyTriggered = slTriggered || tpTriggered || algoStopped;
 
-    // For banner color logic
     const isSL = slTriggered;
     const isTP = tpTriggered;
     const isStop = algoStopped;
@@ -825,7 +794,7 @@ export const OrdersList: React.FC = () => {
                     <span className="text-slate-600">·</span>
                     <span className="inline-flex items-center gap-2">
                         <Shield size={10} className="text-rose-400" />
-                        Auto-close on SL / TP / Algo Stop
+                        Auto-close sweep on SL / TP / Algo Stop
                     </span>
                 </div>
             </div>
