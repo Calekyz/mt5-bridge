@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-    TrendingUp, TrendingDown, DollarSign, AlertTriangle, Target,
+    TrendingUp, TrendingDown, AlertTriangle, Target,
     Activity, Search, X, Info, Zap, Send, Shield, ChevronRight,
-    BarChart3, Percent, Clock, CheckCircle2
+    BarChart3, Percent, CheckCircle2
 } from 'lucide-react';
 import { getQuote, placeOrder, getSymbols } from "../api/nodejsApiClient";
 import { toast } from "react-toastify";
