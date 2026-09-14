@@ -1,8 +1,8 @@
-=import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
-    Users, Shield, Crown, Server, CheckCircle2, XCircle, Search, Filter,
-    Eye, EyeOff, Sparkles, BarChart3, Activity, Clock, Lock
+    Users, Shield, Crown, Server, CheckCircle2, XCircle, Search,
+    Eye, EyeOff, Sparkles
 } from 'lucide-react';
 
 interface User {
@@ -260,7 +260,7 @@ export const AdminPanel: React.FC = () => {
                 const data = await res.json();
                 throw new Error(data.error || data.message || 'Failed to update VPS');
             }
-            setVpsUpdateMessage('✅ VPS updated for ' + user.email);
+            setVpsUpdateMessage('VPS updated for ' + user.email);
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
             setEditingVps(prev => ({ ...prev, [userId]: vpsAddress }));
         } catch (err: any) {
@@ -275,7 +275,6 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
-    // ─── Stats ───────────────────────────────────────────────
     const stats = useMemo(() => {
         const totalUsers = users.length;
         const admins = users.filter(u => u.role === 'admin').length;
@@ -286,7 +285,6 @@ export const AdminPanel: React.FC = () => {
         return { totalUsers, admins, withVps, totalKeys, usedKeys, unusedKeys };
     }, [users, keys]);
 
-    // ─── Filtered lists ──────────────────────────────────────
     const filteredUsers = userSearch
         ? users.filter(u =>
             u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -316,7 +314,7 @@ export const AdminPanel: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
 
-                {/* ─── HEADER ─────────────────────────────────────── */}
+                {/* HEADER */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/20">
@@ -341,70 +339,51 @@ export const AdminPanel: React.FC = () => {
                     </button>
                 </div>
 
-                {/* ─── QUICK STATS ────────────────────────────────── */}
+                {/* QUICK STATS */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-                                Total Users
-                            </span>
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Total Users</span>
                             <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
                                 <Users size={14} className="text-white" />
                             </div>
                         </div>
                         <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                            {stats.admins} admin{stats.admins !== 1 ? 's' : ''}
-                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1">{stats.admins} admin{stats.admins !== 1 ? 's' : ''}</div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-                                VPS Assigned
-                            </span>
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">VPS Assigned</span>
                             <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg">
                                 <Server size={14} className="text-white" />
                             </div>
                         </div>
                         <div className="text-2xl font-bold text-emerald-400">{stats.withVps}</div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                            of {stats.totalUsers} users
-                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1">of {stats.totalUsers} users</div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-                                Total Keys
-                            </span>
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Total Keys</span>
                             <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
                                 <Key size={14} className="text-white" />
                             </div>
                         </div>
                         <div className="text-2xl font-bold text-white">{stats.totalKeys}</div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                            {stats.usedKeys} used · {stats.unusedKeys} available
-                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1">{stats.usedKeys} used · {stats.unusedKeys} available</div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-                                Available Keys
-                            </span>
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Available Keys</span>
                             <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
                                 <Sparkles size={14} className="text-white" />
                             </div>
                         </div>
                         <div className="text-2xl font-bold text-amber-400">{stats.unusedKeys}</div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                            ready to assign
-                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1">ready to assign</div>
                     </div>
                 </div>
 
-                {/* ─── ERROR / SUCCESS ALERTS ─────────────────────── */}
+                {/* ALERTS */}
                 {error && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={18} />
@@ -419,26 +398,20 @@ export const AdminPanel: React.FC = () => {
                     </div>
                 )}
 
-                {/* ─── ADD NEW CLIENT ─────────────────────────────── */}
+                {/* ADD NEW CLIENT */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
                         <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
                             <UserPlus size={16} className="text-white" />
                         </div>
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                            Add New Client
-                        </h2>
-                        <span className="text-[10px] text-slate-500 ml-auto">
-                            Creates user + assigns VPS + generates key
-                        </span>
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Add New Client</h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">Creates user + assigns VPS + generates key</span>
                     </div>
 
                     <form onSubmit={handleAddClient} className="p-5 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
-                                    Email Address
-                                </label>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Email Address</label>
                                 <input
                                     type="email"
                                     value={clientEmail}
@@ -449,9 +422,7 @@ export const AdminPanel: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
-                                    Password
-                                </label>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Password</label>
                                 <div className="relative">
                                     <input
                                         type={showClientPassword ? "text" : "password"}
@@ -498,17 +469,11 @@ export const AdminPanel: React.FC = () => {
                             <div className="bg-gradient-to-br from-emerald-900/30 to-teal-900/20 border border-emerald-500/40 rounded-xl p-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <CheckCircle2 size={16} className="text-emerald-400" />
-                                    <p className="text-emerald-300 text-sm font-bold">
-                                        Client created successfully!
-                                    </p>
+                                    <p className="text-emerald-300 text-sm font-bold">Client created successfully!</p>
                                 </div>
                                 <div className="bg-slate-950/60 rounded-lg p-3 border border-emerald-500/20">
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-semibold">
-                                        Access Key
-                                    </div>
-                                    <code className="block text-emerald-400 font-mono text-sm break-all">
-                                        {newClientKey}
-                                    </code>
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-semibold">Access Key</div>
+                                    <code className="block text-emerald-400 font-mono text-sm break-all">{newClientKey}</code>
                                 </div>
                                 <button
                                     type="button"
@@ -555,26 +520,20 @@ export const AdminPanel: React.FC = () => {
                     </form>
                 </div>
 
-                {/* ─── ADD USER (NO VPS) ──────────────────────────── */}
+                {/* ADD USER */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
                         <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg">
                             <UserPlus size={16} className="text-white" />
                         </div>
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                            Add User Only
-                        </h2>
-                        <span className="text-[10px] text-slate-500 ml-auto">
-                            Assign VPS separately below
-                        </span>
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Add User Only</h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">Assign VPS separately below</span>
                     </div>
 
                     <form onSubmit={handleAddUser} className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                             <div>
-                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
-                                    Email
-                                </label>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Email</label>
                                 <input
                                     type="email"
                                     value={newEmail}
@@ -585,9 +544,7 @@ export const AdminPanel: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
-                                    Password
-                                </label>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">Password</label>
                                 <input
                                     type="password"
                                     value={newPassword}
@@ -618,16 +575,14 @@ export const AdminPanel: React.FC = () => {
                     </form>
                 </div>
 
-                {/* ─── USERS TABLE ────────────────────────────────── */}
+                {/* USERS TABLE */}
                 <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2">
                             <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
                                 <Users size={14} className="text-white" />
                             </div>
-                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                                All Users
-                            </h2>
+                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">All Users</h2>
                             <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
                                 {filteredUsers.length}
                             </span>
@@ -706,7 +661,7 @@ export const AdminPanel: React.FC = () => {
                                                         type="text"
                                                         value={currentVps}
                                                         onChange={(e) => handleVpsChange(user.id, e.target.value)}
-                                                        placeholder={isPending ? "⚠ Pending..." : "Enter VPS URL"}
+                                                        placeholder={isPending ? "Pending..." : "Enter VPS URL"}
                                                         className={`flex-1 bg-slate-900/60 border rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
                                                             isPending
                                                                 ? 'border-amber-500/40 text-amber-400 placeholder-amber-500/60 focus:border-amber-500 focus:ring-amber-500/30'
@@ -760,7 +715,7 @@ export const AdminPanel: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── ACCESS KEYS ────────────────────────────────── */}
+                {/* ACCESS KEYS */}
                 <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -768,9 +723,7 @@ export const AdminPanel: React.FC = () => {
                                 <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
                                     <Key size={14} className="text-white" />
                                 </div>
-                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                                    Access Keys
-                                </h2>
+                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Access Keys</h2>
                                 <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
                                     {filteredKeys.length}
                                 </span>
