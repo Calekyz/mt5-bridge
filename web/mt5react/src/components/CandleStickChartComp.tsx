@@ -4,7 +4,7 @@ import { getHistoricalData } from '../api/nodejsApiClient';
 import { CsvExporter } from "./exprotToCsv";
 import {
     BarChart3, TrendingUp, TrendingDown, Activity, RefreshCw,
-    Calendar, AlertCircle, Info, Loader2, X,
+    Calendar, AlertCircle, Info, X,
     Clock, CheckCircle2, LineChart,
 } from 'lucide-react';
 
