@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Settings, Save, RotateCcw, TrendingUp, Bot, Zap,
-    Shield, AlertCircle, CheckCircle2, Info, ChevronRight,
-    Activity, BarChart3, DollarSign, Percent, Layers
+    RotateCcw, Zap, Shield, AlertCircle, CheckCircle2, Info
 } from 'lucide-react';
 
 interface StrategySetting {
