@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Activity, TrendingUp, TrendingDown, X, RefreshCw,
     Clock, AlertCircle, FileText, Zap, DollarSign,
-    Layers, Target, Shield
+    Layers, Target, Shield, XCircle, CheckCircle2
 } from 'lucide-react';
 import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
 import { toast } from 'react-toastify';
@@ -14,6 +14,11 @@ export const OrdersList: React.FC = () => {
     const [closing, setClosing] = useState<number | null>(null);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+
+    // ─── Close All State ────────────────────────────────────
+    const [showCloseAllConfirm, setShowCloseAllConfirm] = useState(false);
+    const [closingAll, setClosingAll] = useState(false);
+    const [closeAllProgress, setCloseAllProgress] = useState({ current: 0, total: 0 });
 
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
@@ -40,15 +45,16 @@ export const OrdersList: React.FC = () => {
         }
     };
 
-    // Poll every 1 second (was 2s) — still safe for backend
+    // Poll every 1 second
     useEffect(() => {
         if (!vpsAddress) return;
 
-        fetchOrders(); // immediate first fetch
+        fetchOrders();
         const interval = setInterval(() => fetchOrders(true), 1000);
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
+    // ─── Close single order ──────────────────────────────────
     const handleClose = async (ticket: number) => {
         if (!window.confirm(`Close position #${ticket}?`)) return;
 
@@ -64,6 +70,49 @@ export const OrdersList: React.FC = () => {
         }
     };
 
+    // ─── Close ALL orders ────────────────────────────────────
+    const handleCloseAll = async () => {
+        const opened = orders?.opened || [];
+        if (opened.length === 0) {
+            toast.info('No open positions to close');
+            setShowCloseAllConfirm(false);
+            return;
+        }
+
+        setClosingAll(true);
+        setCloseAllProgress({ current: 0, total: opened.length });
+
+        let succeeded = 0;
+        let failed = 0;
+
+        for (let i = 0; i < opened.length; i++) {
+            const ticket = opened[i].ticket;
+            try {
+                await closeOrder(ticket);
+                succeeded++;
+            } catch (err: any) {
+                console.error(`Failed to close #${ticket}:`, err);
+                failed++;
+            }
+            setCloseAllProgress({ current: i + 1, total: opened.length });
+        }
+
+        setClosingAll(false);
+        setShowCloseAllConfirm(false);
+        setCloseAllProgress({ current: 0, total: 0 });
+
+        if (failed === 0) {
+            toast.success(`✅ All ${succeeded} positions closed successfully`);
+        } else if (succeeded === 0) {
+            toast.error(`❌ Failed to close all ${failed} positions`);
+        } else {
+            toast.warning(`⚠️ Closed ${succeeded} of ${succeeded + failed} positions (${failed} failed)`);
+        }
+
+        // Refresh immediately
+        await fetchOrders(true);
+    };
+
     const getOrderType = (order: any) => {
         if (order.type) {
             return order.type === "POSITION_TYPE_BUY" ? "BUY" : "SELL";
@@ -75,7 +124,7 @@ export const OrdersList: React.FC = () => {
     const opened = orders?.opened || [];
     const pending = orders?.pending || [];
 
-    // ─── LIVE STATS ──────────────────────────────────────────
+    // ─── Live Stats ──────────────────────────────────────────
     const stats = useMemo(() => {
         let totalProfit = 0;
         let winners = 0;
@@ -173,7 +222,7 @@ export const OrdersList: React.FC = () => {
                         )}
                         <button
                             onClick={() => fetchOrders()}
-                            disabled={refreshing}
+                            disabled={refreshing || closingAll}
                             className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
                         >
                             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
@@ -184,7 +233,7 @@ export const OrdersList: React.FC = () => {
 
                 {/* ─── SUMMARY STATS ──────────────────────────────── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                    {/* Open Positions */}
+                    {/* Open */}
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Open</span>
@@ -215,7 +264,7 @@ export const OrdersList: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Total Profit */}
+                    {/* Total P/L */}
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total P/L</span>
@@ -235,7 +284,7 @@ export const OrdersList: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Total Volume */}
+                    {/* Volume */}
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Volume</span>
@@ -280,6 +329,29 @@ export const OrdersList: React.FC = () => {
                                             ({opened.length})
                                         </span>
                                     </div>
+
+                                    {/* ─── CLOSE ALL BUTTON ─────────────────────── */}
+                                    <button
+                                        onClick={() => setShowCloseAllConfirm(true)}
+                                        disabled={closingAll || closing !== null}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                                            closingAll || closing !== null
+                                                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                                                : 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-lg shadow-rose-600/30 hover:scale-105 active:scale-95'
+                                        }`}
+                                    >
+                                        {closingAll ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                Closing {closeAllProgress.current}/{closeAllProgress.total}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <XCircle size={14} strokeWidth={2.5} />
+                                                Close All ({opened.length})
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
 
                                 <div className="overflow-x-auto">
@@ -302,12 +374,13 @@ export const OrdersList: React.FC = () => {
                                                 const isBuy = orderType === "BUY";
                                                 const isProfit = order.profit >= 0;
                                                 const isClosing = closing === order.ticket;
+                                                const isDisabled = closingAll || (closing !== null && !isClosing);
                                                 return (
                                                     <tr
                                                         key={order.ticket}
                                                         className={`border-t border-slate-700/20 hover:bg-slate-800/40 transition-colors ${
                                                             idx % 2 === 0 ? "bg-slate-900/20" : ""
-                                                        }`}
+                                                        } ${isClosing ? "opacity-50" : ""}`}
                                                     >
                                                         <td className="px-4 py-3">
                                                             <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
@@ -343,9 +416,9 @@ export const OrdersList: React.FC = () => {
                                                         <td className="px-4 py-3 text-right">
                                                             <button
                                                                 onClick={() => handleClose(order.ticket)}
-                                                                disabled={isClosing}
+                                                                disabled={isClosing || isDisabled}
                                                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                                                    isClosing
+                                                                    isClosing || isDisabled
                                                                         ? "bg-slate-700 text-slate-400 cursor-not-allowed"
                                                                         : "bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-lg shadow-rose-600/20 hover:scale-105 active:scale-95"
                                                                 }`}
@@ -467,6 +540,90 @@ export const OrdersList: React.FC = () => {
                     </span>
                 </div>
             </div>
+
+            {/* ══════════════════════════════════════════════════════ */}
+            {/*  CLOSE ALL CONFIRMATION MODAL                          */}
+            {/* ══════════════════════════════════════════════════════ */}
+            {showCloseAllConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-rose-500/40 shadow-2xl max-w-md w-full p-6 relative">
+                        {/* Icon */}
+                        <div className="flex justify-center mb-4">
+                            <div className="p-4 bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl shadow-lg shadow-rose-600/30">
+                                <XCircle className="text-white" size={32} />
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="text-2xl font-bold text-white text-center mb-2">
+                            Close All Positions?
+                        </h2>
+                        <p className="text-slate-400 text-sm text-center mb-6">
+                            This will immediately close{' '}
+                            <span className="text-white font-bold">{opened.length}</span>{' '}
+                            open position{opened.length !== 1 ? 's' : ''} at market price.
+                        </p>
+
+                        {/* Summary */}
+                        <div className="bg-slate-700/30 rounded-xl p-4 mb-6 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-400 flex items-center gap-2">
+                                    <Activity size={14} className="text-emerald-400" />
+                                    Positions to close
+                                </span>
+                                <span className="text-white font-bold">{opened.length}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-400 flex items-center gap-2">
+                                    <DollarSign size={14} className={stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"} />
+                                    Floating P/L
+                                </span>
+                                <span className={`font-bold ${
+                                    stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"
+                                }`}>
+                                    {stats.totalProfit >= 0 ? "+" : ""}${stats.totalProfit.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Warning */}
+                        <div className="bg-rose-900/20 border border-rose-500/30 rounded-lg p-3 mb-6 flex items-start gap-2">
+                            <AlertCircle size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-rose-200">
+                                This action cannot be undone. All trades will be closed at current market prices.
+                            </p>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={handleCloseAll}
+                                disabled={closingAll}
+                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {closingAll ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                        Closing {closeAllProgress.current}/{closeAllProgress.total}
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle size={18} />
+                                        Yes, Close All
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setShowCloseAllConfirm(false)}
+                                disabled={closingAll}
+                                className="flex-1 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
