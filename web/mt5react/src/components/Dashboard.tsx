@@ -68,6 +68,7 @@ export const Dashboard: React.FC = () => {
 
     const dismissedTriggers = useRef<Set<number>>(new Set());
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const reconciledRef = useRef(false);
 
     const accessKey = localStorage.getItem('accessKey') || '';
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -247,10 +248,22 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
+    // ─── Reconcile EA state on connect ───────────────────────
+    // If localStorage says OFF, force the EA OFF too.
+    // Prevents stale enabled-state from a previous session leaking through.
     useEffect(() => {
-        const anyEnabled = pipnexEnabled || novaEnabled;
-        sendCommand('Master_Enabled', anyEnabled ? 1 : 0).catch(console.error);
-    }, [pipnexEnabled, novaEnabled]);
+        if (!vpsAddress || !eaConnected) return;
+        if (reconciledRef.current) return;
+        reconciledRef.current = true;
+
+        if (!pipnexEnabled) {
+            sendCommand('PipNex_Enable', 0).catch(() => {});
+        }
+        if (!novaEnabled) {
+            sendCommand('Nova_Enable', 0).catch(() => {});
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vpsAddress, eaConnected]);
 
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
@@ -903,6 +916,7 @@ const PIPNEX_SETTINGS = [
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
     { key: 'CloseProfit', label: 'Close Profit ($)', type: 'number', step: 0.05, min: 0, default: 2.0 },
     { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0, default: 0.50 },
+    { key: 'MinProfitPercent', label: 'Min Profit %', type: 'number', step: 1, min: 0, max: 100, default: 60 },
     { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
     { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
 ];
