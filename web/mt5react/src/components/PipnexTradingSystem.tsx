@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
 import {
-    Loader2, TrendingUp, TrendingDown,
+    TrendingUp, TrendingDown,
     AlertCircle, RefreshCw,
     Activity, Zap, Shield,
-    Award, PieChart, Target, DollarSign,
+    Award, PieChart, DollarSign,
     BarChart3, Percent, Clock, Flame,
-    CheckCircle2, Info, Wallet, LineChart
+    CheckCircle2, Info, Wallet
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
