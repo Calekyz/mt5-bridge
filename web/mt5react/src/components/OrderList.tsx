@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Activity, TrendingUp, TrendingDown, X, RefreshCw,
-    Clock, AlertCircle, FileText, Zap, DollarSign,
-    Layers, Target, Shield, XCircle, CheckCircle2
+    Clock, AlertCircle, Zap, DollarSign,
+    Layers, Target, Shield, XCircle
 } from 'lucide-react';
 import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
 import { toast } from 'react-toastify';
