@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from "react
 import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { 
+import {
     Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download
 } from "lucide-react";
 
@@ -137,40 +137,59 @@ function App() {
 
     return (
         <Router>
-            <div className="text-white min-h-screen flex flex-col bg-slate-900">
+            <div className="text-white min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
                 {isAuthenticated ? (
                     <>
-                        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <img src={LOGO_URL} alt="PipTrader AI Logo" className="h-8 w-auto" />
-                                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                                    PipTrader AI
-                                </span>
-                                <span className="text-xs text-slate-400 font-light hidden sm:inline">v2.0</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        const event = new CustomEvent('trigger-install');
-                                        window.dispatchEvent(event);
-                                    }}
-                                    className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition px-3 py-1.5 rounded-lg hover:bg-blue-500/10 border border-blue-500/30"
-                                    title="Install App"
-                                >
-                                    <Download size={16} />
-                                    <span className="hidden sm:inline">Install</span>
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-slate-700/50"
-                                >
-                                    <LogOut size={18} />
-                                    <span className="hidden sm:inline">Logout</span>
-                                </button>
+                        {/* ─── HEADER ─────────────────────────────────── */}
+                        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-700/50">
+                            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+
+                                {/* Logo + Brand */}
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full" />
+                                        <img
+                                            src={LOGO_URL}
+                                            alt="PipTrader AI Logo"
+                                            className="relative h-9 w-auto rounded-lg shadow-lg shadow-blue-600/20 ring-1 ring-slate-700/50"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-none">
+                                            PipTrader AI
+                                        </span>
+                                        <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">
+                                            v2.0
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Right actions */}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const event = new CustomEvent('trigger-install');
+                                            window.dispatchEvent(event);
+                                        }}
+                                        className="group flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-white transition-all px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-blue-600 border border-slate-700/60 hover:border-blue-500/60 shadow-lg shadow-transparent hover:shadow-blue-600/20"
+                                        title="Install App"
+                                    >
+                                        <Download size={14} className="group-hover:scale-110 transition-transform" />
+                                        <span className="hidden sm:inline">Install</span>
+                                    </button>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="group flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-300 transition-all px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-rose-500/10 border border-slate-700/60 hover:border-rose-500/40"
+                                    >
+                                        <LogOut size={14} className="group-hover:scale-110 transition-transform" />
+                                        <span className="hidden sm:inline">Logout</span>
+                                    </button>
+                                </div>
                             </div>
                         </header>
 
-                        <main className="flex-1 mt-14 mb-24 overflow-y-auto p-4">
+                        {/* ─── MAIN CONTENT ───────────────────────────── */}
+                        <main className="flex-1 mt-16 mb-28 overflow-y-auto">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/guide" element={<Guide />} />
@@ -181,61 +200,81 @@ function App() {
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
                                 <Route path="/strategies" element={<PipnexTradingSystem />} />
-                                <Route 
-                                    path="/admin" 
-                                    element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />} 
+                                <Route
+                                    path="/admin"
+                                    element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />}
                                 />
                             </Routes>
                         </main>
 
-                        {/* Bottom Navigation */}
-                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-lg border-t border-slate-700/60 px-1 py-2">
-                            <div className="flex justify-around items-end max-w-4xl mx-auto overflow-x-auto">
-                                {navItems.map((item) => {
-                                    const Icon = item.icon;
-                                    const isHome = item.isHome;
+                        {/* ─── BOTTOM NAV ─────────────────────────────── */}
+                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-slate-700/50">
+                            {/* Subtle top gradient line */}
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
 
-                                    return (
-                                        <NavLink
-                                            key={item.path}
-                                            to={item.path}
-                                            className={({ isActive }) => {
-                                                if (isHome) {
-                                                    return `flex flex-col items-center justify-center mx-1
-                                                        w-16 h-16 -mt-8 rounded-2xl
-                                                        bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600
-                                                        text-white shadow-2xl shadow-orange-500/40
-                                                        border-2 border-yellow-300/40
+                            <div className="max-w-4xl mx-auto px-2 py-2.5">
+                                <div className="flex justify-around items-end overflow-x-auto scrollbar-hide">
+                                    {navItems.map((item) => {
+                                        const Icon = item.icon;
+                                        const isHome = item.isHome;
+
+                                        return (
+                                            <NavLink
+                                                key={item.path}
+                                                to={item.path}
+                                                className={({ isActive }) => {
+                                                    if (isHome) {
+                                                        return `relative flex flex-col items-center justify-center mx-1
+                                                            w-16 h-16 -mt-9 rounded-2xl
+                                                            bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600
+                                                            text-white shadow-2xl shadow-orange-500/50
+                                                            ring-4 ring-slate-950
+                                                            border border-amber-300/40
+                                                            transition-all duration-300
+                                                            hover:scale-105 active:scale-95
+                                                            ${isActive ? 'ring-orange-400/30 scale-105' : ''}`;
+                                                    }
+
+                                                    return `relative flex flex-col items-center justify-center
+                                                        w-14 h-14 rounded-xl mx-0.5
                                                         transition-all duration-300
-                                                        hover:scale-105 active:scale-95
-                                                        ${isActive ? 'ring-4 ring-yellow-300/50 scale-105' : ''}`;
-                                                }
+                                                        ${isActive
+                                                            ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white shadow-lg shadow-emerald-600/40 scale-105'
+                                                            : 'text-slate-500 hover:text-white hover:bg-slate-800/60'
+                                                        }`;
+                                                }}
+                                            >
+                                                {({ isActive }) => (
+                                                    <>
+                                                        {/* Active indicator dot */}
+                                                        {isActive && !isHome && (
+                                                            <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-300 rounded-full shadow-lg shadow-emerald-400/60" />
+                                                        )}
 
-                                                return `flex flex-col items-center justify-center
-                                                    w-14 h-14 rounded-xl mx-0.5
-                                                    transition-all duration-300
-                                                    ${isActive
-                                                        ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white shadow-lg shadow-emerald-600/40 scale-105 ring-2 ring-emerald-400/30'
-                                                        : 'text-slate-400 hover:text-white hover:bg-slate-700/40 active:bg-slate-700/60'
-                                                    }`;
-                                            }}
-                                        >
-                                            <Icon
-                                                size={isHome ? 28 : 20}
-                                                strokeWidth={isHome ? 2.5 : 2}
-                                                className={isHome ? 'drop-shadow-lg' : ''}
-                                            />
-                                            <span className={`text-[9px] font-bold mt-1 tracking-wide ${
-                                                isHome ? 'text-white text-[10px]' : ''
-                                            }`}>
-                                                {item.label}
-                                            </span>
-                                        </NavLink>
-                                    );
-                                })}
+                                                        <Icon
+                                                            size={isHome ? 26 : 20}
+                                                            strokeWidth={isHome ? 2.5 : isActive ? 2.4 : 2}
+                                                            className={isHome ? 'drop-shadow-lg' : ''}
+                                                        />
+                                                        <span className={`text-[9px] font-bold mt-1 tracking-wide ${
+                                                            isHome
+                                                                ? 'text-white text-[10px] uppercase'
+                                                                : isActive
+                                                                    ? 'text-white'
+                                                                    : 'text-slate-500'
+                                                        }`}>
+                                                            {item.label}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </NavLink>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </nav>
 
+                        {/* ─── TOASTS ─────────────────────────────────── */}
                         <ToastContainer
                             style={{ width: "400px", height: "100px" }}
                             position="top-right"
@@ -254,6 +293,12 @@ function App() {
                     <LoginPage onLogin={handleLogin} />
                 )}
             </div>
+
+            {/* Global scrollbar-hide utility */}
+            <style>{`
+                .scrollbar-hide::-webkit-scrollbar { display: none; }
+                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
         </Router>
     );
 }
