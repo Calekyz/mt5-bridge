@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
     Eye, EyeOff, AlertCircle, Loader2, Mail, Lock,
     Sparkles, Shield, Zap, TrendingUp, MessageCircle,
-    ArrowRight, Crown, CheckCircle2, Star
+    ArrowRight, Crown, CheckCircle2, Star,
+    ExternalLink, Building2
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -18,6 +19,8 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
     'Hello! I want to get lifetime access to PipTrader AI. Can you help me configure my account?'
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
+
+const BROKER_LINK = 'https://ma.valetax.com/p/2083506';
 
 const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
 const BG_URL = 'https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png';
@@ -91,11 +94,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                backgroundAttachment: 'fixed'
+                backgroundAttachment: 'fixed',
             }}
         >
-            {/* Dark overlay for readability */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/85 via-slate-900/80 to-slate-950/90" />
+            {/* ─── Dark overlay ───────────────────────────────── */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
+
+            {/* ─── Ambient glows ─────────────────────────────── */}
+            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-8">
                 <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
@@ -103,22 +110,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     {/* ═══════════════════════════════════════════════════ */}
                     {/* LEFT PANEL — Branding & Value Props                 */}
                     {/* ═══════════════════════════════════════════════════ */}
-                    <div className="hidden lg:flex flex-col space-y-6">
+                    <div className="hidden lg:flex flex-col space-y-5">
 
                         {/* Logo + Title */}
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-2xl shadow-blue-600/30">
-                                <img
-                                    src={LOGO_URL}
-                                    alt="PipTrader AI"
-                                    className="h-12 w-12 object-contain"
-                                />
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 to-purple-500/40 blur-xl rounded-2xl" />
+                                <div className="relative p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-2xl shadow-blue-600/30 ring-1 ring-blue-400/30">
+                                    <img
+                                        src={LOGO_URL}
+                                        alt="PipTrader AI"
+                                        className="h-12 w-12 object-contain"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
                                     PipTrader AI
                                 </h1>
-                                <p className="text-slate-400 text-xs mt-1 tracking-wider uppercase font-semibold">
+                                <p className="text-slate-400 text-[10px] mt-1 tracking-[0.25em] uppercase font-bold">
                                     Automated Trading Platform
                                 </p>
                             </div>
@@ -138,70 +148,103 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                         </div>
 
                         {/* Feature List */}
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
-                                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-teal-600/20 rounded-lg border border-emerald-500/30 flex-shrink-0">
-                                    <Shield size={16} className="text-emerald-400" />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-bold text-white mb-0.5">Risk Guard Protection</div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Auto stop-loss and take-profit closes all positions when targets are hit
+                        <div className="space-y-2.5">
+                            {[
+                                {
+                                    icon: <Shield size={16} className="text-emerald-400" />,
+                                    bg: 'from-emerald-500/20 to-teal-600/20',
+                                    border: 'border-emerald-500/30',
+                                    title: 'Risk Guard Protection',
+                                    desc: 'Auto stop-loss and take-profit closes all positions when targets are hit',
+                                },
+                                {
+                                    icon: <Zap size={16} className="text-blue-400" />,
+                                    bg: 'from-blue-500/20 to-indigo-600/20',
+                                    border: 'border-blue-500/30',
+                                    title: 'Instant Execution',
+                                    desc: 'Trades placed in milliseconds on your dedicated VPS',
+                                },
+                                {
+                                    icon: <TrendingUp size={16} className="text-purple-400" />,
+                                    bg: 'from-purple-500/20 to-pink-600/20',
+                                    border: 'border-purple-500/30',
+                                    title: 'Live Performance Tracking',
+                                    desc: 'Real-time balance, equity, orders, and trade history',
+                                },
+                                {
+                                    icon: <Crown size={16} className="text-amber-400" />,
+                                    bg: 'from-amber-500/20 to-orange-600/20',
+                                    border: 'border-amber-500/30',
+                                    title: 'Lifetime Access',
+                                    badge: 'One-time',
+                                    desc: 'Pay once, trade forever. No monthly fees.',
+                                },
+                            ].map((f, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50 hover:border-slate-600/70 transition-all"
+                                >
+                                    <div className={`p-2 bg-gradient-to-br ${f.bg} rounded-lg border ${f.border} flex-shrink-0`}>
+                                        {f.icon}
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-white mb-0.5 flex items-center gap-1.5">
+                                            {f.title}
+                                            {f.badge && (
+                                                <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-bold">
+                                                    {f.badge}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-[11px] text-slate-400">{f.desc}</div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
-                                <div className="p-2 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-lg border border-blue-500/30 flex-shrink-0">
-                                    <Zap size={16} className="text-blue-400" />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-bold text-white mb-0.5">Instant Execution</div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Trades placed in milliseconds on your dedicated VPS
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
-                                <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-lg border border-purple-500/30 flex-shrink-0">
-                                    <TrendingUp size={16} className="text-purple-400" />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-bold text-white mb-0.5">Live Performance Tracking</div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Real-time balance, equity, orders, and trade history
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
-                                <div className="p-2 bg-gradient-to-br from-amber-500/20 to-orange-600/20 rounded-lg border border-amber-500/30 flex-shrink-0">
-                                    <Crown size={16} className="text-amber-400" />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-bold text-white mb-0.5 flex items-center gap-1.5">
-                                        Lifetime Access
-                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-bold">
-                                            One-time
-                                        </span>
-                                    </div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Pay once, trade forever. No monthly fees.
-                                    </div>
-                                </div>
-                            </div>
+                            ))}
                         </div>
 
-                        {/* WhatsApp CTA */}
+                        {/* ─── Broker Signup CTA ───────────────────── */}
+                        <a
+                            href={BROKER_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 rounded-2xl p-4 border border-blue-400/40 shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                        >
+                            {/* Shine effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                            <div className="relative flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
+                                    <Building2 size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <div className="text-white font-bold text-sm flex items-center gap-1.5">
+                                        Open Broker Account
+                                        <span className="text-[9px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded border border-amber-300/40 uppercase font-bold">
+                                            Recommended
+                                        </span>
+                                    </div>
+                                    <div className="text-blue-100 text-[11px]">
+                                        Sign up with our partner broker · MT5 supported
+                                    </div>
+                                </div>
+                            </div>
+                            <ExternalLink
+                                size={18}
+                                className="relative text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform flex-shrink-0"
+                            />
+                        </a>
+
+                        {/* ─── WhatsApp CTA ─────────────────────────── */}
                         <a
                             href={WHATSAPP_LINK}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                            className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                            <div className="relative flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
                                     <MessageCircle size={20} className="text-white" />
                                 </div>
                                 <div>
@@ -215,7 +258,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                             <ArrowRight
                                 size={18}
-                                className="text-white group-hover:translate-x-1 transition-transform"
+                                className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0"
                             />
                         </a>
                     </div>
@@ -224,12 +267,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     {/* RIGHT PANEL — Login/Signup Card                     */}
                     {/* ═══════════════════════════════════════════════════ */}
                     <div className="w-full max-w-md mx-auto lg:mx-0">
-                        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 transition-all duration-300 hover:shadow-blue-500/10">
+                        <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 transition-all duration-300 hover:shadow-blue-500/10 overflow-hidden">
 
-                            {/* Mobile-only Logo */}
+                            {/* Top gradient line */}
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+
+                            {/* ─── Mobile-only Logo ──────────────────── */}
                             <div className="lg:hidden text-center mb-6">
                                 <div className="flex justify-center mb-3">
-                                    <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl shadow-blue-600/30">
+                                    <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/30">
                                         <img
                                             src={LOGO_URL}
                                             alt="PipTrader AI Logo"
@@ -245,7 +291,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </p>
                             </div>
 
-                            {/* Mode Title */}
+                            {/* ─── Mode Title ────────────────────────── */}
                             <div className="text-center mb-6">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
                                     {mode === 'login' ? (
@@ -274,10 +320,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </p>
                             </div>
 
-                            {/* Signup Success Message */}
+                            {/* ─── Broker Hint (signup only) ──────────── */}
+                            {mode === 'signup' && !signupMessage && (
+                                <div className="mb-5 p-3.5 bg-gradient-to-br from-blue-900/30 to-indigo-900/20 border border-blue-500/30 rounded-xl">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-1.5 bg-blue-500/20 rounded-lg border border-blue-500/30 flex-shrink-0">
+                                            <Building2 size={14} className="text-blue-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-blue-200 font-bold text-[11px] mb-0.5">
+                                                Need a broker first?
+                                            </div>
+                                            <p className="text-blue-300/70 text-[11px] leading-relaxed mb-2">
+                                                Open a MetaTrader 5 account with our partner broker to get started.
+                                            </p>
+                                            <a
+                                                href={BROKER_LINK}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-300 hover:text-white underline transition"
+                                            >
+                                                Open Broker Account
+                                                <ExternalLink size={11} />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ─── Signup Success Message ─────────────── */}
                             {signupMessage && (
                                 <div className="mb-5 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl flex items-start gap-3">
-                                    <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0">
+                                    <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30">
                                         <CheckCircle2 size={14} className="text-emerald-400" />
                                     </div>
                                     <div>
@@ -291,7 +365,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             )}
 
-                            {/* Form */}
+                            {/* ─── Form ──────────────────────────────── */}
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Email */}
                                 <div>
@@ -397,42 +471,71 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </form>
 
-                            {/* Divider */}
+                            {/* ─── Divider ────────────────────────────── */}
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-slate-700/50" />
                                 <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                                    Need access?
+                                    Get Started
                                 </span>
                                 <div className="flex-1 h-px bg-slate-700/50" />
                             </div>
 
-                            {/* WhatsApp CTA for mobile */}
-                            <a
-                                href={WHATSAPP_LINK}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 hover:from-emerald-600/30 hover:to-green-700/30 rounded-xl p-3 border border-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
-                                        <MessageCircle size={14} className="text-emerald-400" />
-                                    </div>
-                                    <div>
-                                        <div className="text-emerald-300 font-bold text-[11px]">
-                                            Get Lifetime Access
+                            {/* ─── Mobile / Small Stack: Broker + WhatsApp ── */}
+                            <div className="space-y-2.5">
+                                {/* Broker CTA — always visible on small screens (left panel hidden) */}
+                                <a
+                                    href={BROKER_LINK}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="lg:hidden group flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600/20 to-indigo-700/20 hover:from-blue-600/30 hover:to-indigo-700/30 rounded-xl p-3 border border-blue-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-1.5 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                                            <Building2 size={14} className="text-blue-400" />
                                         </div>
-                                        <div className="text-slate-500 text-[10px]">
-                                            +254 116 081 230
+                                        <div>
+                                            <div className="text-blue-300 font-bold text-[11px]">
+                                                Open Broker Account
+                                            </div>
+                                            <div className="text-slate-500 text-[10px]">
+                                                Partner broker · MT5 supported
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <ArrowRight
-                                    size={14}
-                                    className="text-emerald-400 group-hover:translate-x-1 transition-transform"
-                                />
-                            </a>
+                                    <ExternalLink
+                                        size={14}
+                                        className="text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                                    />
+                                </a>
 
-                            {/* Footer */}
+                                {/* WhatsApp CTA */}
+                                <a
+                                    href={WHATSAPP_LINK}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 hover:from-emerald-600/30 hover:to-green-700/30 rounded-xl p-3 border border-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
+                                            <MessageCircle size={14} className="text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <div className="text-emerald-300 font-bold text-[11px]">
+                                                Get Lifetime Access
+                                            </div>
+                                            <div className="text-slate-500 text-[10px]">
+                                                +254 116 081 230
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ArrowRight
+                                        size={14}
+                                        className="text-emerald-400 group-hover:translate-x-1 transition-transform"
+                                    />
+                                </a>
+                            </div>
+
+                            {/* ─── Footer ────────────────────────────── */}
                             <div className="mt-5 text-center">
                                 <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
                                     <Shield size={10} className="text-emerald-400" />
