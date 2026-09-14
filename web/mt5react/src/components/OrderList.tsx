@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Activity, TrendingUp, TrendingDown, X, RefreshCw,
     Clock, AlertCircle, Zap, DollarSign,
-    Layers, Target, Shield, XCircle, CheckCircle2
+    Layers, Target, Shield, XCircle, CheckCircle2, Square
 } from 'lucide-react';
 import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
 import { toast } from 'react-toastify';
@@ -37,6 +37,8 @@ export const OrdersList: React.FC = () => {
     // ─── Risk Guard Auto-Close State ────────────────────────
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const handledAutoCloseRef = useRef<Set<number>>(new Set());
+    const handledAlgoStopRef = useRef<Set<number>>(new Set());
+    const prevRiskActiveRef = useRef<boolean | null | undefined>(undefined);
     const autoCloseInProgressRef = useRef(false);
 
     const userStr = localStorage.getItem('user');
@@ -112,7 +114,9 @@ export const OrdersList: React.FC = () => {
     };
 
     // ─── Shared Close All performer ──────────────────────────
-    const performCloseAll = async (reason: 'manual' | 'stop_loss' | 'take_profit' = 'manual') => {
+    const performCloseAll = async (
+        reason: 'manual' | 'stop_loss' | 'take_profit' | 'algo_stopped' = 'manual'
+    ) => {
         const opened = orders?.opened || [];
         if (opened.length === 0) return;
 
@@ -139,8 +143,9 @@ export const OrdersList: React.FC = () => {
         setCloseAllProgress({ current: 0, total: 0 });
 
         const prefix =
-            reason === 'stop_loss' ? '🛑 Auto-close (SL hit): ' :
-            reason === 'take_profit' ? '🎯 Auto-close (TP hit): ' :
+            reason === 'stop_loss'    ? '🛑 Auto-close (SL hit): ' :
+            reason === 'take_profit'  ? '🎯 Auto-close (TP hit): ' :
+            reason === 'algo_stopped' ? '⏹️ Auto-close (Algo stopped): ' :
             '';
 
         if (failed === 0) {
@@ -168,7 +173,7 @@ export const OrdersList: React.FC = () => {
         await performCloseAll('manual');
     };
 
-    // ─── AUTO-CLOSE ON STOP LOSS or TAKE PROFIT ──────────────
+    // ─── AUTO-CLOSE #1: SL / TP TRIGGERED ────────────────────
     useEffect(() => {
         if (!riskSession) return;
         if (riskSession.is_active) return;
@@ -178,14 +183,12 @@ export const OrdersList: React.FC = () => {
         const isTP = reason === 'tp_hit';
         if (!isSL && !isTP) return;
 
-        // Respect whichever amount was actually set
         if (isSL && (!riskSession.sl_amount || riskSession.sl_amount <= 0)) return;
         if (isTP && (!riskSession.tp_amount || riskSession.tp_amount <= 0)) return;
 
         if (autoCloseInProgressRef.current) return;
         if (handledAutoCloseRef.current.has(riskSession.id)) return;
 
-        // Freshness guard — only recent triggers (< 10 min)
         if (riskSession.triggered_at) {
             const triggeredAt = new Date(riskSession.triggered_at).getTime();
             const ageMinutes = (Date.now() - triggeredAt) / 60000;
@@ -210,6 +213,60 @@ export const OrdersList: React.FC = () => {
         );
 
         performCloseAll(isSL ? 'stop_loss' : 'take_profit').finally(() => {
+            autoCloseInProgressRef.current = false;
+        });
+    }, [riskSession, orders]);
+
+    // ─── AUTO-CLOSE #2: ALGO MANUALLY STOPPED ────────────────
+    useEffect(() => {
+        // Track "no session" state
+        if (!riskSession) {
+            prevRiskActiveRef.current = null;
+            return;
+        }
+
+        const wasActive = prevRiskActiveRef.current;
+        const isNowActive = riskSession.is_active;
+        const reason = riskSession.trigger_reason;
+
+        // Update ref for next comparison
+        prevRiskActiveRef.current = isNowActive;
+
+        // Only handle when it just became inactive
+        if (isNowActive) return;
+
+        // Skip if SL/TP — handled by effect #1
+        if (reason === 'sl_hit' || reason === 'tp_hit') return;
+
+        // Detect: was active → now inactive (in-session transition)
+        const isTransition = wasActive === true;
+
+        // Detect: page loaded with a recently-created but already-stopped session
+        let isFreshlyStopped = false;
+        if (wasActive === undefined || wasActive === null) {
+            if (riskSession.created_at) {
+                const createdAge = (Date.now() - new Date(riskSession.created_at).getTime()) / 60000;
+                isFreshlyStopped = createdAge < 30;
+            }
+        }
+
+        if (!isTransition && !isFreshlyStopped) return;
+
+        if (handledAlgoStopRef.current.has(riskSession.id)) return;
+        if (autoCloseInProgressRef.current) return;
+
+        const opened = orders?.opened || [];
+        if (opened.length === 0) return;
+
+        handledAlgoStopRef.current.add(riskSession.id);
+        autoCloseInProgressRef.current = true;
+
+        toast.warning(
+            `⏹️ Algo stopped — auto-closing ${opened.length} position${opened.length !== 1 ? 's' : ''}...`,
+            { autoClose: 6000, position: 'top-center' }
+        );
+
+        performCloseAll('algo_stopped').finally(() => {
             autoCloseInProgressRef.current = false;
         });
     }, [riskSession, orders]);
@@ -262,8 +319,20 @@ export const OrdersList: React.FC = () => {
         riskSession.tp_amount > 0
     );
 
-    const anyTriggered = slTriggered || tpTriggered;
+    // Algo stopped = inactive session with no SL/TP trigger
+    const algoStopped = !!(
+        riskSession &&
+        !riskSession.is_active &&
+        !riskSession.trigger_reason &&
+        (opened.length > 0 || closingAll)
+    );
+
+    const anyTriggered = slTriggered || tpTriggered || algoStopped;
+
+    // For banner color logic
     const isSL = slTriggered;
+    const isTP = tpTriggered;
+    const isStop = algoStopped;
 
     if (!vpsAddress) {
         return (
@@ -345,18 +414,18 @@ export const OrdersList: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── SL / TP TRIGGERED BANNER ───────────────────── */}
+                {/* ─── SL / TP / STOP TRIGGERED BANNER ────────────── */}
                 {anyTriggered && (
                     <div className={`rounded-2xl border p-4 flex items-start gap-3 backdrop-blur transition-all ${
                         closingAll
                             ? 'bg-gradient-to-r from-amber-900/40 to-orange-900/20 border-amber-500/50'
                             : opened.length === 0
-                                ? isSL
-                                    ? 'bg-gradient-to-r from-emerald-900/40 to-green-900/20 border-emerald-500/50'
-                                    : 'bg-gradient-to-r from-emerald-900/40 to-teal-900/20 border-emerald-500/50'
+                                ? 'bg-gradient-to-r from-emerald-900/40 to-green-900/20 border-emerald-500/50'
                                 : isSL
                                     ? 'bg-gradient-to-r from-rose-900/40 to-red-900/20 border-rose-500/50'
-                                    : 'bg-gradient-to-r from-blue-900/40 to-teal-900/20 border-blue-500/50'
+                                    : isTP
+                                        ? 'bg-gradient-to-r from-blue-900/40 to-teal-900/20 border-blue-500/50'
+                                        : 'bg-gradient-to-r from-amber-900/40 to-yellow-900/20 border-amber-500/50'
                     }`}>
                         <div className={`p-2 rounded-xl border flex-shrink-0 ${
                             closingAll
@@ -365,7 +434,9 @@ export const OrdersList: React.FC = () => {
                                     ? 'bg-emerald-500/20 border-emerald-500/30'
                                     : isSL
                                         ? 'bg-rose-500/20 border-rose-500/30'
-                                        : 'bg-blue-500/20 border-blue-500/30'
+                                        : isTP
+                                            ? 'bg-blue-500/20 border-blue-500/30'
+                                            : 'bg-amber-500/20 border-amber-500/30'
                         }`}>
                             {closingAll ? (
                                 <RefreshCw size={20} className="text-amber-400 animate-spin" />
@@ -373,8 +444,10 @@ export const OrdersList: React.FC = () => {
                                 <CheckCircle2 size={20} className="text-emerald-400" />
                             ) : isSL ? (
                                 <TrendingDown size={20} className="text-rose-400" />
-                            ) : (
+                            ) : isTP ? (
                                 <TrendingUp size={20} className="text-blue-400" />
+                            ) : (
+                                <Square size={20} className="text-amber-400" />
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -385,13 +458,15 @@ export const OrdersList: React.FC = () => {
                                         ? 'text-emerald-200'
                                         : isSL
                                             ? 'text-rose-200'
-                                            : 'text-blue-200'
+                                            : isTP
+                                                ? 'text-blue-200'
+                                                : 'text-amber-200'
                             }`}>
                                 {closingAll
-                                    ? `${isSL ? 'Stop Loss' : 'Take Profit'} Hit — Auto-Closing Positions`
+                                    ? `${isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped'} — Auto-Closing Positions`
                                     : opened.length === 0
-                                        ? `${isSL ? 'Stop Loss' : 'Take Profit'} Handled — All Positions Closed`
-                                        : `${isSL ? 'Stop Loss' : 'Take Profit'} Hit — Positions Still Open`}
+                                        ? `${isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped'} Handled — All Positions Closed`
+                                        : `${isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped'} — Positions Still Open`}
                             </div>
                             <div className={`text-xs mt-0.5 ${
                                 closingAll
@@ -400,7 +475,9 @@ export const OrdersList: React.FC = () => {
                                         ? 'text-emerald-300/80'
                                         : isSL
                                             ? 'text-rose-300/80'
-                                            : 'text-blue-300/80'
+                                            : isTP
+                                                ? 'text-blue-300/80'
+                                                : 'text-amber-300/80'
                             }`}>
                                 {closingAll ? (
                                     <>
@@ -408,17 +485,29 @@ export const OrdersList: React.FC = () => {
                                     </>
                                 ) : opened.length === 0 ? (
                                     <>
-                                        Your Risk Guard stopped the algo at{' '}
-                                        {isSL ? (
-                                            <>${riskSession?.sl_amount?.toFixed(2)} drawdown</>
-                                        ) : (
-                                            <>${riskSession?.tp_amount?.toFixed(2)} profit</>
+                                        {isSL && (
+                                            <>
+                                                Your Risk Guard stopped the algo at $
+                                                {riskSession?.sl_amount?.toFixed(2)} drawdown.
+                                                All positions have been closed automatically.
+                                            </>
                                         )}
-                                        . All positions have been closed automatically.
+                                        {isTP && (
+                                            <>
+                                                Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit.
+                                                All positions have been closed automatically.
+                                            </>
+                                        )}
+                                        {isStop && (
+                                            <>
+                                                Algo was stopped manually. All positions
+                                                have been closed automatically.
+                                            </>
+                                        )}
                                     </>
                                 ) : (
                                     <>
-                                        Algo stopped. <span className="font-bold">{opened.length}</span>{' '}
+                                        <span className="font-bold">{opened.length}</span>{' '}
                                         position{opened.length !== 1 ? 's' : ''} still open — auto-close in progress.
                                     </>
                                 )}
@@ -728,7 +817,7 @@ export const OrdersList: React.FC = () => {
                 )}
 
                 {/* ─── AUTO-REFRESH INDICATOR ─────────────────────── */}
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-2">
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-2 flex-wrap">
                     <span className="inline-flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                         Live · updates every 1 second
@@ -736,7 +825,7 @@ export const OrdersList: React.FC = () => {
                     <span className="text-slate-600">·</span>
                     <span className="inline-flex items-center gap-2">
                         <Shield size={10} className="text-rose-400" />
-                        Auto-close on SL <span className="text-slate-600">&</span> TP enabled
+                        Auto-close on SL / TP / Algo Stop
                     </span>
                 </div>
             </div>
