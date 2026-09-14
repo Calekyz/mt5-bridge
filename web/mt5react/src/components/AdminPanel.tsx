@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save } from 'lucide-react';
+=import React, { useState, useEffect, useMemo } from 'react';
+import {
+    Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
+    Users, Shield, Crown, Server, CheckCircle2, XCircle, Search, Filter,
+    Eye, EyeOff, Sparkles, BarChart3, Activity, Clock, Lock
+} from 'lucide-react';
 
 interface User {
     id: number;
@@ -40,11 +44,16 @@ export const AdminPanel: React.FC = () => {
     const [addingClient, setAddingClient] = useState(false);
     const [newClientKey, setNewClientKey] = useState<string | null>(null);
     const [clientError, setClientError] = useState<string | null>(null);
+    const [showClientPassword, setShowClientPassword] = useState(false);
 
     // Inline VPS update state
     const [editingVps, setEditingVps] = useState<{ [key: number]: string }>({});
     const [savingVps, setSavingVps] = useState<{ [key: number]: boolean }>({});
     const [vpsUpdateMessage, setVpsUpdateMessage] = useState<string | null>(null);
+
+    // Search
+    const [userSearch, setUserSearch] = useState('');
+    const [keySearch, setKeySearch] = useState('');
 
     const fetchUsers = async () => {
         try {
@@ -220,7 +229,6 @@ export const AdminPanel: React.FC = () => {
             setClientVps('');
             await loadData();
         } catch (err: any) {
-            // Extract the actual error message
             let msg = 'Unknown error';
             if (err.message) msg = err.message;
             else if (err.error) msg = err.error;
@@ -256,7 +264,6 @@ export const AdminPanel: React.FC = () => {
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, vps_address: vpsAddress } : u));
             setEditingVps(prev => ({ ...prev, [userId]: vpsAddress }));
         } catch (err: any) {
-            // Extract the actual error message
             let msg = 'Unknown error';
             if (err.message) msg = err.message;
             else if (err.error) msg = err.error;
@@ -268,302 +275,642 @@ export const AdminPanel: React.FC = () => {
         }
     };
 
+    // ─── Stats ───────────────────────────────────────────────
+    const stats = useMemo(() => {
+        const totalUsers = users.length;
+        const admins = users.filter(u => u.role === 'admin').length;
+        const withVps = users.filter(u => u.vps_address).length;
+        const totalKeys = keys.length;
+        const usedKeys = keys.filter(k => k.used_by_email).length;
+        const unusedKeys = totalKeys - usedKeys;
+        return { totalUsers, admins, withVps, totalKeys, usedKeys, unusedKeys };
+    }, [users, keys]);
+
+    // ─── Filtered lists ──────────────────────────────────────
+    const filteredUsers = userSearch
+        ? users.filter(u =>
+            u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+            String(u.id).includes(userSearch)
+        )
+        : users;
+
+    const filteredKeys = keySearch
+        ? keys.filter(k =>
+            k.key_code.toLowerCase().includes(keySearch.toLowerCase()) ||
+            (k.used_by_email || '').toLowerCase().includes(keySearch.toLowerCase())
+        )
+        : keys;
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-slate-400 text-sm">Loading admin data...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            👥 Admin Panel
-                        </h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            Manage users and assign VPS addresses
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/20">
+                            <Crown className="text-white" size={22} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-purple-100 to-pink-200 bg-clip-text text-transparent">
+                                Admin Panel
+                            </h1>
+                            <p className="text-slate-400 text-xs mt-0.5">
+                                Manage users, VPS assignments & access keys
+                            </p>
+                        </div>
                     </div>
-                    <button onClick={loadData} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition disabled:opacity-50">
-                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                        Refresh
+                    <button
+                        onClick={loadData}
+                        disabled={loading}
+                        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        <span className="hidden sm:inline">Refresh</span>
                     </button>
                 </div>
 
+                {/* ─── QUICK STATS ────────────────────────────────── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                                Total Users
+                            </span>
+                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                                <Users size={14} className="text-white" />
+                            </div>
+                        </div>
+                        <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
+                        <div className="text-[10px] text-slate-500 mt-1">
+                            {stats.admins} admin{stats.admins !== 1 ? 's' : ''}
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                                VPS Assigned
+                            </span>
+                            <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg">
+                                <Server size={14} className="text-white" />
+                            </div>
+                        </div>
+                        <div className="text-2xl font-bold text-emerald-400">{stats.withVps}</div>
+                        <div className="text-[10px] text-slate-500 mt-1">
+                            of {stats.totalUsers} users
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                                Total Keys
+                            </span>
+                            <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
+                                <Key size={14} className="text-white" />
+                            </div>
+                        </div>
+                        <div className="text-2xl font-bold text-white">{stats.totalKeys}</div>
+                        <div className="text-[10px] text-slate-500 mt-1">
+                            {stats.usedKeys} used · {stats.unusedKeys} available
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                                Available Keys
+                            </span>
+                            <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+                                <Sparkles size={14} className="text-white" />
+                            </div>
+                        </div>
+                        <div className="text-2xl font-bold text-amber-400">{stats.unusedKeys}</div>
+                        <div className="text-[10px] text-slate-500 mt-1">
+                            ready to assign
+                        </div>
+                    </div>
+                </div>
+
+                {/* ─── ERROR / SUCCESS ALERTS ─────────────────────── */}
                 {error && (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm flex items-center gap-2">
+                    <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 text-red-400 text-sm flex items-center gap-2">
                         <AlertCircle size={18} />
                         <span>{error}</span>
+                        <button onClick={() => setError(null)} className="ml-auto text-xs underline">Dismiss</button>
                     </div>
                 )}
                 {vpsUpdateMessage && (
-                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-3 text-emerald-400 text-sm flex items-center gap-2">
+                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-4 text-emerald-400 text-sm flex items-center gap-2">
+                        <CheckCircle2 size={18} />
                         <span>{vpsUpdateMessage}</span>
                     </div>
                 )}
 
-                {/* Add Client */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <UserPlus size={20} className="text-blue-400" />
-                        Add New Client
-                    </h2>
-                    <form onSubmit={handleAddClient} className="space-y-4">
+                {/* ─── ADD NEW CLIENT ─────────────────────────────── */}
+                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
+                        <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                            <UserPlus size={16} className="text-white" />
+                        </div>
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                            Add New Client
+                        </h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">
+                            Creates user + assigns VPS + generates key
+                        </span>
+                    </div>
+
+                    <form onSubmit={handleAddClient} className="p-5 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
+                                    Email Address
+                                </label>
                                 <input
                                     type="email"
                                     value={clientEmail}
                                     onChange={(e) => setClientEmail(e.target.value)}
                                     placeholder="client@example.com"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Password</label>
-                                <input
-                                    type="text"
-                                    value={clientPassword}
-                                    onChange={(e) => setClientPassword(e.target.value)}
-                                    placeholder="Set a password"
-                                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
-                                    required
-                                />
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showClientPassword ? "text" : "password"}
+                                        value={clientPassword}
+                                        onChange={(e) => setClientPassword(e.target.value)}
+                                        placeholder="Set a secure password"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 pr-10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowClientPassword(!showClientPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
+                                    >
+                                        {showClientPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
                         <div>
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">VPS Address</label>
+                            <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold flex items-center gap-1.5">
+                                <Server size={10} />
+                                VPS Address
+                                <span className="text-slate-600 normal-case tracking-normal">(optional)</span>
+                            </label>
                             <input
                                 type="text"
                                 value={clientVps}
                                 onChange={(e) => setClientVps(e.target.value)}
-                                placeholder="http://your-vps-ip:8890"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                                placeholder="http://51.75.104.231:8890"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
                             />
                         </div>
+
                         {clientError && (
-                            <div className="text-red-400 text-sm bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                            <div className="text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3 flex items-center gap-2">
+                                <XCircle size={14} />
                                 {clientError}
                             </div>
                         )}
+
                         {newClientKey && (
-                            <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
-                                <p className="text-emerald-400 text-sm font-semibold">✅ Client created! Access Key:</p>
-                                <code className="block mt-2 bg-slate-800 text-white font-mono text-sm px-4 py-2 rounded-lg break-all">
-                                    {newClientKey}
-                                </code>
-                                <p className="text-xs text-slate-400 mt-2">Give this key to the client for login.</p>
+                            <div className="bg-gradient-to-br from-emerald-900/30 to-teal-900/20 border border-emerald-500/40 rounded-xl p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircle2 size={16} className="text-emerald-400" />
+                                    <p className="text-emerald-300 text-sm font-bold">
+                                        Client created successfully!
+                                    </p>
+                                </div>
+                                <div className="bg-slate-950/60 rounded-lg p-3 border border-emerald-500/20">
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-semibold">
+                                        Access Key
+                                    </div>
+                                    <code className="block text-emerald-400 font-mono text-sm break-all">
+                                        {newClientKey}
+                                    </code>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(newClientKey)}
+                                    className="mt-3 w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition"
+                                >
+                                    {copiedKey === newClientKey ? (
+                                        <>
+                                            <Check size={14} />
+                                            Copied to clipboard!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy size={14} />
+                                            Copy Access Key
+                                        </>
+                                    )}
+                                </button>
+                                <p className="text-[10px] text-slate-500 mt-2 text-center">
+                                    Send this key to the client — they'll need it to log in.
+                                </p>
                             </div>
                         )}
-                        <button
-                            type="submit"
-                            disabled={addingClient}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {addingClient ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={18} />}
-                            {addingClient ? 'Creating...' : 'Create Client'}
-                        </button>
+
+                        <div className="flex justify-end pt-2">
+                            <button
+                                type="submit"
+                                disabled={addingClient}
+                                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                {addingClient ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={16} />
+                                        Create Client
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </form>
                 </div>
 
-                {/* Add User */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <UserPlus size={20} className="text-blue-400" />
-                        Add User (without VPS)
-                    </h2>
-                    <form onSubmit={handleAddUser} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={newEmail}
-                                onChange={(e) => setNewEmail(e.target.value)}
-                                placeholder="user@example.com"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
+                {/* ─── ADD USER (NO VPS) ──────────────────────────── */}
+                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
+                        <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg">
+                            <UserPlus size={16} className="text-white" />
                         </div>
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Password</label>
-                            <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                required
-                            />
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                            Add User Only
+                        </h2>
+                        <span className="text-[10px] text-slate-500 ml-auto">
+                            Assign VPS separately below
+                        </span>
+                    </div>
+
+                    <form onSubmit={handleAddUser} className="p-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                            <div>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={newEmail}
+                                    onChange={(e) => setNewEmail(e.target.value)}
+                                    placeholder="user@example.com"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1.5 font-semibold">
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition"
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={isAdding}
+                                className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                {isAdding ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus size={16} />
+                                        Add User
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={isAdding}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={18} />}
-                            {isAdding ? 'Adding...' : 'Add User'}
-                        </button>
                     </form>
                 </div>
 
-                {/* Users Table */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+                {/* ─── USERS TABLE ────────────────────────────────── */}
+                <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                                <Users size={14} className="text-white" />
+                            </div>
+                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                All Users
+                            </h2>
+                            <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
+                                {filteredUsers.length}
+                            </span>
+                        </div>
+                        <div className="relative w-full sm:w-64">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                type="text"
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                                placeholder="Search users..."
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition"
+                            />
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-slate-700/30 border-b border-slate-700/50">
+                        <table className="w-full text-sm">
+                            <thead className="bg-slate-900/60 border-b border-slate-700/50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">ID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Role</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Joined</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">VPS Address</th>
-                                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">ID</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Role</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Joined</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">VPS Address</th>
+                                    <th className="px-4 py-3.5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map((user) => {
+                                {filteredUsers.map((user, idx) => {
                                     const currentVps = editingVps[user.id] || '';
                                     const isPending = !currentVps && !user.vps_address;
+                                    const isAdminRow = user.role === 'admin';
+                                    const isSelf = user.email === 'caleborenge8@gmail.com';
+
                                     return (
-                                        <tr key={user.id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition">
-                                            <td className="px-6 py-4 text-sm text-white font-mono">#{user.id}</td>
-                                            <td className="px-6 py-4 text-sm text-white">{user.email}</td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-300'}`}>
+                                        <tr
+                                            key={user.id}
+                                            className={`border-t border-slate-700/20 hover:bg-slate-800/40 transition-colors ${
+                                                idx % 2 === 0 ? "bg-slate-900/20" : ""
+                                            }`}
+                                        >
+                                            <td className="px-4 py-3">
+                                                <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
+                                                    #{user.id}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-white font-medium truncate max-w-[200px]">
+                                                        {user.email}
+                                                    </span>
+                                                    {isSelf && (
+                                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded uppercase font-bold">
+                                                            You
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                                    isAdminRow
+                                                        ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                                                        : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                                                }`}>
+                                                    {isAdminRow ? <Crown size={10} /> : <Shield size={10} />}
                                                     {user.role}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-slate-400">
-                                                {new Date(user.created_at).toLocaleString()}
+                                            <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
+                                                {new Date(user.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 py-3 min-w-[260px]">
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="text"
                                                         value={currentVps}
                                                         onChange={(e) => handleVpsChange(user.id, e.target.value)}
-                                                        placeholder={isPending ? "Pending" : "Enter VPS address"}
-                                                        className={`flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isPending ? 'text-yellow-400 placeholder-yellow-400/50' : ''}`}
+                                                        placeholder={isPending ? "⚠ Pending..." : "Enter VPS URL"}
+                                                        className={`flex-1 bg-slate-900/60 border rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                                                            isPending
+                                                                ? 'border-amber-500/40 text-amber-400 placeholder-amber-500/60 focus:border-amber-500 focus:ring-amber-500/30'
+                                                                : 'border-slate-600/60 focus:border-blue-500 focus:ring-blue-500/30'
+                                                        }`}
                                                     />
                                                     <button
                                                         onClick={() => handleVpsSave(user.id)}
                                                         disabled={savingVps[user.id]}
-                                                        className="text-blue-400 hover:text-blue-300 transition disabled:opacity-50"
+                                                        className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
                                                         title="Save VPS address"
                                                     >
-                                                        {savingVps[user.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
+                                                        {savingVps[user.id] ? (
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Save size={13} />
+                                                        )}
                                                     </button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {user.email !== 'caleborenge8@gmail.com' && (
+                                            <td className="px-4 py-3 text-right">
+                                                {!isSelf && (
                                                     <button
                                                         onClick={() => handleDeleteUser(user.id)}
                                                         disabled={isDeleting === user.id}
-                                                        className="text-red-400 hover:text-red-300 transition disabled:opacity-50"
+                                                        className="inline-flex items-center justify-center w-8 h-8 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition disabled:opacity-50"
+                                                        title="Delete user"
                                                     >
-                                                        {isDeleting === user.id ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : <Trash2 size={18} />}
+                                                        {isDeleting === user.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 size={15} />
+                                                        )}
                                                     </button>
                                                 )}
                                             </td>
                                         </tr>
                                     );
                                 })}
-                                {users.length === 0 && (
-                                    <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">No users found.</td></tr>
+                                {filteredUsers.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="px-4 py-12 text-center">
+                                            <div className="text-slate-500 text-sm">
+                                                {userSearch ? 'No users match your search' : 'No users yet'}
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                {/* Access Keys */}
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Key size={20} /> Access Keys
-                    </h2>
-                    <div className="flex flex-wrap gap-4 items-end mb-4">
-                        <div>
-                            <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">Number of keys</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="20"
-                                value={keyCount}
-                                onChange={(e) => setKeyCount(parseInt(e.target.value) || 1)}
-                                className="w-20 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2 text-white"
-                            />
+                {/* ─── ACCESS KEYS ────────────────────────────────── */}
+                <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-700/40">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
+                                    <Key size={14} className="text-white" />
+                                </div>
+                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                    Access Keys
+                                </h2>
+                                <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
+                                    {filteredKeys.length}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        value={keySearch}
+                                        onChange={(e) => setKeySearch(e.target.value)}
+                                        placeholder="Search keys..."
+                                        className="w-44 bg-slate-900/60 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-1 bg-slate-900/60 border border-slate-700/60 rounded-lg px-2 py-1">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="20"
+                                        value={keyCount}
+                                        onChange={(e) => setKeyCount(parseInt(e.target.value) || 1)}
+                                        className="w-12 bg-transparent text-white text-xs text-center focus:outline-none font-mono"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={generateKeys}
+                                    disabled={generating}
+                                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-lg shadow-purple-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                                >
+                                    {generating ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Sparkles size={12} />
+                                    )}
+                                    {generating ? 'Generating...' : 'Generate'}
+                                </button>
+                            </div>
                         </div>
-                        <button
-                            onClick={generateKeys}
-                            disabled={generating}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key size={16} />}
-                            {generating ? 'Generating...' : 'Generate Keys'}
-                        </button>
                     </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-slate-700/30 border-b border-slate-700/50">
+                            <thead className="bg-slate-900/60 border-b border-slate-700/50">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-xs text-slate-400">Key</th>
-                                    <th className="px-4 py-2 text-left text-xs text-slate-400">Created</th>
-                                    <th className="px-4 py-2 text-left text-xs text-slate-400">Used By</th>
-                                    <th className="px-4 py-2 text-right text-xs text-slate-400">Action</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Key Code</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Created</th>
+                                    <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 py-3.5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {keys.map((key) => {
+                                {filteredKeys.map((key, idx) => {
                                     const isCopied = copiedKey === key.key_code;
+                                    const isUsed = !!key.used_by_email;
                                     return (
-                                        <tr key={key.id} className="border-b border-slate-700/30">
-                                            <td className="px-4 py-2">
+                                        <tr
+                                            key={key.id}
+                                            className={`border-t border-slate-700/20 hover:bg-slate-800/40 transition-colors ${
+                                                idx % 2 === 0 ? "bg-slate-900/20" : ""
+                                            }`}
+                                        >
+                                            <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <code className="font-mono text-white text-xs bg-slate-700/50 px-2 py-1 rounded select-all">
+                                                    <code className="font-mono text-xs text-white bg-slate-800/60 px-2 py-1 rounded border border-slate-700/40 select-all">
                                                         {key.key_code}
                                                     </code>
                                                     <button
                                                         onClick={() => copyToClipboard(key.key_code)}
-                                                        className="text-slate-400 hover:text-white transition"
+                                                        className="text-slate-500 hover:text-white transition p-1"
                                                         title="Copy key"
                                                     >
-                                                        {isCopied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                                                        {isCopied ? (
+                                                            <Check size={13} className="text-emerald-400" />
+                                                        ) : (
+                                                            <Copy size={13} />
+                                                        )}
                                                     </button>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-2 text-slate-400 text-xs">
+                                            <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
                                                 {new Date(key.created_at).toLocaleString()}
                                             </td>
-                                            <td className="px-4 py-2 text-slate-400 text-xs">
-                                                {key.used_by_email || 'Not used'}
+                                            <td className="px-4 py-3">
+                                                {isUsed ? (
+                                                    <div>
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase">
+                                                            <CheckCircle2 size={10} />
+                                                            Used
+                                                        </span>
+                                                        <div className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[180px]">
+                                                            {key.used_by_email}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 uppercase">
+                                                        <Sparkles size={10} />
+                                                        Available
+                                                    </span>
+                                                )}
                                             </td>
-                                            <td className="px-4 py-2 text-right">
+                                            <td className="px-4 py-3 text-right">
                                                 <button
                                                     onClick={() => handleDeleteKey(key.id)}
-                                                    disabled={!!key.used_by_email}
-                                                    className="text-red-400 hover:text-red-300 disabled:opacity-30 transition"
+                                                    disabled={isUsed}
+                                                    className="inline-flex items-center justify-center w-8 h-8 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition disabled:opacity-20 disabled:cursor-not-allowed"
+                                                    title={isUsed ? "Cannot delete — key is in use" : "Delete key"}
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={15} />
                                                 </button>
                                             </td>
                                         </tr>
                                     );
                                 })}
-                                {keys.length === 0 && (
-                                    <tr><td colSpan={4} className="px-4 py-4 text-center text-slate-400">No keys generated.</td></tr>
+                                {filteredKeys.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-12 text-center">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/60 mb-3">
+                                                <Key size={28} className="text-slate-500" />
+                                            </div>
+                                            <div className="text-slate-400 text-sm">
+                                                {keySearch ? 'No keys match your search' : 'No keys generated yet'}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500 mt-1">
+                                                Click "Generate" above to create new access keys
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
+
             </div>
         </div>
     );
 };
+
+export default AdminPanel;
