@@ -2,19 +2,85 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="description" content="PipTrader AI — Automated MT5 trading platform with 24/7 cloud bots" />
-    <title>PipTrader AI</title>
 
-    <!-- PWA -->
+    <!-- ─── Viewport (mobile-optimized, notch-safe) ───────────── -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <!-- ─── Primary meta ─────────────────────────────────────── -->
+    <title>PipTrader AI — Automated MT5 Trading Platform</title>
+    <meta
+      name="description"
+      content="Cloud-based MT5 trading bots with Risk Guard protection. Trade 24/7 with AI-powered algorithms — no computer needed."
+    />
+    <meta name="theme-color" content="#020617" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- ─── Favicon (browser tab) ────────────────────────────── -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png"
+    />
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <!-- ─── PWA Manifest ─────────────────────────────────────── -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1e293b" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- ─── iOS (Apple) PWA ──────────────────────────────────── -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PipTrader" />
+
+    <!-- ─── Android / Chrome PWA ─────────────────────────────── -->
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="PipTrader AI" />
+
+    <!-- ─── Open Graph (share previews) ──────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PipTrader AI — Automated MT5 Trading" />
+    <meta
+      property="og:description"
+      content="Cloud-based MT5 trading bots with Risk Guard protection. Trade 24/7 with AI-powered algorithms."
+    />
+    <meta
+      property="og:image"
+      content="https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png"
+    />
+    <meta property="og:site_name" content="PipTrader AI" />
+
+    <!-- ─── Twitter Card ─────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PipTrader AI — Automated MT5 Trading" />
+    <meta
+      name="twitter:description"
+      content="Cloud-based MT5 trading bots with Risk Guard protection. Trade 24/7."
+    />
+    <meta
+      name="twitter:image"
+      content="https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png"
+    />
+
+    <!-- ─── Splash background (avoids white flash) ───────────── -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #020617;
+        color: #ffffff;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overscroll-behavior: none;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
