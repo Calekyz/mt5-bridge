@@ -791,17 +791,31 @@ export const AdminPanel: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                {!isSelf && (
+                                                {isSelf ? (
+                                                    <span
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/60 text-slate-600 border border-slate-700/40 cursor-not-allowed"
+                                                        title="You cannot delete your own account"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                        Delete
+                                                    </span>
+                                                ) : (
                                                     <button
                                                         onClick={() => handleDeleteUser(user.id)}
                                                         disabled={isDeleting === user.id}
-                                                        className="inline-flex items-center justify-center w-8 h-8 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition disabled:opacity-50"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:border-rose-500/60 shadow-lg shadow-rose-600/10 hover:shadow-rose-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                         title="Delete user"
                                                     >
                                                         {isDeleting === user.id ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            <>
+                                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                Deleting...
+                                                            </>
                                                         ) : (
-                                                            <Trash2 size={15} />
+                                                            <>
+                                                                <Trash2 size={13} />
+                                                                Delete
+                                                            </>
                                                         )}
                                                     </button>
                                                 )}
