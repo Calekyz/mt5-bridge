@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import {
-    Wifi, WifiOff, Radio, TrendingUp, BarChart3, Layers, Bell,
-    Activity, RefreshCw, Trash2, Send, Copy, Check, AlertCircle,
-    Info, Zap, Search, Pause, Play, Filter, X
+    WifiOff, Radio, TrendingUp, BarChart3, Layers, Bell,
+    Activity, Trash2, Send, Copy, Check,
+    Info, Zap, Search, Pause, Play, X
 } from "lucide-react";
 
 // Use environment variables or fallback to default (works with Render backend)
