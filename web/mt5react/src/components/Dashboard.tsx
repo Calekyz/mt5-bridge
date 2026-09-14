@@ -426,6 +426,7 @@ export const Dashboard: React.FC = () => {
         } else {
             setNovaSettings(prev => ({ ...prev, [key]: checked }));
         }
+        toast.success(`${key} ${checked ? 'enabled' : 'disabled'}`);
     };
 
     // ─── EA Not Configured ───────────────────────────────────
@@ -1012,6 +1013,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                         const currentValue = settings[setting.key] ?? setting.default;
                         const isChanged = currentValue !== setting.default;
 
+                        // ─── CHECKBOX / TOGGLE ────────────────────────
                         if (isBool) {
                             const checked = !!settings[setting.key];
                             return (
@@ -1023,31 +1025,47 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                                             : 'border-slate-700/40'
                                     }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                            {setting.label}
-                                        </label>
-                                        <label className="cursor-pointer flex-shrink-0 ml-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={(e) => onCheckboxChange(type, setting.key, e.target.checked)}
-                                                disabled={disabled}
-                                                className="sr-only peer"
-                                            />
-                                            <div className={`w-10 h-5.5 rounded-full transition-all relative ${
-                                                checked ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-slate-700'
-                                            }`}>
-                                                <div className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white shadow-md transition-all transform ${
-                                                    checked ? 'translate-x-4.5' : 'translate-x-0'
-                                                }`} />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
+                                                {setting.label}
                                             </div>
-                                        </label>
+                                            <div className={`text-[11px] font-bold uppercase tracking-wider ${
+                                                checked ? 'text-emerald-400' : 'text-slate-500'
+                                            }`}>
+                                                {checked ? '● ON' : '○ OFF'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => onCheckboxChange(type, setting.key, !checked)}
+                                            disabled={disabled}
+                                            aria-pressed={checked}
+                                            aria-label={`Toggle ${setting.label}`}
+                                            className={`relative inline-flex items-center flex-shrink-0 w-14 h-7 rounded-full transition-all duration-300 shadow-lg ${
+                                                checked
+                                                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/40'
+                                                    : 'bg-slate-700 shadow-slate-900/40'
+                                            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
+                                        >
+                                            <span
+                                                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                                    checked ? 'translate-x-7' : 'translate-x-0'
+                                                }`}
+                                            >
+                                                {checked ? (
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                ) : (
+                                                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                                                )}
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
                             );
                         }
 
+                        // ─── NUMBER INPUT ─────────────────────────────
                         return (
                             <div
                                 key={setting.key}
