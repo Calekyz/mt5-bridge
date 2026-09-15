@@ -22,8 +22,9 @@ interface RiskSession {
     created_at: string;
 }
 
-const SWEEP_COOLDOWN_MS = 5000;
-const SWEEP_FRESHNESS_MIN = 15;
+const SWEEP_COOLDOWN_MS = 5000;    // retry interval while positions remain
+const SWEEP_FRESHNESS_MIN = 15;    // ignore sessions older than 15 min
+const SWEEP_GRACE_MS = 10000;      // ← NEW: keep sweeping stragglers for 10s after positions hit 0
 
 export const OrdersList: React.FC = () => {
     const [orders, setOrders] = useState<OrderResponse | null>(null);
@@ -42,6 +43,8 @@ export const OrdersList: React.FC = () => {
     const lastSweepAttemptRef = useRef<number>(0);
     const sweepToastShownRef = useRef<Set<number>>(new Set());
     const sweepStateRef = useRef<Map<number, 'pending' | 'completed'>>(new Map());
+    // ─── NEW: tracks when each session last had 0 positions open ───
+    const sweepZeroTimeRef = useRef<Map<number, number>>(new Map());
 
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
@@ -169,6 +172,9 @@ export const OrdersList: React.FC = () => {
         await performCloseAll('manual');
     };
 
+    // ═══════════════════════════════════════════════════════════
+    //  UNIFIED AUTO-CLOSE SWEEP WITH 10s GRACE WINDOW
+    // ═══════════════════════════════════════════════════════════
     useEffect(() => {
         if (!riskSession) return;
         if (riskSession.is_active) return;
@@ -191,18 +197,39 @@ export const OrdersList: React.FC = () => {
         }
 
         const opened = orders?.opened || [];
+        const currentState = sweepStateRef.current.get(sessionId);
 
+        // ─── CASE A: No positions open right now ─────────────
         if (opened.length === 0) {
-            const state = sweepStateRef.current.get(sessionId);
-            if (state === 'pending') {
+            if (currentState === 'pending') {
+                const zeroTime = sweepZeroTimeRef.current.get(sessionId) || 0;
+
+                // First time we hit 0 → start the grace timer
+                if (zeroTime === 0) {
+                    sweepZeroTimeRef.current.set(sessionId, Date.now());
+                    console.log(`[Sweep] Session ${sessionId} — reached 0, ${SWEEP_GRACE_MS / 1000}s grace started`);
+                    return;
+                }
+
+                // Still within grace window → keep watching for stragglers
+                if (Date.now() - zeroTime < SWEEP_GRACE_MS) {
+                    return;
+                }
+
+                // Grace period passed with no new positions → lock it
                 sweepStateRef.current.set(sessionId, 'completed');
-                console.log(`[Sweep] Session ${sessionId} — completed, subsequent positions are user-owned`);
+                sweepZeroTimeRef.current.delete(sessionId);
+                console.log(`[Sweep] Session ${sessionId} — grace passed, session locked`);
             }
             return;
         }
 
-        const state = sweepStateRef.current.get(sessionId);
-        if (state === 'completed') return;
+        // ─── CASE B: Positions exist ─────────────────────────
+        // If grace has passed and we've locked, leave manual trades alone
+        if (currentState === 'completed') return;
+
+        // A position appeared (either straggler or during grace) → reset zero timer
+        sweepZeroTimeRef.current.delete(sessionId);
 
         if (autoCloseInProgressRef.current) return;
         if (Date.now() - lastSweepAttemptRef.current < SWEEP_COOLDOWN_MS) return;
@@ -436,9 +463,9 @@ export const OrdersList: React.FC = () => {
                                     <>Closing {closeAllProgress.current} of {closeAllProgress.total} position{closeAllProgress.total !== 1 ? 's' : ''}...</>
                                 ) : opened.length === 0 ? (
                                     <>
-                                        {isSL && (<>Your Risk Guard stopped the algo at ${riskSession?.sl_amount?.toFixed(2)} drawdown. All positions have been closed automatically.</>)}
-                                        {isTP && (<>Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit. All positions have been closed automatically.</>)}
-                                        {isStop && (<>Algo was stopped manually. All positions have been closed automatically.</>)}
+                                        {isSL && (<>Your Risk Guard stopped the algo at ${riskSession?.sl_amount?.toFixed(2)} drawdown. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
+                                        {isTP && (<>Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
+                                        {isStop && (<>Algo was stopped manually. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
                                     </>
                                 ) : (
                                     <><span className="font-bold">{opened.length}</span> position{opened.length !== 1 ? 's' : ''} still open — auto-close in progress.</>
@@ -755,7 +782,7 @@ export const OrdersList: React.FC = () => {
                     <span className="text-slate-600">·</span>
                     <span className="inline-flex items-center gap-2">
                         <Shield size={10} className="text-rose-400" />
-                        Auto-close sweep on SL / TP / Algo Stop
+                        Auto-close sweep · 10s grace for stragglers
                     </span>
                 </div>
             </div>
