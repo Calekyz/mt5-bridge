@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Activity, TrendingUp, TrendingDown, X, RefreshCw,
     Clock, AlertCircle, Zap, DollarSign,
-    Layers, Target, Shield, XCircle, CheckCircle2, Square
+    Layers, Target, Shield, XCircle, CheckCircle2, Square, Info
 } from 'lucide-react';
 import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
 import { QuantumAIHealthPanel } from './QuantumAIHealthPanel';
