@@ -35,7 +35,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     const [applying, setApplying] = useState(false);
     const [showHealth, setShowHealth] = useState(false);
 
-    // Recompute on every render when data changes
     const account = useMemo(
         () => analyzeAccount(balance, equity, positions),
         [balance, equity, positions]
@@ -89,17 +88,17 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     const ac = healthColorMap[account.color];
 
     return (
-        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-purple-500/30 overflow-hidden">
+        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-amber-500/30 overflow-hidden">
             {/* ─── HEADER ─────────────────────────────────────── */}
             <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-purple-600 to-pink-700 shadow-lg shadow-purple-600/30">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 shadow-lg shadow-amber-500/30">
                         <Brain size={18} className="text-white" />
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                             Quantum AI
-                            <span className="text-[9px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30 normal-case tracking-normal font-semibold">
+                            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 normal-case tracking-normal font-semibold">
                                 Beta
                             </span>
                         </h2>
@@ -140,7 +139,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 disabled={disabled}
                                 className={`px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                                     mode === m.value
-                                        ? 'bg-gradient-to-r from-purple-600 to-pink-700 text-white shadow-lg shadow-purple-600/30 scale-[1.02]'
+                                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
                                         : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/50'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
@@ -166,7 +165,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                         ? r.value === 'conservative'
                                             ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg shadow-emerald-600/30'
                                             : r.value === 'moderate'
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/30'
+                                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                                                 : 'bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-lg shadow-rose-600/30'
                                         : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/50'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -177,14 +176,14 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                     </div>
                 </div>
 
-                {/* Analyze button */}
+                {/* ─── ANALYZE BUTTON (yellow/orange) ────────────── */}
                 <button
                     onClick={handleAnalyze}
                     disabled={disabled || analyzed}
-                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                         analyzed
                             ? 'bg-slate-800/60 text-slate-500 border border-slate-700/40 cursor-default'
-                            : 'bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-500 hover:to-pink-600 text-white shadow-lg shadow-purple-600/30 hover:scale-[1.01] active:scale-[0.99]'
+                            : 'bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 hover:from-yellow-300 hover:via-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-500/40 hover:shadow-amber-500/60 hover:scale-[1.02] active:scale-[0.98] border border-amber-300/40'
                     } disabled:cursor-not-allowed`}
                 >
                     {analyzed ? (
@@ -207,7 +206,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                     {/* Suggested settings */}
                     <div>
                         <div className="flex items-center gap-2 mb-3">
-                            <Zap size={12} className="text-purple-400" />
+                            <Zap size={12} className="text-amber-400" />
                             <h3 className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                                 Suggested Settings
                             </h3>
@@ -219,7 +218,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 const reasonText = currentReasons[key];
                                 const displayValue = typeof value === 'boolean'
                                     ? (value ? 'ON' : 'OFF')
-                                    : (typeof value === 'number' && key.toLowerCase().includes('profit') || key.toLowerCase().includes('loss')
+                                    : (typeof value === 'number' && (key.toLowerCase().includes('profit') || key.toLowerCase().includes('loss'))
                                         ? `$${Number(value).toFixed(2)}`
                                         : String(value));
 
@@ -270,7 +269,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 className="w-full flex items-center justify-between bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/40 rounded-xl px-3 py-2.5 transition"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Shield size={12} className="text-blue-400" />
+                                    <Shield size={12} className="text-amber-400" />
                                     <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                                         Running Trades ({tradeScores.length})
                                     </span>
