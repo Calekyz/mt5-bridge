@@ -699,7 +699,7 @@ export const Dashboard: React.FC = () => {
                                     )}
                                 </h2>
                                 <p className="text-slate-500 text-[10px] mt-0.5">
-                                    Auto-stops your algo when SL or TP is hit
+                                    Auto-stops your algo when SL or TP is hit (ALWAYS CONFIRM NOT ALL POSITIONS ARE CLOSED)
                                 </p>
                             </div>
                         </div>
