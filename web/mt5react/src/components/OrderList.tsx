@@ -45,6 +45,26 @@ export const OrdersList: React.FC = () => {
     const sweepStateRef = useRef<Map<number, 'pending' | 'completed'>>(new Map());
     const sweepZeroTimeRef = useRef<Map<number, number>>(new Map());
 
+    // ★ Auto-close preference as live state (synced with localStorage)
+    const [autoCloseOn, setAutoCloseOn] = useState<boolean>(
+        () => localStorage.getItem('autoCloseEnabled') === 'true'
+    );
+
+    // ★ Sync with cross-tab changes and any other write
+    useEffect(() => {
+        const sync = () => {
+            const next = localStorage.getItem('autoCloseEnabled') === 'true';
+            setAutoCloseOn(next);
+        };
+        const handler = (e: StorageEvent) => { if (e.key === 'autoCloseEnabled') sync(); };
+        window.addEventListener('storage', handler);
+        const iv = setInterval(sync, 2000);
+        return () => {
+            window.removeEventListener('storage', handler);
+            clearInterval(iv);
+        };
+    }, []);
+
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
     if (userStr) {
@@ -84,6 +104,15 @@ export const OrdersList: React.FC = () => {
             // silent
         }
     };
+
+    // ★ Debug snapshot on mount — open DevTools to verify
+    useEffect(() => {
+        console.log('[OrderList] LocalStorage snapshot:', {
+            autoCloseEnabled: localStorage.getItem('autoCloseEnabled'),
+            pipnexEnabled: localStorage.getItem('pipnexEnabled'),
+            novaEnabled: localStorage.getItem('novaEnabled'),
+        });
+    }, []);
 
     useEffect(() => {
         if (!vpsAddress) return;
@@ -172,12 +201,17 @@ export const OrdersList: React.FC = () => {
     };
 
     // ═══════════════════════════════════════════════════════════
-    //  UNIFIED AUTO-CLOSE SWEEP — respects user preference
+    //  AUTO-CLOSE SWEEP — GATED BY USER TOGGLE
+    //  When OFF (default): nothing happens on SL/TP/stop. Only the
+    //  backend marks the session inactive — positions stay open.
+    //  When ON: sweep runs as before.
     // ═══════════════════════════════════════════════════════════
     useEffect(() => {
-        // ★ Read the auto-close preference (set from Dashboard → Risk Guard)
-        const autoCloseEnabled = localStorage.getItem('autoCloseEnabled') === 'true';
-        if (!autoCloseEnabled) return;
+        // ─── GATE #1: user preference ────────────────────────
+        if (!autoCloseOn) {
+            console.log('[OrderList Sweep] Skipped — autoCloseEnabled is OFF');
+            return;
+        }
 
         if (!riskSession) return;
         if (riskSession.is_active) return;
@@ -213,9 +247,7 @@ export const OrdersList: React.FC = () => {
                     return;
                 }
 
-                if (Date.now() - zeroTime < SWEEP_GRACE_MS) {
-                    return;
-                }
+                if (Date.now() - zeroTime < SWEEP_GRACE_MS) return;
 
                 sweepStateRef.current.set(sessionId, 'completed');
                 sweepZeroTimeRef.current.delete(sessionId);
@@ -232,12 +264,21 @@ export const OrdersList: React.FC = () => {
         if (autoCloseInProgressRef.current) return;
         if (Date.now() - lastSweepAttemptRef.current < SWEEP_COOLDOWN_MS) return;
 
+        // ─── GATE #2 (defense in depth): re-check flag right before closing
+        const freshFlag = localStorage.getItem('autoCloseEnabled');
+        if (freshFlag !== 'true') {
+            console.warn('[OrderList Sweep] Aborting — flag flipped to', freshFlag);
+            return;
+        }
+
         lastSweepAttemptRef.current = Date.now();
         autoCloseInProgressRef.current = true;
         sweepStateRef.current.set(sessionId, 'pending');
 
         const label = isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped';
         const emoji = isSL ? '🛑' : isTP ? '🎯' : '⏹️';
+
+        console.log(`[OrderList Sweep] FIRING — ${label} | positions=${opened.length} | flag=${freshFlag}`);
 
         if (!sweepToastShownRef.current.has(sessionId)) {
             sweepToastShownRef.current.add(sessionId);
@@ -250,7 +291,7 @@ export const OrdersList: React.FC = () => {
         performCloseAll(isSL ? 'stop_loss' : isTP ? 'take_profit' : 'algo_stopped').finally(() => {
             autoCloseInProgressRef.current = false;
         });
-    }, [riskSession, orders]);
+    }, [riskSession, orders, autoCloseOn]);
 
     const getOrderType = (order: any) => {
         if (order.type) {
@@ -283,11 +324,8 @@ export const OrdersList: React.FC = () => {
         };
     }, [opened, pending]);
 
-    // ─── Auto-close state for UI ─────────────────────────────
-    const autoCloseEnabled = localStorage.getItem('autoCloseEnabled') === 'true';
-
     const slTriggered = !!(
-        autoCloseEnabled &&
+        autoCloseOn &&
         riskSession &&
         !riskSession.is_active &&
         riskSession.trigger_reason === 'sl_hit' &&
@@ -296,7 +334,7 @@ export const OrdersList: React.FC = () => {
     );
 
     const tpTriggered = !!(
-        autoCloseEnabled &&
+        autoCloseOn &&
         riskSession &&
         !riskSession.is_active &&
         riskSession.trigger_reason === 'tp_hit' &&
@@ -305,7 +343,7 @@ export const OrdersList: React.FC = () => {
     );
 
     const algoStopped = !!(
-        autoCloseEnabled &&
+        autoCloseOn &&
         riskSession &&
         !riskSession.is_active &&
         !riskSession.trigger_reason &&
@@ -365,7 +403,7 @@ export const OrdersList: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
 
-                {/* ─── HEADER ─────────────────────────────────────── */}
+                {/* HEADER */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-xl shadow-lg shadow-emerald-600/20">
@@ -398,7 +436,7 @@ export const OrdersList: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── SL / TP / STOP TRIGGERED BANNER ────────────── */}
+                {/* Auto-close ON banner (only when ON) */}
                 {anyTriggered && (
                     <div className={`rounded-2xl border p-4 flex items-start gap-3 backdrop-blur transition-all ${
                         closingAll
@@ -467,9 +505,9 @@ export const OrdersList: React.FC = () => {
                                     <>Closing {closeAllProgress.current} of {closeAllProgress.total} position{closeAllProgress.total !== 1 ? 's' : ''}...</>
                                 ) : opened.length === 0 ? (
                                     <>
-                                        {isSL && (<>Your Risk Guard stopped the algo at ${riskSession?.sl_amount?.toFixed(2)} drawdown. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
-                                        {isTP && (<>Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
-                                        {isStop && (<>Algo was stopped manually. All positions have been closed automatically. Watching for stragglers for 10s.</>)}
+                                        {isSL && (<>Your Risk Guard stopped the algo at ${riskSession?.sl_amount?.toFixed(2)} drawdown. All positions closed automatically.</>)}
+                                        {isTP && (<>Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit. All positions closed automatically.</>)}
+                                        {isStop && (<>Algo was stopped manually. All positions closed automatically.</>)}
                                     </>
                                 ) : (
                                     <><span className="font-bold">{opened.length}</span> position{opened.length !== 1 ? 's' : ''} still open — auto-close in progress.</>
@@ -488,9 +526,26 @@ export const OrdersList: React.FC = () => {
                     </div>
                 )}
 
-                {/* ─── SUMMARY STATS ──────────────────────────────── */}
+                {/* Auto-close OFF banner — only shows when a trigger happened but auto-close is disabled */}
+                {!autoCloseOn && riskSession && !riskSession.is_active && riskSession.trigger_reason && (
+                    <div className="rounded-2xl border border-slate-600/50 bg-slate-800/60 backdrop-blur p-4 flex items-start gap-3">
+                        <div className="p-2 rounded-xl bg-slate-700/40 border border-slate-600/40 flex-shrink-0">
+                            <Info size={20} className="text-slate-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm uppercase tracking-wider text-slate-200">
+                                {riskSession.trigger_reason === 'sl_hit' ? 'Stop Loss Hit' : 'Take Profit Hit'} — Auto-Close OFF
+                            </div>
+                            <div className="text-xs mt-0.5 text-slate-400">
+                                Algo was stopped by Risk Guard. Positions are still open because auto-close is disabled. Enable it in Risk Guard on the Dashboard to auto-close next time.
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SUMMARY STATS */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Open</span>
                             <Activity size={16} className="text-emerald-400" />
@@ -507,8 +562,7 @@ export const OrdersList: React.FC = () => {
                             </span>
                         </div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pending</span>
                             <Clock size={16} className="text-amber-400" />
@@ -518,8 +572,7 @@ export const OrdersList: React.FC = () => {
                             {stats.pending > 0 ? "Awaiting trigger" : "No pending orders"}
                         </div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total P/L</span>
                             {stats.totalProfit >= 0 ? (
@@ -533,32 +586,26 @@ export const OrdersList: React.FC = () => {
                         </div>
                         <div className="mt-2 text-xs text-slate-500">Floating P&L</div>
                     </div>
-
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
+                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Volume</span>
                             <Target size={16} className="text-purple-400" />
                         </div>
-                        <div className="text-2xl font-bold text-white">
-                            {stats.totalVolume.toFixed(2)}
-                        </div>
+                        <div className="text-2xl font-bold text-white">{stats.totalVolume.toFixed(2)}</div>
                         <div className="mt-2 text-xs text-slate-500">Total lots open</div>
                     </div>
                 </div>
 
-                {/* ─── QUANTUM AI HEALTH ──────────────────────────── */}
                 <QuantumAIHealthPanel positions={opened} riskSession={riskSession} />
 
-                {/* ─── EMPTY STATE ────────────────────────────────── */}
+                {/* EMPTY / TABLE */}
                 {opened.length === 0 && pending.length === 0 ? (
                     <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 p-16 text-center">
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-800/60 mb-4">
                             <Shield size={36} className="text-slate-500" />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-1">No Open Positions</h3>
-                        <p className="text-slate-400 text-sm">
-                            Your account has no active trades right now.
-                        </p>
+                        <p className="text-slate-400 text-sm">Your account has no active trades right now.</p>
                         <p className="text-slate-500 text-xs mt-3 flex items-center justify-center gap-2">
                             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                             Watching for new positions...
@@ -571,14 +618,9 @@ export const OrdersList: React.FC = () => {
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                                            Active Positions
-                                        </h2>
-                                        <span className="text-xs text-slate-500">
-                                            ({opened.length})
-                                        </span>
+                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Active Positions</h2>
+                                        <span className="text-xs text-slate-500">({opened.length})</span>
                                     </div>
-
                                     <button
                                         onClick={() => setShowCloseAllConfirm(true)}
                                         disabled={closingAll || closing !== null}
@@ -631,9 +673,7 @@ export const OrdersList: React.FC = () => {
                                                         } ${isClosing ? "opacity-50" : ""}`}
                                                     >
                                                         <td className="px-4 py-3">
-                                                            <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
-                                                                #{order.ticket}
-                                                            </span>
+                                                            <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">#{order.ticket}</span>
                                                         </td>
                                                         <td className="px-4 py-3">
                                                             <span className="font-bold text-white">{order.symbol}</span>
@@ -647,15 +687,9 @@ export const OrdersList: React.FC = () => {
                                                                 {isBuy ? "▲" : "▼"} {orderType}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-slate-200 font-mono text-xs">
-                                                            {order.volume.toFixed(2)}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-300 font-mono text-xs">
-                                                            {order.price_open.toFixed(5)}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-300 font-mono text-xs">
-                                                            {order.price_current.toFixed(5)}
-                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-200 font-mono text-xs">{order.volume.toFixed(2)}</td>
+                                                        <td className="px-4 py-3 text-slate-300 font-mono text-xs">{order.price_open.toFixed(5)}</td>
+                                                        <td className="px-4 py-3 text-slate-300 font-mono text-xs">{order.price_current.toFixed(5)}</td>
                                                         <td className={`px-4 py-3 text-right font-bold font-mono text-xs ${
                                                             isProfit ? "text-emerald-400" : "text-rose-400"
                                                         }`}>
@@ -714,15 +748,10 @@ export const OrdersList: React.FC = () => {
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Clock size={14} className="text-amber-400" />
-                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                                            Pending Orders
-                                        </h2>
-                                        <span className="text-xs text-slate-500">
-                                            ({pending.length})
-                                        </span>
+                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Pending Orders</h2>
+                                        <span className="text-xs text-slate-500">({pending.length})</span>
                                     </div>
                                 </div>
-
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead className="bg-slate-900/60 border-b border-slate-700/50">
@@ -743,9 +772,7 @@ export const OrdersList: React.FC = () => {
                                                     }`}
                                                 >
                                                     <td className="px-4 py-3">
-                                                        <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
-                                                            #{order.ticket}
-                                                        </span>
+                                                        <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">#{order.ticket}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className="font-bold text-white">{order.symbol}</span>
@@ -755,18 +782,13 @@ export const OrdersList: React.FC = () => {
                                                             <Clock size={10} /> {order.type || "PENDING"}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-slate-200 font-mono text-xs">
-                                                        {order.volume?.toFixed(2)}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-slate-300 font-mono text-xs">
-                                                        {order.price_open?.toFixed(5)}
-                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-200 font-mono text-xs">{order.volume?.toFixed(2)}</td>
+                                                    <td className="px-4 py-3 text-slate-300 font-mono text-xs">{order.price_open?.toFixed(5)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
-
                                 <div className="px-5 py-3 bg-slate-900/40 border-t border-slate-700/40 text-xs text-slate-500">
                                     <span className="flex items-center gap-2">
                                         <Clock size={12} className="text-amber-400" />
@@ -784,9 +806,9 @@ export const OrdersList: React.FC = () => {
                         Live · updates every 1 second
                     </span>
                     <span className="text-slate-600">·</span>
-                    <span className={`inline-flex items-center gap-2 ${autoCloseEnabled ? '' : 'opacity-50'}`}>
-                        <Shield size={10} className={autoCloseEnabled ? "text-rose-400" : "text-slate-500"} />
-                        Auto-close {autoCloseEnabled ? 'enabled' : 'disabled'}
+                    <span className={`inline-flex items-center gap-2 ${autoCloseOn ? '' : 'opacity-50'}`}>
+                        <Shield size={10} className={autoCloseOn ? "text-rose-400" : "text-slate-500"} />
+                        Auto-close {autoCloseOn ? 'enabled' : 'disabled'}
                     </span>
                 </div>
             </div>
@@ -799,16 +821,12 @@ export const OrdersList: React.FC = () => {
                                 <XCircle className="text-white" size={32} />
                             </div>
                         </div>
-
-                        <h2 className="text-2xl font-bold text-white text-center mb-2">
-                            Close All Positions?
-                        </h2>
+                        <h2 className="text-2xl font-bold text-white text-center mb-2">Close All Positions?</h2>
                         <p className="text-slate-400 text-sm text-center mb-6">
                             This will immediately close{' '}
                             <span className="text-white font-bold">{opened.length}</span>{' '}
                             open position{opened.length !== 1 ? 's' : ''} at market price.
                         </p>
-
                         <div className="bg-slate-700/30 rounded-xl p-4 mb-6 space-y-2">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-400 flex items-center gap-2">
@@ -827,14 +845,12 @@ export const OrdersList: React.FC = () => {
                                 </span>
                             </div>
                         </div>
-
                         <div className="bg-rose-900/20 border border-rose-500/30 rounded-lg p-3 mb-6 flex items-start gap-2">
                             <AlertCircle size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-rose-200">
                                 This action cannot be undone. All trades will be closed at current market prices.
                             </p>
                         </div>
-
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={handleCloseAll}
