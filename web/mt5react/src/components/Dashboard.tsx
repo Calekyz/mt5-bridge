@@ -9,7 +9,7 @@ import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
     BookOpen, X as XIcon, Zap, Activity,
-    Info, Clock, BarChart3
+    Info, Clock, BarChart3, Sparkles
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -97,12 +97,14 @@ export const Dashboard: React.FC = () => {
     const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
     const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
 
+    // ─── Auto-close toggle (default OFF) ───────────────────
+    const [autoCloseEnabled, setAutoCloseEnabled] = useState(() => getStoredState('autoCloseEnabled', false));
+
     // ─── First-Visit Guide Modal ───────────────────────────
     const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
     const dismissedTriggers = useRef<Set<number>>(new Set());
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const reconciledRef = useRef(false);
 
     const accessKey = localStorage.getItem('accessKey') || '';
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -119,6 +121,11 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         saveStoredSettings('novaSettings', novaSettings);
     }, [novaSettings]);
+
+    // ─── Persist auto-close preference ──────────────────────
+    useEffect(() => {
+        setStoredState('autoCloseEnabled', autoCloseEnabled);
+    }, [autoCloseEnabled]);
 
     // ─── Check if user is new ────────────────────────────────
     useEffect(() => {
@@ -307,20 +314,12 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
 
-    // ─── Reconcile EA state on connect ───────────────────────
-    useEffect(() => {
-        if (!vpsAddress || !eaConnected) return;
-        if (reconciledRef.current) return;
-        reconciledRef.current = true;
-
-        if (!pipnexEnabled) {
-            sendCommand('PipNex_Enable', 0).catch(() => {});
-        }
-        if (!novaEnabled) {
-            sendCommand('Nova_Enable', 0).catch(() => {});
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [vpsAddress, eaConnected]);
+    // ─── NOTE ─────────────────────────────────────────────────
+    // The previous "reconcile on connect" effect was REMOVED.
+    // It sent Enable=0 to the EA on login when localStorage said
+    // disabled, which turned off algos that were running from a
+    // previous session. Now the EA keeps its state across logouts.
+    // ──────────────────────────────────────────────────────────
 
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
@@ -440,10 +439,11 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Quantum AI: Apply PipNex suggestions ───────────────
+    // ─── Quantum AI: Apply PipNex suggestions (no MaxLoss) ──
     const applyPipnexSuggestion = async (suggestion: PipnexSuggestion) => {
-        const { Lot, PipStep, CloseProfit, MaxLoss, MinProfitPercent, MaxLevels, Martingale } = suggestion;
-        const values = { Lot, PipStep, CloseProfit, MaxLoss, MinProfitPercent, MaxLevels, Martingale };
+        // MaxLoss intentionally omitted — SL handles loss protection now
+        const { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale } = suggestion;
+        const values = { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale };
 
         let ok = 0;
         let fail = 0;
@@ -816,6 +816,67 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* ═══════════════════════════════════════════ */}
+                        {/*  AUTO-CLOSE TOGGLE (NEW)                     */}
+                        {/* ═══════════════════════════════════════════ */}
+                        <div className={`mt-5 rounded-xl border p-4 transition-all ${
+                            autoCloseEnabled
+                                ? 'bg-gradient-to-br from-rose-900/20 to-slate-900/40 border-rose-500/40 shadow-lg shadow-rose-500/10'
+                                : 'bg-slate-900/40 border-slate-700/40'
+                        }`}>
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                    <div className={`p-1.5 rounded-lg flex-shrink-0 border ${
+                                        autoCloseEnabled
+                                            ? 'bg-rose-500/20 border-rose-500/40'
+                                            : 'bg-slate-800/60 border-slate-700/40'
+                                    }`}>
+                                        <Sparkles size={14} className={autoCloseEnabled ? "text-rose-300" : "text-slate-500"} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs font-bold text-white uppercase tracking-wider">
+                                                Auto-Close Positions
+                                            </span>
+                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                                                autoCloseEnabled
+                                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                                    : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
+                                            }`}>
+                                                {autoCloseEnabled ? '● Enabled' : '○ Disabled'}
+                                            </span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                                            When ON, all open positions close automatically if Stop Loss or Take Profit hits, or the algo stops. Leave OFF to manage closes manually.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setAutoCloseEnabled(!autoCloseEnabled)}
+                                    aria-pressed={autoCloseEnabled}
+                                    aria-label="Toggle auto-close"
+                                    className={`relative inline-flex items-center flex-shrink-0 w-14 h-7 rounded-full transition-all duration-300 shadow-lg ${
+                                        autoCloseEnabled
+                                            ? 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/40'
+                                            : 'bg-slate-700 shadow-slate-900/40'
+                                    } cursor-pointer hover:scale-105 active:scale-95`}
+                                >
+                                    <span
+                                        className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                            autoCloseEnabled ? 'translate-x-7' : 'translate-x-0'
+                                        }`}
+                                    >
+                                        {autoCloseEnabled ? (
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                        ) : (
+                                            <span className="w-2 h-2 rounded-full bg-slate-400" />
+                                        )}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
                         {riskSession?.is_active && riskCurrent && (
                             <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
@@ -1026,11 +1087,11 @@ export const Dashboard: React.FC = () => {
 };
 
 // ---- Settings Definitions ----
+// NOTE: MaxLoss removed from PipNex — SL handles loss protection now
 const PIPNEX_SETTINGS = [
     { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
     { key: 'CloseProfit', label: 'Close Profit ($)', type: 'number', step: 0.05, min: 0, default: 2.0 },
-    { key: 'MaxLoss', label: 'Max Loss ($)', type: 'number', step: 0.05, min: 0, default: 0.50 },
     { key: 'MinProfitPercent', label: 'Min Profit %', type: 'number', step: 1, min: 0, max: 100, default: 60 },
     { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
     { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
