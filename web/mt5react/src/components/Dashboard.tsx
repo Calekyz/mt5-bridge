@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
+import { getOrders } from '../api/nodejsApiClient';
+import { QuantumAICard } from './QuantumAICard';
+import type { PipnexSuggestion, NovaSuggestion } from './quantumAI';
 import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
@@ -83,6 +86,9 @@ export const Dashboard: React.FC = () => {
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
+
+    // ─── Open positions for Quantum AI ─────────────────────
+    const [positions, setPositions] = useState<any[]>([]);
 
     // ─── Risk Guard State ───────────────────────────────────
     const [slInput, setSlInput] = useState<string>(() => localStorage.getItem('riskSl') || '');
@@ -245,6 +251,22 @@ export const Dashboard: React.FC = () => {
             if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
         };
     }, []);
+
+    // ─── Fetch open positions for Quantum AI (every 3s) ─────
+    useEffect(() => {
+        if (!vpsAddress) return;
+        const fetchPositions = async () => {
+            try {
+                const data = await getOrders();
+                setPositions(data.opened || []);
+            } catch {
+                // silent — don't spam if EA offline
+            }
+        };
+        fetchPositions();
+        const interval = setInterval(fetchPositions, 3000);
+        return () => clearInterval(interval);
+    }, [vpsAddress]);
 
     useEffect(() => {
         const checkEaHealth = async () => {
@@ -415,6 +437,54 @@ export const Dashboard: React.FC = () => {
             toast.success(`${key} updated to ${value}`);
         } catch (err: any) {
             toast.error(`Failed to update ${key}`);
+        }
+    };
+
+    // ─── Quantum AI: Apply PipNex suggestions ───────────────
+    const applyPipnexSuggestion = async (suggestion: PipnexSuggestion) => {
+        const { Lot, PipStep, CloseProfit, MaxLoss, MinProfitPercent, MaxLevels, Martingale } = suggestion;
+        const values = { Lot, PipStep, CloseProfit, MaxLoss, MinProfitPercent, MaxLevels, Martingale };
+
+        let ok = 0;
+        let fail = 0;
+        for (const [key, value] of Object.entries(values)) {
+            try {
+                await sendCommand(`PipNex_${key}`, value as number | boolean);
+                ok++;
+            } catch (err) {
+                console.error(`Quantum AI: failed PipNex_${key}`, err);
+                fail++;
+            }
+        }
+        setPipnexSettings(prev => ({ ...prev, ...values }));
+        if (fail === 0) {
+            toast.success(`✅ Quantum AI applied ${ok} PipNex settings`);
+        } else {
+            toast.warning(`Applied ${ok}/${ok + fail} PipNex settings`);
+        }
+    };
+
+    // ─── Quantum AI: Apply NOVA suggestions ─────────────────
+    const applyNovaSuggestion = async (suggestion: NovaSuggestion) => {
+        const { LotSize, SwingStrength, RewardRisk, MaxPositions } = suggestion;
+        const values = { LotSize, SwingStrength, RewardRisk, MaxPositions };
+
+        let ok = 0;
+        let fail = 0;
+        for (const [key, value] of Object.entries(values)) {
+            try {
+                await sendCommand(`Nova_${key}`, value as number);
+                ok++;
+            } catch (err) {
+                console.error(`Quantum AI: failed Nova_${key}`, err);
+                fail++;
+            }
+        }
+        setNovaSettings(prev => ({ ...prev, ...values }));
+        if (fail === 0) {
+            toast.success(`✅ Quantum AI applied ${ok} NOVA settings`);
+        } else {
+            toast.warning(`Applied ${ok}/${ok + fail} NOVA settings`);
         }
     };
 
@@ -678,7 +748,6 @@ export const Dashboard: React.FC = () => {
                         ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
                         : 'border-slate-700/50'
                 }`}>
-                    {/* Header */}
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${
@@ -699,13 +768,12 @@ export const Dashboard: React.FC = () => {
                                     )}
                                 </h2>
                                 <p className="text-slate-500 text-[10px] mt-0.5">
-                                    Auto-stops your algo when SL or TP is hit (ALWAYS CONFIRM NOT ALL POSITIONS ARE CLOSED)
+                                    Auto-stops your algo when SL or TP is hit
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Input Fields */}
                     <div className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -748,7 +816,6 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Live Risk Status */}
                         {riskSession?.is_active && riskCurrent && (
                             <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
@@ -816,6 +883,19 @@ export const Dashboard: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* ─── QUANTUM AI ─────────────────────────────────── */}
+                {account && (
+                    <QuantumAICard
+                        balance={account.balance}
+                        equity={account.equity}
+                        positions={positions}
+                        riskSession={riskSession}
+                        onApplyPipnex={applyPipnexSuggestion}
+                        onApplyNova={applyNovaSuggestion}
+                        disabled={!eaConnected}
+                    />
+                )}
 
                 {/* ─── COMMAND ERROR ──────────────────────────────── */}
                 {commandError && (
@@ -992,7 +1072,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                 : 'border-slate-700/50 hover:border-slate-600/60'
         } ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
 
-            {/* Header */}
             <div className="p-5 border-b border-slate-700/40">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -1047,7 +1126,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                 )}
             </div>
 
-            {/* Parameters */}
             <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <Zap size={12} className="text-blue-400" />
@@ -1062,7 +1140,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                         const currentValue = settings[setting.key] ?? setting.default;
                         const isChanged = currentValue !== setting.default;
 
-                        // ─── CHECKBOX / TOGGLE ────────────────────────
                         if (isBool) {
                             const checked = !!settings[setting.key];
                             return (
@@ -1114,7 +1191,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             );
                         }
 
-                        // ─── NUMBER INPUT ─────────────────────────────
                         return (
                             <div
                                 key={setting.key}
