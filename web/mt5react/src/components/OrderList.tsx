@@ -5,6 +5,7 @@ import {
     Layers, Target, Shield, XCircle, CheckCircle2, Square
 } from 'lucide-react';
 import { getOrders, closeOrder, type OrderResponse } from '../api/nodejsApiClient';
+import { QuantumAIHealthPanel } from './QuantumAIHealthPanel';
 import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -21,8 +22,8 @@ interface RiskSession {
     created_at: string;
 }
 
-const SWEEP_COOLDOWN_MS = 5000;    // retry every 5s while positions remain
-const SWEEP_FRESHNESS_MIN = 15;    // don't sweep sessions older than 15 min
+const SWEEP_COOLDOWN_MS = 5000;
+const SWEEP_FRESHNESS_MIN = 15;
 
 export const OrdersList: React.FC = () => {
     const [orders, setOrders] = useState<OrderResponse | null>(null);
@@ -32,18 +33,14 @@ export const OrdersList: React.FC = () => {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [refreshing, setRefreshing] = useState(false);
 
-    // ─── Close All State ────────────────────────────────────
     const [showCloseAllConfirm, setShowCloseAllConfirm] = useState(false);
     const [closingAll, setClosingAll] = useState(false);
     const [closeAllProgress, setCloseAllProgress] = useState({ current: 0, total: 0 });
 
-    // ─── Risk Guard Auto-Close State ────────────────────────
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const autoCloseInProgressRef = useRef(false);
     const lastSweepAttemptRef = useRef<number>(0);
     const sweepToastShownRef = useRef<Set<number>>(new Set());
-
-    // ★ Per-session sweep state: 'pending' = sweeping, 'completed' = done (locked)
     const sweepStateRef = useRef<Map<number, 'pending' | 'completed'>>(new Map());
 
     const userStr = localStorage.getItem('user');
@@ -86,7 +83,6 @@ export const OrdersList: React.FC = () => {
         }
     };
 
-    // Poll orders every 1 second
     useEffect(() => {
         if (!vpsAddress) return;
         fetchOrders();
@@ -94,7 +90,6 @@ export const OrdersList: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // Poll risk status every 2 seconds
     useEffect(() => {
         if (!vpsAddress) return;
         fetchRiskStatus();
@@ -102,10 +97,8 @@ export const OrdersList: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress]);
 
-    // ─── Close single order ──────────────────────────────────
     const handleClose = async (ticket: number) => {
         if (!window.confirm(`Close position #${ticket}?`)) return;
-
         setClosing(ticket);
         try {
             await closeOrder(ticket);
@@ -118,7 +111,6 @@ export const OrdersList: React.FC = () => {
         }
     };
 
-    // ─── Shared Close All performer ──────────────────────────
     const performCloseAll = async (
         reason: 'manual' | 'stop_loss' | 'take_profit' | 'algo_stopped' = 'manual'
     ) => {
@@ -167,7 +159,6 @@ export const OrdersList: React.FC = () => {
         await fetchOrders(true);
     };
 
-    // ─── Manual Close All (with confirm) ─────────────────────
     const handleCloseAll = async () => {
         const opened = orders?.opened || [];
         if (opened.length === 0) {
@@ -178,13 +169,11 @@ export const OrdersList: React.FC = () => {
         await performCloseAll('manual');
     };
 
-    // ─── UNIFIED AUTO-CLOSE SWEEP ────────────────────────────
     useEffect(() => {
         if (!riskSession) return;
         if (riskSession.is_active) return;
 
         const sessionId = riskSession.id;
-
         const reason = riskSession.trigger_reason;
         const isSL = reason === 'sl_hit';
         const isTP = reason === 'tp_hit';
@@ -203,7 +192,6 @@ export const OrdersList: React.FC = () => {
 
         const opened = orders?.opened || [];
 
-        // ★ If positions are gone, mark sweep as COMPLETE (if it was pending)
         if (opened.length === 0) {
             const state = sweepStateRef.current.get(sessionId);
             if (state === 'pending') {
@@ -213,7 +201,6 @@ export const OrdersList: React.FC = () => {
             return;
         }
 
-        // ★ If sweep already completed for this session, leave new positions alone
         const state = sweepStateRef.current.get(sessionId);
         if (state === 'completed') return;
 
@@ -222,8 +209,6 @@ export const OrdersList: React.FC = () => {
 
         lastSweepAttemptRef.current = Date.now();
         autoCloseInProgressRef.current = true;
-
-        // Mark as pending (so we can detect completion later)
         sweepStateRef.current.set(sessionId, 'pending');
 
         const label = isSL ? 'Stop Loss' : isTP ? 'Take Profit' : 'Algo Stopped';
@@ -273,7 +258,6 @@ export const OrdersList: React.FC = () => {
         };
     }, [opened, pending]);
 
-    // ─── Trigger status ─────────────────────────────────────
     const slTriggered = !!(
         riskSession &&
         !riskSession.is_active &&
@@ -449,36 +433,15 @@ export const OrdersList: React.FC = () => {
                                                 : 'text-amber-300/80'
                             }`}>
                                 {closingAll ? (
-                                    <>
-                                        Closing {closeAllProgress.current} of {closeAllProgress.total} position{closeAllProgress.total !== 1 ? 's' : ''}...
-                                    </>
+                                    <>Closing {closeAllProgress.current} of {closeAllProgress.total} position{closeAllProgress.total !== 1 ? 's' : ''}...</>
                                 ) : opened.length === 0 ? (
                                     <>
-                                        {isSL && (
-                                            <>
-                                                Your Risk Guard stopped the algo at $
-                                                {riskSession?.sl_amount?.toFixed(2)} drawdown.
-                                                All positions have been closed automatically.
-                                            </>
-                                        )}
-                                        {isTP && (
-                                            <>
-                                                Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit.
-                                                All positions have been closed automatically.
-                                            </>
-                                        )}
-                                        {isStop && (
-                                            <>
-                                                Algo was stopped manually. All positions
-                                                have been closed automatically.
-                                            </>
-                                        )}
+                                        {isSL && (<>Your Risk Guard stopped the algo at ${riskSession?.sl_amount?.toFixed(2)} drawdown. All positions have been closed automatically.</>)}
+                                        {isTP && (<>Target profit of ${riskSession?.tp_amount?.toFixed(2)} hit. All positions have been closed automatically.</>)}
+                                        {isStop && (<>Algo was stopped manually. All positions have been closed automatically.</>)}
                                     </>
                                 ) : (
-                                    <>
-                                        <span className="font-bold">{opened.length}</span>{' '}
-                                        position{opened.length !== 1 ? 's' : ''} still open — auto-close in progress.
-                                    </>
+                                    <><span className="font-bold">{opened.length}</span> position{opened.length !== 1 ? 's' : ''} still open — auto-close in progress.</>
                                 )}
                             </div>
                         </div>
@@ -534,9 +497,7 @@ export const OrdersList: React.FC = () => {
                                 <TrendingDown size={16} className="text-rose-400" />
                             )}
                         </div>
-                        <div className={`text-2xl font-bold ${
-                            stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"
-                        }`}>
+                        <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                             {stats.totalProfit >= 0 ? "+" : ""}${stats.totalProfit.toFixed(2)}
                         </div>
                         <div className="mt-2 text-xs text-slate-500">Floating P&L</div>
@@ -553,6 +514,9 @@ export const OrdersList: React.FC = () => {
                         <div className="mt-2 text-xs text-slate-500">Total lots open</div>
                     </div>
                 </div>
+
+                {/* ─── QUANTUM AI HEALTH ──────────────────────────── */}
+                <QuantumAIHealthPanel positions={opened} riskSession={riskSession} />
 
                 {/* ─── EMPTY STATE ────────────────────────────────── */}
                 {opened.length === 0 && pending.length === 0 ? (
@@ -571,7 +535,6 @@ export const OrdersList: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* ─── OPEN POSITIONS TABLE ──────────────────── */}
                         {opened.length > 0 && (
                             <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
@@ -715,7 +678,6 @@ export const OrdersList: React.FC = () => {
                             </div>
                         )}
 
-                        {/* ─── PENDING ORDERS TABLE ──────────────────── */}
                         {pending.length > 0 && (
                             <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
@@ -785,7 +747,6 @@ export const OrdersList: React.FC = () => {
                     </>
                 )}
 
-                {/* ─── AUTO-REFRESH INDICATOR ─────────────────────── */}
                 <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-2 flex-wrap">
                     <span className="inline-flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
@@ -799,9 +760,6 @@ export const OrdersList: React.FC = () => {
                 </div>
             </div>
 
-            {/* ══════════════════════════════════════════════════════ */}
-            {/*  CLOSE ALL CONFIRMATION MODAL                          */}
-            {/* ══════════════════════════════════════════════════════ */}
             {showCloseAllConfirm && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-rose-500/40 shadow-2xl max-w-md w-full p-6 relative">
@@ -833,9 +791,7 @@ export const OrdersList: React.FC = () => {
                                     <DollarSign size={14} className={stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"} />
                                     Floating P/L
                                 </span>
-                                <span className={`font-bold ${
-                                    stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"
-                                }`}>
+                                <span className={`font-bold ${stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                                     {stats.totalProfit >= 0 ? "+" : ""}${stats.totalProfit.toFixed(2)}
                                 </span>
                             </div>
