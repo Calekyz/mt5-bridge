@@ -92,10 +92,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
         <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border overflow-hidden transition-all ${
             expanded ? 'border-amber-500/40 shadow-lg shadow-amber-500/10' : 'border-amber-500/25 hover:border-amber-500/50'
         }`}>
-
-            {/* ═══════════════════════════════════════════════════ */}
-            {/*  COLLAPSED STATE — single big button                */}
-            {/* ═══════════════════════════════════════════════════ */}
             <button
                 onClick={() => setExpanded(!expanded)}
                 className="w-full flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-800/40 transition group"
@@ -127,21 +123,13 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             ? 'bg-amber-500/20 text-amber-300'
                             : 'bg-amber-500/15 text-amber-400 group-hover:bg-amber-500/25'
                     }`}>
-                        {expanded
-                            ? <ChevronUp size={16} />
-                            : <ChevronDown size={16} />
-                        }
+                        {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                 </div>
             </button>
 
-            {/* ═══════════════════════════════════════════════════ */}
-            {/*  EXPANDED STATE — full card                          */}
-            {/* ═══════════════════════════════════════════════════ */}
             {expanded && (
                 <div className="border-t border-slate-700/40">
-
-                    {/* ─── ACCOUNT HEALTH STRIP ────────────────── */}
                     <div className="px-5 pt-5">
                         <div className={`${ac.bg} ${ac.border} border rounded-xl p-3 flex items-center gap-3`}>
                             <div className={`w-2 h-2 rounded-full ${ac.dot} animate-pulse flex-shrink-0`} />
@@ -156,9 +144,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                         </div>
                     </div>
 
-                    {/* ─── CONTROLS ─────────────────────────────── */}
                     <div className="px-5 pt-4 space-y-3">
-                        {/* Strategy toggle */}
                         <div>
                             <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                                 Strategy
@@ -181,7 +167,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             </div>
                         </div>
 
-                        {/* Risk toggle */}
                         <div>
                             <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                                 Risk Profile
@@ -208,7 +193,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             </div>
                         </div>
 
-                        {/* Analyze button */}
                         <button
                             onClick={handleAnalyze}
                             disabled={disabled || analyzed}
@@ -232,10 +216,8 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                         </button>
                     </div>
 
-                    {/* ─── RESULTS ──────────────────────────────── */}
                     {analyzed && (
                         <div className="px-5 pt-4 pb-5 space-y-4 border-t border-slate-700/40 mt-4">
-                            {/* Suggested settings */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
                                     <Zap size={12} className="text-amber-400" />
@@ -247,6 +229,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 <div className="bg-slate-900/50 rounded-xl border border-slate-700/40 divide-y divide-slate-700/40">
                                     {Object.entries(currentSuggestion).map(([key, value]) => {
                                         if (key === 'reasons') return null;
+                                        if (key === 'MaxLoss') return null; // ★ SL handles loss now
                                         const reasonText = currentReasons[key];
                                         const displayValue = typeof value === 'boolean'
                                             ? (value ? 'ON' : 'OFF')
@@ -293,7 +276,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 </button>
                             </div>
 
-                            {/* Trade health */}
                             {tradeScores.length > 0 && (
                                 <div>
                                     <button
@@ -307,22 +289,10 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-emerald-400 font-bold">
-                                                🟢 {summary.healthy}
-                                            </span>
-                                            <span className="text-[10px] text-amber-400 font-bold">
-                                                🟡 {summary.watch}
-                                            </span>
-                                            {summary.caution > 0 && (
-                                                <span className="text-[10px] text-orange-400 font-bold">
-                                                    🟠 {summary.caution}
-                                                </span>
-                                            )}
-                                            {summary.highRisk > 0 && (
-                                                <span className="text-[10px] text-rose-400 font-bold">
-                                                    🔴 {summary.highRisk}
-                                                </span>
-                                            )}
+                                            <span className="text-[10px] text-emerald-400 font-bold">🟢 {summary.healthy}</span>
+                                            <span className="text-[10px] text-amber-400 font-bold">🟡 {summary.watch}</span>
+                                            {summary.caution > 0 && <span className="text-[10px] text-orange-400 font-bold">🟠 {summary.caution}</span>}
+                                            {summary.highRisk > 0 && <span className="text-[10px] text-rose-400 font-bold">🔴 {summary.highRisk}</span>}
                                             {showHealth ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                                         </div>
                                     </button>
@@ -332,30 +302,17 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                             {tradeScores.map((t) => {
                                                 const tc = healthColorMap[t.color];
                                                 return (
-                                                    <div
-                                                        key={t.ticket}
-                                                        className={`${tc.bg} ${tc.border} border rounded-xl p-2.5`}
-                                                    >
+                                                    <div key={t.ticket} className={`${tc.bg} ${tc.border} border rounded-xl p-2.5`}>
                                                         <div className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-2 min-w-0">
                                                                 <span className={`w-2 h-2 rounded-full ${tc.dot} flex-shrink-0`} />
-                                                                <span className="font-mono text-[10px] text-slate-400">
-                                                                    #{t.ticket}
-                                                                </span>
-                                                                <span className="text-xs font-bold text-white">
-                                                                    {t.symbol}
-                                                                </span>
+                                                                <span className="font-mono text-[10px] text-slate-400">#{t.ticket}</span>
+                                                                <span className="text-xs font-bold text-white">{t.symbol}</span>
                                                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                                                    t.direction === 'BUY'
-                                                                        ? 'bg-emerald-500/15 text-emerald-400'
-                                                                        : 'bg-rose-500/15 text-rose-400'
-                                                                }`}>
-                                                                    {t.direction}
-                                                                </span>
+                                                                    t.direction === 'BUY' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
+                                                                }`}>{t.direction}</span>
                                                             </div>
-                                                            <div className={`text-xs font-bold ${tc.text} flex-shrink-0`}>
-                                                                {t.score}
-                                                            </div>
+                                                            <div className={`text-xs font-bold ${tc.text} flex-shrink-0`}>{t.score}</div>
                                                         </div>
                                                         <div className="mt-1.5 text-[10px] text-slate-400 space-y-0.5">
                                                             {t.reasons.map((r, i) => (
@@ -373,7 +330,6 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 </div>
                             )}
 
-                            {/* Honest disclaimer */}
                             <div className="bg-slate-900/40 border border-slate-700/40 rounded-xl p-2.5 flex items-start gap-2">
                                 <Info size={12} className="text-slate-500 flex-shrink-0 mt-0.5" />
                                 <p className="text-[10px] text-slate-500">
