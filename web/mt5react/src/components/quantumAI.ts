@@ -1,9 +1,3 @@
-//+------------------------------------------------------------------+
-//| Quantum AI — Advisory Engine                                      |
-//| Pure logic. No React. No backend. Easy to unit-test.              |
-//| All thresholds are DERIVED from the user's balance — no config.   |
-//+------------------------------------------------------------------+
-
 export type RiskLevel = 'conservative' | 'moderate' | 'aggressive';
 export type StrategyMode = 'scalper' | 'swing';
 
@@ -18,7 +12,6 @@ export const STRATEGY_MODES: { value: StrategyMode; label: string; description: 
     { value: 'swing',   label: 'Swing',   description: 'NOVA AI · Fibonacci levels' },
 ];
 
-// ─── Types ─────────────────────────────────────────────────────────
 export interface AccountHealth {
     label: 'Strong' | 'Stable' | 'Stretched' | 'At Risk';
     color: 'emerald' | 'blue' | 'amber' | 'rose';
@@ -31,7 +24,6 @@ export interface PipnexSuggestion {
     Lot: number;
     PipStep: number;
     CloseProfit: number;
-    MaxLoss: number;
     MinProfitPercent: number;
     MaxLevels: number;
     Martingale: boolean;
@@ -57,11 +49,9 @@ export interface TradeHealth {
     reasons: string[];
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────
 const roundLot = (n: number) => Math.max(0.01, Math.round(n * 100) / 100);
 const fmt = (n: number) => `$${n.toFixed(2)}`;
 
-// ─── Account Health ────────────────────────────────────────────────
 export function analyzeAccount(
     balance: number,
     equity: number,
@@ -102,46 +92,31 @@ export function analyzeAccount(
     return { label, color, floating, floatingPct, description };
 }
 
-// ─── PipNex (Scalper) Suggestions ──────────────────────────────────
 export function suggestPipnexSettings(
     balance: number,
     risk: RiskLevel,
     openCount: number = 0
 ): PipnexSuggestion {
-    // Derive lot from balance — this is the core "no config" logic
-    // Conservative: 0.01 per $1000
-    // Moderate:     0.01 per $500
-    // Aggressive:   0.01 per $250
     const lotDivisor = risk === 'conservative' ? 10000 : risk === 'moderate' ? 5000 : 2500;
     let lot = roundLot(balance / lotDivisor);
 
-    // Cap by current exposure
     const lotCap = openCount > 8 ? 0.02 : 0.10;
     const cappedLot = Math.min(lot, lotCap);
 
-    // Wider grid for conservative, tighter for aggressive
     const pipStep = risk === 'conservative' ? 15 : risk === 'moderate' ? 12 : 8;
 
-    // Close profit scales with lot
     const closeProfit = Math.max(1.0, Math.round(cappedLot * 100 * 100) / 100);
 
-    // Max loss = 3x close profit (never more)
-    const maxLoss = Math.round(closeProfit * 3 * 100) / 100;
-
-    // Min profit % gates the close — conservative needs more winners
     const minProfitPercent = risk === 'conservative' ? 70 : risk === 'moderate' ? 60 : 50;
 
-    // Max levels
     const maxLevels = risk === 'conservative' ? 10 : risk === 'moderate' ? 15 : 20;
 
-    // Martingale ALWAYS off — it's the #1 account-killer
     const martingale = false;
 
     return {
         Lot: cappedLot,
         PipStep: pipStep,
         CloseProfit: closeProfit,
-        MaxLoss: maxLoss,
         MinProfitPercent: minProfitPercent,
         MaxLevels: maxLevels,
         Martingale: martingale,
@@ -149,7 +124,6 @@ export function suggestPipnexSettings(
             Lot: `Balance ${fmt(balance)} ÷ ${lotDivisor} (${risk} risk) = ${cappedLot.toFixed(2)} lots`,
             PipStep: `${risk} mode uses a ${pipStep}-pip spacing between grid levels`,
             CloseProfit: `Target = ${cappedLot.toFixed(2)} lots × 100 pips ≈ ${fmt(closeProfit)}`,
-            MaxLoss: `Safety cap = 3× close profit (${fmt(closeProfit)} × 3)`,
             MinProfitPercent: `${risk} mode requires ${minProfitPercent}% of positions in profit before closing`,
             MaxLevels: `${risk} mode allows up to ${maxLevels} grid levels`,
             Martingale: 'Disabled by default — martingale compounds losses exponentially',
@@ -157,25 +131,17 @@ export function suggestPipnexSettings(
     };
 }
 
-// ─── NOVA (Swing) Suggestions ──────────────────────────────────────
 export function suggestNovaSettings(
     balance: number,
     risk: RiskLevel
 ): NovaSettingsResult {
-    // Swing trades hold longer, so lot sizing is more conservative
-    // Conservative: 0.01 per $2000
-    // Moderate:     0.01 per $1000
-    // Aggressive:   0.01 per $500
     const lotDivisor = risk === 'conservative' ? 20000 : risk === 'moderate' ? 10000 : 5000;
     const lotSize = roundLot(balance / lotDivisor);
 
-    // Swing strength: bars used to identify swing highs/lows
     const swingStrength = risk === 'conservative' ? 40 : risk === 'moderate' ? 30 : 20;
 
-    // Reward-to-risk ratio
     const rewardRisk = risk === 'conservative' ? 2.0 : risk === 'moderate' ? 3.0 : 4.0;
 
-    // Concurrent positions
     const maxPositions = risk === 'conservative' ? 2 : risk === 'moderate' ? 3 : 5;
 
     return {
@@ -204,11 +170,8 @@ export function suggestNovaSettings(
     };
 }
 
-// Type alias for readability
 export type NovaSettingsResult = NovaSuggestion;
 
-// ─── Trade Health Score ────────────────────────────────────────────
-// Combines risk exposure + performance trend into a 0-100 score.
 export function scoreTradeHealth(
     pos: any,
     allPositions: any[],
@@ -222,10 +185,9 @@ export function scoreTradeHealth(
     let score = 100;
     const reasons: string[] = [];
 
-    // ─── 1. Floating P/L vs inferred max loss ────────────────
     const inferredMaxLoss = riskSession?.sl_amount && riskSession.sl_amount > 0
         ? riskSession.sl_amount
-        : (pos.volume || 0.01) * 500; // heuristic if no risk guard
+        : (pos.volume || 0.01) * 500;
 
     if (profit < 0) {
         const lossRatio = Math.abs(profit) / inferredMaxLoss;
@@ -241,7 +203,6 @@ export function scoreTradeHealth(
         }
     }
 
-    // ─── 2. Time in trade ────────────────────────────────────
     const openTime = pos.time ?? pos.open_time ?? 0;
     if (openTime > 0) {
         const ageHours = (Date.now() / 1000 - openTime) / 3600;
@@ -254,7 +215,6 @@ export function scoreTradeHealth(
         }
     }
 
-    // ─── 3. Total exposure ───────────────────────────────────
     const totalPositions = allPositions?.length ?? 1;
     if (totalPositions > 15) {
         score -= 20;
@@ -267,7 +227,6 @@ export function scoreTradeHealth(
         reasons.push(`${totalPositions} levels open`);
     }
 
-    // ─── 4. Basket health (winners vs losers) ────────────────
     const winners = (allPositions || []).filter((p: any) => (p.profit ?? 0) > 0).length;
     const winRatio = totalPositions > 0 ? winners / totalPositions : 0;
 
@@ -279,13 +238,11 @@ export function scoreTradeHealth(
         reasons.push(`Only ${winners}/${totalPositions} in profit`);
     }
 
-    // ─── 5. Positive profit bonus ────────────────────────────
     if (profit > 0 && profit >= inferredMaxLoss * 0.5) {
         score += 5;
         reasons.push(`Well in profit (${fmt(profit)})`);
     }
 
-    // Clamp
     score = Math.max(0, Math.min(100, Math.round(score)));
 
     let label: TradeHealth['label'];
@@ -300,7 +257,6 @@ export function scoreTradeHealth(
     return { ticket, symbol, direction, profit, score, label, color, reasons };
 }
 
-// ─── Aggregate Stats ───────────────────────────────────────────────
 export function summarizeHealth(scores: TradeHealth[]): {
     total: number;
     healthy: number;
