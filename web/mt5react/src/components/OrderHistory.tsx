@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
     Activity, TrendingUp, TrendingDown, Award, DollarSign,
     Clock, Calendar, ChevronUp, ChevronDown, RefreshCw,
-    Target, Zap, ArrowUpDown, BarChart3, AlertCircle
+    Target, Zap, ArrowUpDown, BarChart3, AlertCircle, Sparkles
 } from "lucide-react";
 import { getOrderHistory } from "../api/nodejsApiClient";
 
@@ -34,6 +34,11 @@ interface HistoryOrder {
 type SortKey = keyof HistoryOrder | "side";
 type RangePreset = "24h" | "48h" | "7d" | "30d" | "90d" | "custom";
 
+// ─── Faster polling: 5 seconds ────────────────────────────
+const POLL_INTERVAL_MS = 5000;
+// How long to keep the green "new trade" highlight on
+const NEW_HIGHLIGHT_MS = 4000;
+
 const OrderHistory: React.FC = () => {
     const [orders, setOrders] = useState<HistoryOrder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,6 +49,13 @@ const OrderHistory: React.FC = () => {
     const [sortAsc, setSortAsc] = useState(false);
     const [preset, setPreset] = useState<RangePreset>("48h");
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [isFetching, setIsFetching] = useState(false);
+
+    // ─── Track new tickets to highlight ────────────────────
+    const [newTicketIds, setNewTicketIds] = useState<Set<number>>(new Set());
+    const knownTicketIdsRef = useRef<Set<number>>(new Set());
+    const firstLoadRef = useRef(true);
+    const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
@@ -79,7 +91,6 @@ const OrderHistory: React.FC = () => {
                 from.setDate(today.getDate() - 90);
                 break;
             case "custom":
-                // Leave dates as-is for custom
                 return;
         }
 
@@ -98,37 +109,81 @@ const OrderHistory: React.FC = () => {
         setPreset("48h");
     }, []);
 
-    // Fetch when dates change
-    useEffect(() => {
-        if (fromDate && toDate && vpsAddress) {
-            fetchHistory(fromDate, toDate);
-        }
-    }, [fromDate, toDate, vpsAddress]);
-
-    // Auto-refresh every 30 seconds
-    useEffect(() => {
-        if (!fromDate || !toDate || !vpsAddress) return;
-        const interval = setInterval(() => {
-            fetchHistory(fromDate, toDate, true);
-        }, 30000);
-        return () => clearInterval(interval);
-    }, [fromDate, toDate, vpsAddress]);
-
+    // ─── Fetch History ──────────────────────────────────────
     const fetchHistory = async (from: string, to: string, silent = false) => {
         if (!vpsAddress) return;
         try {
             if (!silent) setLoading(true);
+            setIsFetching(true);
             setError(null);
+
             const data = await getOrderHistory(from, to);
-            setOrders((data.data as unknown) as HistoryOrder[] || []);
+            const fresh = ((data.data as unknown) as HistoryOrder[]) || [];
+
+            // ─── Detect new tickets (skip on first load) ────
+            if (firstLoadRef.current) {
+                // Seed known IDs without highlighting
+                knownTicketIdsRef.current = new Set(fresh.map(o => o.ticket));
+                firstLoadRef.current = false;
+                setOrders(fresh);
+                setLastUpdated(new Date());
+                return;
+            }
+
+            const freshIds = new Set(fresh.map(o => o.ticket));
+            const brandNew = new Set<number>();
+            freshIds.forEach(id => {
+                if (!knownTicketIdsRef.current.has(id)) brandNew.add(id);
+            });
+
+            // Efficiency: skip setOrders if nothing changed (same count & same tickets)
+            const countSame = fresh.length === orders.length;
+            const idsUnchanged = countSame && fresh.every(o => knownTicketIdsRef.current.has(o.ticket));
+
+            if (!idsUnchanged) {
+                setOrders(fresh);
+            }
+
+            // Highlight new trades
+            if (brandNew.size > 0) {
+                setNewTicketIds(brandNew);
+                if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+                highlightTimerRef.current = setTimeout(() => {
+                    setNewTicketIds(new Set());
+                }, NEW_HIGHLIGHT_MS);
+            }
+
+            knownTicketIdsRef.current = freshIds;
             setLastUpdated(new Date());
         } catch (err: any) {
             console.error("Error fetching order history:", err);
             if (!silent) setError(err.message || "Failed to fetch order history.");
         } finally {
             if (!silent) setLoading(false);
+            setIsFetching(false);
         }
     };
+
+    // Fetch when dates change
+    useEffect(() => {
+        if (fromDate && toDate && vpsAddress) {
+            fetchHistory(fromDate, toDate);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fromDate, toDate, vpsAddress]);
+
+    // ─── Fast auto-refresh every 5s (silent) ────────────────
+    useEffect(() => {
+        if (!fromDate || !toDate || !vpsAddress) return;
+        const interval = setInterval(() => {
+            fetchHistory(fromDate, toDate, true);
+        }, POLL_INTERVAL_MS);
+        return () => {
+            clearInterval(interval);
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fromDate, toDate, vpsAddress]);
 
     const handleDateFilter = () => {
         if (fromDate && toDate && vpsAddress) {
@@ -250,7 +305,7 @@ const OrderHistory: React.FC = () => {
         </button>
     );
 
-    // ─── Loading State ────────────────────────────────────────
+    // ─── EA Not Configured ────────────────────────────────────
     if (!vpsAddress) {
         return (
             <div className="flex items-center justify-center min-h-[60vh] p-6">
@@ -309,15 +364,17 @@ const OrderHistory: React.FC = () => {
                                 Order History
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
-                                Closed trades · Live stats · Auto-refresh every 30s
+                                Closed trades · Live stats · Auto-refresh every 5s
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         {lastUpdated && (
                             <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                                Updated {lastUpdated.toLocaleTimeString()}
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                    isFetching ? 'bg-blue-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+                                }`} />
+                                {isFetching ? 'Updating…' : `Updated ${lastUpdated.toLocaleTimeString()}`}
                             </div>
                         )}
                         <button
@@ -415,7 +472,6 @@ const OrderHistory: React.FC = () => {
 
                 {/* ─── DATE FILTER ────────────────────────────────── */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
-                    {/* Quick presets */}
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                         <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-2">
                             Quick Range:
@@ -427,7 +483,6 @@ const OrderHistory: React.FC = () => {
                         <PresetButton value="90d" label="90 days" />
                     </div>
 
-                    {/* Custom date range */}
                     <div className="flex flex-wrap items-end gap-3">
                         <div>
                             <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -472,7 +527,9 @@ const OrderHistory: React.FC = () => {
                 {/* ─── TABLE ──────────────────────────────────────── */}
                 {sortedOrders.length === 0 ? (
                     <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 p-16 text-center">
-                        <div className="text-6xl mb-4 opacity-40">📭</div>
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-800/60 mb-4">
+                            <BarChart3 size={36} className="text-slate-500" />
+                        </div>
                         <h3 className="text-xl font-bold text-white mb-1">No Orders Found</h3>
                         <p className="text-slate-400 text-sm">
                             No closed trades in the selected date range.
@@ -504,17 +561,31 @@ const OrderHistory: React.FC = () => {
                                         const side = getSide(order.type);
                                         const isBuy = side === "BUY";
                                         const isProfit = order.net_profit >= 0;
+                                        const isNew = newTicketIds.has(order.ticket);
+
                                         return (
                                             <tr
                                                 key={order.ticket}
-                                                className={`border-t border-slate-700/20 hover:bg-slate-800/40 transition-colors ${
-                                                    idx % 2 === 0 ? "bg-slate-900/20" : ""
+                                                className={`border-t transition-all duration-500 ${
+                                                    isNew
+                                                        ? 'border-emerald-500/40 bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30'
+                                                        : `border-slate-700/20 hover:bg-slate-800/40 ${
+                                                            idx % 2 === 0 ? "bg-slate-900/20" : ""
+                                                        }`
                                                 }`}
                                             >
                                                 <td className="px-4 py-3">
-                                                    <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
-                                                        #{order.ticket}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs text-slate-300 bg-slate-800/60 px-2 py-1 rounded">
+                                                            #{order.ticket}
+                                                        </span>
+                                                        {isNew && (
+                                                            <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
+                                                                <Sparkles size={8} />
+                                                                New
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className="font-bold text-white">{order.symbol}</span>
@@ -581,6 +652,25 @@ const OrderHistory: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* ─── LIVE INDICATOR ─────────────────────────────── */}
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-2 flex-wrap">
+                    <span className="inline-flex items-center gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                            isFetching ? 'bg-blue-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+                        }`} />
+                        {isFetching ? 'Updating…' : `Live · refreshes every ${POLL_INTERVAL_MS / 1000}s`}
+                    </span>
+                    {newTicketIds.size > 0 && (
+                        <>
+                            <span className="text-slate-600">·</span>
+                            <span className="inline-flex items-center gap-1 text-emerald-400 font-bold animate-pulse">
+                                <Sparkles size={10} />
+                                {newTicketIds.size} new trade{newTicketIds.size !== 1 ? 's' : ''}
+                            </span>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
