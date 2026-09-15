@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Brain, Sparkles, TrendingUp, TrendingDown, Shield, AlertTriangle,
-    ChevronDown, ChevronUp, CheckCircle2, Info, Zap, RefreshCw,
-    Target, DollarSign
+    Brain, Sparkles, Shield,
+    ChevronDown, ChevronUp, CheckCircle2, Info, Zap, RefreshCw
 } from 'lucide-react';
 import {
     analyzeAccount, suggestPipnexSettings, suggestNovaSettings,
