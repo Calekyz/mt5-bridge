@@ -4,11 +4,10 @@ import {
     ChevronDown, ChevronUp, CheckCircle2, Info, Zap, RefreshCw
 } from 'lucide-react';
 import {
-    analyzeAccount, suggestPipnexSettings, suggestNovaSettings,
-    scoreTradeHealth, summarizeHealth,
-    RISK_LEVELS, STRATEGY_MODES,
-    type RiskLevel, type StrategyMode, type PipnexSuggestion, type NovaSuggestion,
-} from './quantumAI';
+    Activity, TrendingUp, TrendingDown, X, RefreshCw,
+    Clock, AlertCircle, Zap, DollarSign,
+    Layers, Target, Shield, XCircle, CheckCircle2, Square, Info
+} from 'lucide-react';
 
 interface QuantumAICardProps {
     balance: number;
