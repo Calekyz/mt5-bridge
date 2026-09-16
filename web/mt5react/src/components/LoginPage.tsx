@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Eye, EyeOff, AlertCircle, Loader2, Mail, Lock,
     Sparkles, Shield, Zap, TrendingUp, MessageCircle,
     ArrowRight, Crown, CheckCircle2, Star,
-    ExternalLink, Building2
+    ExternalLink, Building2, Send, X, DollarSign
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -21,6 +21,9 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 const BROKER_LINK = 'https://ma.valetax.com/p/2083506';
+const TELEGRAM_LINK = 'https://t.me/calekyz';
+
+const BOT_PRICE = '$150';
 
 const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
 const BG_URL = 'https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png';
@@ -33,6 +36,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
     const [signupMessage, setSignupMessage] = useState<string | null>(null);
+
+    // ─── Telegram popup state (persisted dismissal) ─────────
+    const [showTelegramPopup, setShowTelegramPopup] = useState(false);
+
+    useEffect(() => {
+        const dismissed = localStorage.getItem('telegramPopupDismissed');
+        if (!dismissed) {
+            // Small delay so it slides in after the page settles
+            const t = setTimeout(() => setShowTelegramPopup(true), 1200);
+            return () => clearTimeout(t);
+        }
+    }, []);
+
+    const dismissTelegramPopup = () => {
+        setShowTelegramPopup(false);
+        localStorage.setItem('telegramPopupDismissed', 'true');
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -176,8 +196,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     bg: 'from-amber-500/20 to-orange-600/20',
                                     border: 'border-amber-500/30',
                                     title: 'Lifetime Access',
-                                    badge: 'One-time',
-                                    desc: 'Pay once, trade forever. No monthly fees.',
+                                    badge: `One-time · ${BOT_PRICE}`,
+                                    desc: `Pay once ${BOT_PRICE}, trade forever. No monthly fees.`,
                                 },
                             ].map((f, i) => (
                                 <div
@@ -188,7 +208,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         {f.icon}
                                     </div>
                                     <div>
-                                        <div className="text-sm font-bold text-white mb-0.5 flex items-center gap-1.5">
+                                        <div className="text-sm font-bold text-white mb-0.5 flex items-center gap-1.5 flex-wrap">
                                             {f.title}
                                             {f.badge && (
                                                 <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-bold">
@@ -209,9 +229,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             rel="noopener noreferrer"
                             className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 rounded-2xl p-4 border border-blue-400/40 shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
                         >
-                            {/* Shine effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
                             <div className="relative flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
                                     <Building2 size={20} className="text-white" />
@@ -242,14 +260,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
                             <div className="relative flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
                                     <MessageCircle size={20} className="text-white" />
                                 </div>
                                 <div>
-                                    <div className="text-white font-bold text-sm">
+                                    <div className="text-white font-bold text-sm flex items-center gap-2">
                                         Get Lifetime Access
+                                        <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">
+                                            {BOT_PRICE}
+                                        </span>
                                     </div>
                                     <div className="text-emerald-100 text-[11px]">
                                         Chat on WhatsApp · +254 116 081 230
@@ -269,7 +289,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     <div className="w-full max-w-md mx-auto lg:mx-0">
                         <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 transition-all duration-300 hover:shadow-blue-500/10 overflow-hidden">
 
-                            {/* Top gradient line */}
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
                             {/* ─── Mobile-only Logo ──────────────────── */}
@@ -289,6 +308,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 <p className="text-slate-500 text-xs mt-1">
                                     Automated MT5 Trading Platform
                                 </p>
+                            </div>
+
+                            {/* ─── Price badge ──────────────────────── */}
+                            <div className="flex justify-center mb-4">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/40 shadow-lg shadow-amber-500/10">
+                                    <DollarSign size={12} className="text-amber-400" />
+                                    <span className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">
+                                        Lifetime Access · {BOT_PRICE}
+                                    </span>
+                                    <Crown size={12} className="text-amber-400" />
+                                </div>
                             </div>
 
                             {/* ─── Mode Title ────────────────────────── */}
@@ -367,7 +397,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
                             {/* ─── Form ──────────────────────────────── */}
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* Email */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                         Email Address
@@ -388,7 +417,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
 
-                                {/* Password */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                         Password
@@ -416,7 +444,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
 
-                                {/* Error */}
                                 {(localError || error) && (
                                     <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3">
                                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
@@ -424,7 +451,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 )}
 
-                                {/* Submit */}
                                 <button
                                     type="submit"
                                     disabled={loading || isLoading}
@@ -443,7 +469,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     )}
                                 </button>
 
-                                {/* Toggle Mode */}
                                 <div className="text-center text-xs text-slate-400 pt-2">
                                     {mode === 'login' ? (
                                         <>
@@ -482,7 +507,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
                             {/* ─── Mobile / Small Stack: Broker + WhatsApp ── */}
                             <div className="space-y-2.5">
-                                {/* Broker CTA — always visible on small screens (left panel hidden) */}
                                 <a
                                     href={BROKER_LINK}
                                     target="_blank"
@@ -508,7 +532,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     />
                                 </a>
 
-                                {/* WhatsApp CTA */}
                                 <a
                                     href={WHATSAPP_LINK}
                                     target="_blank"
@@ -528,10 +551,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                             </div>
                                         </div>
                                     </div>
-                                    <ArrowRight
-                                        size={14}
-                                        className="text-emerald-400 group-hover:translate-x-1 transition-transform"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-extrabold">
+                                            {BOT_PRICE}
+                                        </span>
+                                        <ArrowRight
+                                            size={14}
+                                            className="text-emerald-400 group-hover:translate-x-1 transition-transform"
+                                        />
+                                    </div>
                                 </a>
                             </div>
 
@@ -546,6 +574,66 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     </div>
                 </div>
             </div>
+
+            {/* ═════════════════════════════════════════════════════ */}
+            {/*  FLOATING TELEGRAM POPUP (dismissible)                */}
+            {/* ═════════════════════════════════════════════════════ */}
+            {showTelegramPopup && (
+                <div className="fixed bottom-5 right-5 z-[200] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="relative group">
+                        {/* Ambient glow */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-blue-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
+
+                        {/* Card */}
+                        <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-blue-600/40 border border-sky-300/40 max-w-[280px]">
+
+                            {/* Telegram icon */}
+                            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30 flex-shrink-0">
+                                <Send size={18} className="text-white" />
+                            </div>
+
+                            {/* Text */}
+                            <div className="min-w-0">
+                                <div className="text-white font-bold text-xs leading-tight">
+                                    Join our Telegram
+                                </div>
+                                <div className="text-sky-100 text-[10px] font-mono mt-0.5">
+                                    t.me/calekyz
+                                </div>
+                            </div>
+
+                            {/* CTA button — hidden on very small, becomes icon-only */}
+                            <a
+                                href={TELEGRAM_LINK}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-auto flex-shrink-0 bg-white/25 hover:bg-white/35 text-white p-2 rounded-xl backdrop-blur-sm border border-white/30 transition-all hover:scale-110 active:scale-95"
+                                aria-label="Open Telegram"
+                            >
+                                <ArrowRight size={14} />
+                            </a>
+
+                            {/* Dismiss button */}
+                            <button
+                                onClick={dismissTelegramPopup}
+                                className="absolute top-1 right-1 p-1 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition"
+                                aria-label="Dismiss"
+                                title="Dismiss"
+                            >
+                                <X size={12} strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        {/* Small pulsing hint dot on first show */}
+                        <span className="absolute -top-1 -left-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
+export default LoginPage;
