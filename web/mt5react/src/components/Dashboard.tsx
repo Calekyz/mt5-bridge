@@ -9,11 +9,19 @@ import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
     BookOpen, X as XIcon, Zap, Activity,
-    Info, Clock, BarChart3, Sparkles
+    Info, Clock, BarChart3, Sparkles, Crown, MessageCircle,
+    ArrowRight, DollarSign, CheckCircle2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova';
+
+const BOT_PRICE = '$150';
+const WHATSAPP_NUMBER = '254116081230';
+const WHATSAPP_MESSAGE = encodeURIComponent(
+    'Hello! I want to get lifetime access to PipTrader AI for $150. Can you help me configure my account?'
+);
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 function getStoredState(key: string, defaultValue: boolean): boolean {
     const stored = localStorage.getItem(key);
@@ -25,7 +33,6 @@ function setStoredState(key: string, value: boolean) {
     localStorage.setItem(key, String(value));
 }
 
-// ─── Settings persistence helpers ─────────────────────────
 function loadStoredSettings(key: string): Record<string, any> {
     try {
         const raw = localStorage.getItem(key);
@@ -42,7 +49,7 @@ function saveStoredSettings(key: string, value: Record<string, any>) {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch {
-        // ignore storage errors
+        // ignore
     }
 }
 
@@ -74,7 +81,6 @@ export const Dashboard: React.FC = () => {
     const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
     const [novaEnabled, setNovaEnabled] = useState(() => getStoredState('novaEnabled', false));
 
-    // ─── Settings now hydrate from localStorage ────────────
     const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>(
         () => loadStoredSettings('pipnexSettings')
     );
@@ -87,20 +93,16 @@ export const Dashboard: React.FC = () => {
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
 
-    // ─── Open positions for Quantum AI ─────────────────────
     const [positions, setPositions] = useState<any[]>([]);
 
-    // ─── Risk Guard State ───────────────────────────────────
     const [slInput, setSlInput] = useState<string>(() => localStorage.getItem('riskSl') || '');
     const [tpInput, setTpInput] = useState<string>(() => localStorage.getItem('riskTp') || '');
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
     const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
 
-    // ─── Auto-close toggle (default OFF) ───────────────────
     const [autoCloseEnabled, setAutoCloseEnabled] = useState(() => getStoredState('autoCloseEnabled', false));
 
-    // ─── First-Visit Guide Modal ───────────────────────────
     const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
     const dismissedTriggers = useRef<Set<number>>(new Set());
@@ -109,11 +111,9 @@ export const Dashboard: React.FC = () => {
     const accessKey = localStorage.getItem('accessKey') || '';
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
-    // ─── Persist SL/TP inputs ────────────────────────────────
     useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
     useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
 
-    // ─── Persist strategy settings to localStorage ──────────
     useEffect(() => {
         saveStoredSettings('pipnexSettings', pipnexSettings);
     }, [pipnexSettings]);
@@ -122,12 +122,10 @@ export const Dashboard: React.FC = () => {
         saveStoredSettings('novaSettings', novaSettings);
     }, [novaSettings]);
 
-    // ─── Persist auto-close preference ──────────────────────
     useEffect(() => {
         setStoredState('autoCloseEnabled', autoCloseEnabled);
     }, [autoCloseEnabled]);
 
-    // ─── Check if user is new ────────────────────────────────
     useEffect(() => {
         const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
         if (!hasSeenGuide) {
@@ -259,7 +257,6 @@ export const Dashboard: React.FC = () => {
         };
     }, []);
 
-    // ─── Fetch open positions for Quantum AI (every 3s) ─────
     useEffect(() => {
         if (!vpsAddress) return;
         const fetchPositions = async () => {
@@ -267,7 +264,7 @@ export const Dashboard: React.FC = () => {
                 const data = await getOrders();
                 setPositions(data.opened || []);
             } catch {
-                // silent — don't spam if EA offline
+                // silent
             }
         };
         fetchPositions();
@@ -313,13 +310,6 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
-
-    // ─── NOTE ─────────────────────────────────────────────────
-    // The previous "reconcile on connect" effect was REMOVED.
-    // It sent Enable=0 to the EA on login when localStorage said
-    // disabled, which turned off algos that were running from a
-    // previous session. Now the EA keeps its state across logouts.
-    // ──────────────────────────────────────────────────────────
 
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
@@ -439,9 +429,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Quantum AI: Apply PipNex suggestions (no MaxLoss) ──
     const applyPipnexSuggestion = async (suggestion: PipnexSuggestion) => {
-        // MaxLoss intentionally omitted — SL handles loss protection now
         const { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale } = suggestion;
         const values = { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale };
 
@@ -464,7 +452,6 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    // ─── Quantum AI: Apply NOVA suggestions ─────────────────
     const applyNovaSuggestion = async (suggestion: NovaSuggestion) => {
         const { LotSize, SwingStrength, RewardRisk, MaxPositions } = suggestion;
         const values = { LotSize, SwingStrength, RewardRisk, MaxPositions };
@@ -547,26 +534,149 @@ export const Dashboard: React.FC = () => {
         toast.success(`${key} ${checked ? 'enabled' : 'disabled'}`);
     };
 
-    // ─── EA Not Configured ───────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  EA NOT CONFIGURED STATE — with $150 price + buy options
+    // ═══════════════════════════════════════════════════════════
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6 flex items-center justify-center">
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 mb-4">
-                        <AlertCircle size={28} className="text-amber-400" />
+                <div className="w-full max-w-lg">
+
+                    {/* ─── Main Card ─────────────────────────────── */}
+                    <div className="relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl overflow-hidden">
+
+                        {/* Top gradient line */}
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+
+                        {/* Ambient glow */}
+                        <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                        <div className="relative p-6 sm:p-8">
+
+                            {/* Icon */}
+                            <div className="flex justify-center mb-4">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-amber-500/40 blur-xl rounded-full" />
+                                    <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-2xl shadow-amber-600/40 ring-1 ring-amber-300/40">
+                                        <AlertCircle size={36} className="text-white" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Title */}
+                            <h2 className="text-2xl font-extrabold text-white text-center mb-2">
+                                EA Not Configured
+                            </h2>
+                            <p className="text-slate-400 text-sm text-center mb-6 max-w-md mx-auto">
+                                Your account is registered but your trading setup hasn't been activated yet. Complete the steps below to unlock full access.
+                            </p>
+
+                            {/* ═══════════════════════════════════════════ */}
+                            {/*  PRICE CARD                                  */}
+                            {/* ═══════════════════════════════════════════ */}
+                            <div className="relative bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-slate-900/40 border-2 border-amber-500/40 rounded-2xl p-5 mb-5 overflow-hidden">
+                                {/* Shine */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent -translate-x-full animate-shimmer" />
+
+                                <div className="relative flex items-center justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Crown size={14} className="text-amber-400" />
+                                            <span className="text-[10px] text-amber-300 uppercase tracking-widest font-bold">
+                                                Lifetime Access
+                                            </span>
+                                        </div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-4xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                                                {BOT_PRICE}
+                                            </span>
+                                            <span className="text-xs text-slate-400 line-through">$400</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 mt-1">
+                                            One-time payment · No monthly fees · Trade forever
+                                        </p>
+                                    </div>
+                                    <div className="flex-shrink-0 p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg shadow-amber-600/30 ring-1 ring-amber-300/40">
+                                        <DollarSign size={26} className="text-white" />
+                                    </div>
+                                </div>
+
+                                {/* What's included */}
+                                <div className="relative mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-2 gap-2">
+                                    {[
+                                        'PipNex Scalper Algo',
+                                        'NOVA Swing Algo',
+                                        'Risk Guard protection',
+                                        'Quantum AI advisor',
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+                                            <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />
+                                            <span className="truncate">{item}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* ═══════════════════════════════════════════ */}
+                            {/*  ACTION BUTTONS                              */}
+                            {/* ═══════════════════════════════════════════ */}
+                            <div className="space-y-2.5 mb-5">
+                                {/* WhatsApp CTA — primary action */}
+                                <a
+                                    href={WHATSAPP_LINK}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-xl p-3.5 border border-emerald-400/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                    <div className="relative flex items-center gap-3">
+                                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
+                                            <MessageCircle size={18} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <div className="text-white font-bold text-sm flex items-center gap-2">
+                                                Get Lifetime Access
+                                                <span className="text-[10px] bg-white/25 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">
+                                                    {BOT_PRICE}
+                                                </span>
+                                            </div>
+                                            <div className="text-emerald-100 text-[11px]">
+                                                Chat on WhatsApp · fastest setup
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={16} className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                                </a>
+
+                                {/* Refresh VPS */}
+                                <button
+                                    onClick={() => refreshUserInfo(true)}
+                                    disabled={refreshingUser}
+                                    className="w-full flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white py-3 px-4 rounded-xl text-sm font-semibold transition disabled:opacity-50"
+                                >
+                                    <RefreshCw size={14} className={refreshingUser ? 'animate-spin' : ''} />
+                                    {refreshingUser ? 'Refreshing...' : 'Already paid? Refresh access'}
+                                </button>
+                            </div>
+
+                            {/* ═══════════════════════════════════════════ */}
+                            {/*  INFO FOOTER                                 */}
+                            {/* ═══════════════════════════════════════════ */}
+                            <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex items-start gap-2">
+                                <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-blue-200 leading-relaxed">
+                                    After completing payment, our team will configure your VPS and assign your MetaTrader 5 account. This usually takes less than 15 minutes.
+                                </p>
+                            </div>
+
+                        </div>
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">EA Not Configured</h2>
-                    <p className="text-slate-400 text-sm mb-4">
-                        Please contact the administrator to set up your VPS and EA configuration.
-                    </p>
-                    <button
-                        onClick={() => refreshUserInfo(true)}
-                        disabled={refreshingUser}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50"
-                    >
-                        <RefreshCw size={16} className={refreshingUser ? 'animate-spin' : ''} />
-                        {refreshingUser ? 'Refreshing...' : 'Refresh VPS Info'}
-                    </button>
+
+                    {/* Sub-footer */}
+                    <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-500">
+                        <Shield size={10} className="text-emerald-400" />
+                        <span>Secure payment · Lifetime access · 24/7 support</span>
+                    </div>
                 </div>
             </div>
         );
@@ -628,7 +738,6 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* EA Status Card */}
                     <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur ${
                         eaConnected === null
                             ? 'bg-slate-800/60 border-slate-700/50'
@@ -816,9 +925,6 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* ═══════════════════════════════════════════ */}
-                        {/*  AUTO-CLOSE TOGGLE (NEW)                     */}
-                        {/* ═══════════════════════════════════════════ */}
                         <div className={`mt-5 rounded-xl border p-4 transition-all ${
                             autoCloseEnabled
                                 ? 'bg-gradient-to-br from-rose-900/20 to-slate-900/40 border-rose-500/40 shadow-lg shadow-rose-500/10'
@@ -1087,7 +1193,6 @@ export const Dashboard: React.FC = () => {
 };
 
 // ---- Settings Definitions ----
-// NOTE: MaxLoss removed from PipNex — SL handles loss protection now
 const PIPNEX_SETTINGS = [
     { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
