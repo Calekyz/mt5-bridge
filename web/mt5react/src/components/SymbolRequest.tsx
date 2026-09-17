@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Plus, Send, Clock, Shield, CheckCircle2, AlertCircle,
+    Plus, Clock, Shield, CheckCircle2, AlertCircle,
     Info, Search, X, MessageCircle, Zap, History, Trash2,
     Sparkles, ArrowRight
 } from 'lucide-react';
