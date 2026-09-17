@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Plus, Clock, Shield, CheckCircle2, AlertCircle,
-    Info, Search, X, MessageCircle, Zap, History, Trash2,
+    Info, Search, X, MessageCircle, History, Trash2,
     Sparkles, ArrowRight, Globe, Activity, Bitcoin, Pencil
 } from 'lucide-react';
 import { getSymbols } from '../api/nodejsApiClient';
