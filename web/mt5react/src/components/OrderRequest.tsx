@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     TrendingUp, TrendingDown, AlertTriangle, Target,
     Activity, Search, X, Info, Zap, Send, Shield, ChevronRight,
-    BarChart3, Percent, CheckCircle2
+    BarChart3, Percent, CheckCircle2, Monitor, RefreshCw
 } from 'lucide-react';
-import { getQuote, placeOrder, getSymbols } from "../api/nodejsApiClient";
+import { getQuote, placeOrder, getSymbols, getOrders } from "../api/nodejsApiClient";
 import { toast } from "react-toastify";
 
 interface OrderRequest {
@@ -25,6 +25,8 @@ interface Quote {
     time: string;
     volume: number;
 }
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 const OrderRequestForm: React.FC = () => {
     const [formData, setFormData] = useState<OrderRequest>({
@@ -48,6 +50,11 @@ const OrderRequestForm: React.FC = () => {
     const [loadingSymbols, setLoadingSymbols] = useState(true);
     const [symbolsSet, setSymbolsSet] = useState<Set<string>>(new Set());
 
+    // ─── Chart symbol auto-detection state ──────────────────
+    const [chartSymbol, setChartSymbol] = useState<string | null>(null);
+    const [detectingSymbol, setDetectingSymbol] = useState(true);
+    const [symbolSource, setSymbolSource] = useState<'ea' | 'orders' | 'none'>('none');
+
     const userStr = localStorage.getItem('user');
     let vpsAddress = null;
     if (userStr) {
@@ -64,7 +71,7 @@ const OrderRequestForm: React.FC = () => {
             try {
                 const data = await getSymbols();
                 setSymbols(data);
-                setSymbolsSet(new Set(data.map(s => s.toUpperCase())));
+                setSymbolsSet(new Set(data.map((s: string) => s.toUpperCase())));
             } catch (error) {
                 console.error('Failed to load symbols:', error);
             } finally {
@@ -74,6 +81,84 @@ const OrderRequestForm: React.FC = () => {
         loadSymbols();
     }, [vpsAddress]);
 
+    // ─── Detect current chart symbol ────────────────────────
+    // 1) Try EA status endpoint (returns the symbol the EA is attached to)
+    // 2) Fallback: most common symbol from open + pending orders
+    useEffect(() => {
+        if (!vpsAddress) return;
+
+        const detectChartSymbol = async () => {
+            setDetectingSymbol(true);
+            try {
+                const token = localStorage.getItem('token');
+
+                // Attempt 1: EA status endpoint
+                try {
+                    const res = await fetch(`${API_URL}/ea/status`, {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        // Support multiple possible field names
+                        const sym =
+                            data.symbol ||
+                            data.current_symbol ||
+                            data.chart_symbol ||
+                            data.chartSymbol ||
+                            null;
+                        if (sym && typeof sym === 'string') {
+                            setChartSymbol(sym);
+                            setSymbolSource('ea');
+                            // Auto-fill the form
+                            setFormData(prev => ({ ...prev, symbol: sym }));
+                            setDetectingSymbol(false);
+                            return;
+                        }
+                    }
+                } catch {
+                    // fall through to next attempt
+                }
+
+                // Attempt 2: infer from recent orders
+                try {
+                    const data = await getOrders();
+                    const opened = (data?.opened || []) as any[];
+                    const pending = (data?.pending || []) as any[];
+                    const all = [...opened, ...pending];
+
+                    if (all.length > 0) {
+                        const counts: Record<string, number> = {};
+                        all.forEach((o) => {
+                            const s = o?.symbol;
+                            if (s && typeof s === 'string') {
+                                counts[s] = (counts[s] || 0) + 1;
+                            }
+                        });
+                        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                        if (sorted.length > 0) {
+                            const best = sorted[0][0];
+                            setChartSymbol(best);
+                            setSymbolSource('orders');
+                            setFormData(prev => ({ ...prev, symbol: best }));
+                            setDetectingSymbol(false);
+                            return;
+                        }
+                    }
+                } catch {
+                    // fall through
+                }
+
+                // Nothing detected
+                setChartSymbol(null);
+                setSymbolSource('none');
+            } finally {
+                setDetectingSymbol(false);
+            }
+        };
+
+        detectChartSymbol();
+    }, [vpsAddress]);
+
     // ─── Filter symbols ──────────────────────────────────────
     useEffect(() => {
         const input = formData.symbol.toUpperCase();
@@ -81,7 +166,7 @@ const OrderRequestForm: React.FC = () => {
             setFilteredSymbols(symbols.slice(0, 20));
             return;
         }
-        const filtered = symbols.filter(s => s.toUpperCase().includes(input)).slice(0, 20);
+        const filtered = symbols.filter((s) => s.toUpperCase().includes(input)).slice(0, 20);
         setFilteredSymbols(filtered);
     }, [formData.symbol, symbols]);
 
@@ -101,6 +186,7 @@ const OrderRequestForm: React.FC = () => {
             setQuote(null);
             setQuoteError(null);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.symbol, symbolsSet, vpsAddress]);
 
     const fetchQuote = async () => {
@@ -124,7 +210,7 @@ const OrderRequestForm: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: name === "volume" || name === "sl" || name === "tp" || name === "deviation"
                 ? value === "" ? undefined : parseFloat(value)
@@ -137,9 +223,18 @@ const OrderRequestForm: React.FC = () => {
     };
 
     const handleSymbolSelect = (symbol: string) => {
-        setFormData(prev => ({ ...prev, symbol }));
+        setFormData((prev) => ({ ...prev, symbol }));
         setShowSuggestions(false);
         setQuoteError(null);
+    };
+
+    const handleUseChartSymbol = () => {
+        if (chartSymbol) {
+            setFormData((prev) => ({ ...prev, symbol: chartSymbol }));
+            setShowSuggestions(false);
+            setQuoteError(null);
+            toast.success(`Loaded ${chartSymbol} from chart`);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +252,7 @@ const OrderRequestForm: React.FC = () => {
             await placeOrder(formData);
             toast.success("✅ Order placed successfully!");
             // Reset symbol/volume after success but keep settings
-            setFormData(prev => ({
+            setFormData((prev) => ({
                 ...prev,
                 symbol: "",
                 sl: undefined,
@@ -189,7 +284,7 @@ const OrderRequestForm: React.FC = () => {
     const spreadPips = useMemo(() => {
         if (!quote) return null;
         const spread = quote.ask - quote.bid;
-        // Heuristic: 1 pip = 0.0001 for 5-decimal quotes, 0.01 for 3-decimal (JPY)
+        // Heuristic: 1 pip = 0.0001 for 5-decimal quotes, 0.01 for 3-decimal (JPY) / gold
         const pipSize = quote.ask > 1000 ? 0.01 : quote.ask > 100 ? 0.01 : 0.0001;
         return spread / pipSize;
     }, [quote]);
@@ -228,6 +323,77 @@ const OrderRequestForm: React.FC = () => {
                     </div>
                 </div>
 
+                {/* ─── CHART SYMBOL STRIP ─────────────────────────── */}
+                <div className={`rounded-2xl border p-4 flex items-center gap-3 backdrop-blur transition-all ${
+                    chartSymbol
+                        ? 'bg-gradient-to-r from-emerald-900/20 to-slate-900/60 border-emerald-500/40'
+                        : 'bg-gradient-to-r from-slate-800/60 to-slate-900/60 border-slate-700/50'
+                }`}>
+                    <div className={`p-2 rounded-xl flex-shrink-0 border ${
+                        chartSymbol
+                            ? 'bg-emerald-500/20 border-emerald-500/40'
+                            : 'bg-slate-800/60 border-slate-700/40'
+                    }`}>
+                        <Monitor size={16} className={chartSymbol ? 'text-emerald-400' : 'text-slate-500'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[10px] uppercase tracking-wider font-bold ${
+                                chartSymbol ? 'text-emerald-300' : 'text-slate-400'
+                            }`}>
+                                Current Chart Symbol
+                            </span>
+                            {symbolSource === 'ea' && (
+                                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-500/40 font-bold uppercase tracking-wider">
+                                    ● Live from EA
+                                </span>
+                            )}
+                            {symbolSource === 'orders' && (
+                                <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/40 font-bold uppercase tracking-wider">
+                                    ◐ From open orders
+                                </span>
+                            )}
+                        </div>
+                        {detectingSymbol ? (
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className="w-3 h-3 border-2 border-slate-500/40 border-t-slate-300 rounded-full animate-spin" />
+                                <span className="text-xs text-slate-500">Detecting...</span>
+                            </div>
+                        ) : chartSymbol ? (
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-lg font-bold text-white font-mono">
+                                    {chartSymbol}
+                                </span>
+                                {formData.symbol === chartSymbol && (
+                                    <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                                        <CheckCircle2 size={11} />
+                                        Matched
+                                    </span>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-xs text-slate-500 mt-0.5">
+                                No EA symbol detected — pick one below
+                            </div>
+                        )}
+                    </div>
+                    {chartSymbol && (
+                        <button
+                            type="button"
+                            onClick={handleUseChartSymbol}
+                            disabled={formData.symbol === chartSymbol}
+                            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                                formData.symbol === chartSymbol
+                                    ? 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/40'
+                                    : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white shadow-lg shadow-emerald-600/30 hover:scale-105 active:scale-95'
+                            }`}
+                        >
+                            <Zap size={12} />
+                            {formData.symbol === chartSymbol ? 'In use' : 'Use this'}
+                        </button>
+                    )}
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* ─── SYMBOL & VOLUME CARD ──────────────────────── */}
@@ -246,11 +412,24 @@ const OrderRequestForm: React.FC = () => {
                             <div className="space-y-2 relative">
                                 <label className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider">
                                     <span>Trading Symbol</span>
-                                    {loadingSymbols && (
-                                        <span className="text-[10px] text-blue-400 animate-pulse normal-case">
-                                            Loading...
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {chartSymbol && formData.symbol !== chartSymbol && (
+                                            <button
+                                                type="button"
+                                                onClick={handleUseChartSymbol}
+                                                className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold normal-case tracking-normal flex items-center gap-1 transition"
+                                                title={`Use ${chartSymbol}`}
+                                            >
+                                                <Monitor size={10} />
+                                                Use {chartSymbol}
+                                            </button>
+                                        )}
+                                        {loadingSymbols && (
+                                            <span className="text-[10px] text-blue-400 animate-pulse normal-case">
+                                                Loading...
+                                            </span>
+                                        )}
+                                    </div>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -266,13 +445,15 @@ const OrderRequestForm: React.FC = () => {
                                         className={`w-full px-4 py-3 rounded-xl border bg-slate-900/60 text-white placeholder-slate-500 font-mono uppercase text-sm transition-all pr-10 ${
                                             formData.symbol && !isSymbolValid() && formData.symbol.length >= 2
                                                 ? 'border-rose-500/60 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                                                : 'border-slate-600/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30'
+                                                : formData.symbol && chartSymbol && formData.symbol.toUpperCase() === chartSymbol.toUpperCase()
+                                                    ? 'border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30'
+                                                    : 'border-slate-600/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30'
                                         }`}
                                     />
                                     {formData.symbol && (
                                         <button
                                             type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, symbol: "" }))}
+                                            onClick={() => setFormData((prev) => ({ ...prev, symbol: "" }))}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
                                         >
                                             <X className="w-4 h-4" />
@@ -280,6 +461,20 @@ const OrderRequestForm: React.FC = () => {
                                     )}
                                     {showSuggestions && filteredSymbols.length > 0 && (
                                         <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700/60 rounded-xl shadow-2xl max-h-56 overflow-y-auto">
+                                            {/* Highlight chart symbol at the top if it's in the list */}
+                                            {chartSymbol && filteredSymbols.includes(chartSymbol) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSymbolSelect(chartSymbol)}
+                                                    className="w-full text-left px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-white text-sm font-mono transition-colors flex items-center gap-2 border-b border-emerald-500/30"
+                                                >
+                                                    <Monitor className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                                                    <span className="flex-1 font-bold">{chartSymbol}</span>
+                                                    <span className="text-[9px] bg-emerald-500/30 text-emerald-200 px-1.5 py-0.5 rounded-full border border-emerald-500/40 font-bold uppercase tracking-wider">
+                                                        Chart
+                                                    </span>
+                                                </button>
+                                            )}
                                             {filteredSymbols.map((s) => (
                                                 <button
                                                     key={s}
@@ -289,7 +484,11 @@ const OrderRequestForm: React.FC = () => {
                                                 >
                                                     <Search className="w-3 h-3 text-blue-400 flex-shrink-0" />
                                                     <span className="flex-1">{s}</span>
-                                                    <CheckCircle2 size={12} className="text-slate-600 opacity-0 group-hover:opacity-100" />
+                                                    {chartSymbol && s === chartSymbol && (
+                                                        <span className="text-[9px] text-emerald-400 font-bold">
+                                                            current
+                                                        </span>
+                                                    )}
                                                 </button>
                                             ))}
                                         </div>
@@ -419,9 +618,10 @@ const OrderRequestForm: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={fetchQuote}
-                                            className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
+                                            className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors inline-flex items-center gap-1.5"
                                         >
-                                            🔄 Retry Quote
+                                            <RefreshCw size={11} />
+                                            Retry Quote
                                         </button>
                                     )}
                                 </div>
@@ -455,7 +655,7 @@ const OrderRequestForm: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, order_type: "buy" }))}
+                                        onClick={() => setFormData((prev) => ({ ...prev, order_type: "buy" }))}
                                         className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                                             formData.order_type === "buy"
                                                 ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-600/30 scale-105'
@@ -467,7 +667,7 @@ const OrderRequestForm: React.FC = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, order_type: "sell" }))}
+                                        onClick={() => setFormData((prev) => ({ ...prev, order_type: "sell" }))}
                                         className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                                             formData.order_type === "sell"
                                                 ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-600/30 scale-105'
