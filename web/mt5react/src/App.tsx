@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus
 } from "lucide-react";
 
 // ---- Components ----
@@ -20,6 +20,7 @@ import WsStreaming from "./components/WsStreaming";
 import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
 import Guide from "./components/Guide";
 import InstallPrompt from "./components/InstallPrompt";
+import SymbolRequest from "./components/SymbolRequest";
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
@@ -115,6 +116,7 @@ function App() {
     const sideItems = [
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
+        { path: "/symbol-request", label: "Symbols", icon: Plus },
         { path: "/account", label: "Account", icon: User },
         { path: "/history", label: "History", icon: Clock },
         { path: "/chart", label: "Chart", icon: BarChart3 },
@@ -195,6 +197,7 @@ function App() {
                                 <Route path="/guide" element={<Guide />} />
                                 <Route path="/orders" element={<OrdersList />} />
                                 <Route path="/request" element={<OrderRequest />} />
+                                <Route path="/symbol-request" element={<SymbolRequest />} />
                                 <Route path="/account" element={<AccountInfo />} />
                                 <Route path="/history" element={<OrderHistory />} />
                                 <Route path="/chart" element={<CandleChart />} />
@@ -209,7 +212,6 @@ function App() {
 
                         {/* ─── BOTTOM NAV ─────────────────────────────── */}
                         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-slate-700/50">
-                            {/* Subtle top gradient line */}
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
 
                             <div className="max-w-4xl mx-auto px-2 py-2.5">
@@ -246,7 +248,6 @@ function App() {
                                             >
                                                 {({ isActive }) => (
                                                     <>
-                                                        {/* Active indicator dot */}
                                                         {isActive && !isHome && (
                                                             <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-300 rounded-full shadow-lg shadow-emerald-400/60" />
                                                         )}
