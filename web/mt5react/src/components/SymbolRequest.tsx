@@ -15,6 +15,7 @@ interface SymbolRequestEntry {
     notes: string;
     requestedAt: string;
     email: string;
+    wasAlreadyAvailable?: boolean;
 }
 
 const STORAGE_KEY = 'symbolRequestsHistory';
@@ -73,14 +74,15 @@ const SymbolRequest: React.FC = () => {
         } catch { /* ignore */ }
     };
 
-    // ─── Duplicate check ───────────────────────────────────
+    // ─── Symbol state ──────────────────────────────────────
     const normalizedInput = symbol.trim().toUpperCase();
     const symbolsUpperSet = useMemo(
         () => new Set(symbols.map((s) => s.toUpperCase())),
         [symbols]
     );
-    const isDuplicate = normalizedInput.length > 0 && symbolsUpperSet.has(normalizedInput);
-    const isValid = normalizedInput.length >= 2 && !isDuplicate;
+    // Informational only — no longer blocks submission
+    const isAlreadyAvailable = normalizedInput.length > 0 && symbolsUpperSet.has(normalizedInput);
+    const isValid = normalizedInput.length >= 2;
 
     // ─── Filter suggestions ────────────────────────────────
     const filteredSymbols = useMemo(() => {
@@ -91,7 +93,11 @@ const SymbolRequest: React.FC = () => {
     }, [normalizedInput, symbols]);
 
     // ─── Build WhatsApp link ───────────────────────────────
-    const buildWhatsAppLink = (reqSymbol: string, reqNotes: string) => {
+    const buildWhatsAppLink = (
+        reqSymbol: string,
+        reqNotes: string,
+        alreadyAvailable: boolean
+    ) => {
         const timestamp = new Date().toLocaleString('en-KE', {
             dateStyle: 'medium',
             timeStyle: 'short',
@@ -101,6 +107,7 @@ const SymbolRequest: React.FC = () => {
             '🔔 *NEW SYMBOL REQUEST*',
             '',
             `*Symbol:* ${reqSymbol}`,
+            alreadyAvailable ? '*Status:* ⚠️ Already available on my account' : '*Status:* 🆕 New symbol',
             `*Email:* ${userEmail}`,
             accessKey ? `*Access Key:* ${accessKey}` : '',
             vpsAddress ? `*VPS:* ${vpsAddress}` : '',
@@ -108,14 +115,16 @@ const SymbolRequest: React.FC = () => {
             '',
             `*Requested at:* ${timestamp}`,
             '',
-            'Please add this symbol to my EA. Thank you!',
+            alreadyAvailable
+                ? 'I know this symbol is available — I still need help with it. Please advise.'
+                : 'Please add this symbol to my EA. Thank you!',
         ].filter(Boolean);
 
         const message = lines.join('\n');
         return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     };
 
-    // ─── Submit ────────────────────────────────────────────
+    // ─── Submit — ALWAYS allowed for any symbol ────────────
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -129,15 +138,10 @@ const SymbolRequest: React.FC = () => {
             return;
         }
 
-        if (isDuplicate) {
-            toast.error(`Symbol "${normalizedInput}" is already available on your account.`);
-            return;
-        }
-
         setSubmitting(true);
 
         // Build WhatsApp link and open it
-        const link = buildWhatsAppLink(normalizedInput, notes.trim());
+        const link = buildWhatsAppLink(normalizedInput, notes.trim(), isAlreadyAvailable);
 
         // Save to history
         const entry: SymbolRequestEntry = {
@@ -146,6 +150,7 @@ const SymbolRequest: React.FC = () => {
             notes: notes.trim(),
             requestedAt: new Date().toISOString(),
             email: userEmail,
+            wasAlreadyAvailable: isAlreadyAvailable,
         };
         saveHistory([entry, ...history].slice(0, 20));
 
@@ -336,7 +341,7 @@ const SymbolRequest: React.FC = () => {
                                 maxLength={20}
                                 disabled={!vpsAddress}
                                 className={`w-full px-4 py-3 rounded-xl border bg-slate-900/60 text-white placeholder-slate-500 font-mono uppercase text-sm transition-all pr-10 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    isDuplicate
+                                    isAlreadyAvailable
                                         ? 'border-amber-500/60 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30'
                                         : normalizedInput.length >= 2
                                             ? 'border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30'
@@ -355,7 +360,7 @@ const SymbolRequest: React.FC = () => {
                             {showSuggestions && filteredSymbols.length > 0 && (
                                 <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700/60 rounded-xl shadow-2xl max-h-52 overflow-y-auto">
                                     <div className="px-3 py-1.5 text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-700/40">
-                                        Already available on your account
+                                        Matches on your account (info only)
                                     </div>
                                     {filteredSymbols.map((s) => (
                                         <button
@@ -375,18 +380,18 @@ const SymbolRequest: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Duplicate warning */}
-                        {isDuplicate && (
+                        {/* Already-available hint — informational only, still requestable */}
+                        {isAlreadyAvailable && (
                             <div className="flex items-start gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5">
-                                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                                <Info size={14} className="flex-shrink-0 mt-0.5" />
                                 <span>
-                                    <strong>{normalizedInput}</strong> is already available on your account. No request needed.
+                                    <strong>{normalizedInput}</strong> already exists on your account — but you can still send this request. Admin will contact you if further setup is needed.
                                 </span>
                             </div>
                         )}
 
-                        {/* Valid hint */}
-                        {!isDuplicate && normalizedInput.length >= 2 && (
+                        {/* Valid hint — new symbol */}
+                        {!isAlreadyAvailable && normalizedInput.length >= 2 && (
                             <div className="flex items-start gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2.5">
                                 <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" />
                                 <span>
@@ -423,7 +428,7 @@ const SymbolRequest: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Submit */}
+                    {/* Submit — ENABLED for any valid symbol */}
                     <button
                         type="submit"
                         disabled={!isValid || submitting || !vpsAddress}
@@ -509,14 +514,25 @@ const SymbolRequest: React.FC = () => {
                                     key={entry.id}
                                     className="px-5 py-3 flex items-center gap-3 hover:bg-slate-800/40 transition"
                                 >
-                                    <div className="p-2 rounded-lg bg-violet-500/15 border border-violet-500/30 flex-shrink-0">
-                                        <Sparkles size={12} className="text-violet-400" />
+                                    <div className={`p-2 rounded-lg flex-shrink-0 border ${
+                                        entry.wasAlreadyAvailable
+                                            ? 'bg-amber-500/15 border-amber-500/30'
+                                            : 'bg-violet-500/15 border-violet-500/30'
+                                    }`}>
+                                        <Sparkles size={12} className={
+                                            entry.wasAlreadyAvailable ? 'text-amber-400' : 'text-violet-400'
+                                        } />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-mono font-bold text-white text-sm">
                                                 {entry.symbol}
                                             </span>
+                                            {entry.wasAlreadyAvailable && (
+                                                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                                    Existed
+                                                </span>
+                                            )}
                                             <span className="text-[10px] text-slate-500">
                                                 · {formatRelativeTime(entry.requestedAt)}
                                             </span>
