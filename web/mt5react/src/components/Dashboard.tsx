@@ -184,6 +184,10 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    // ═══════════════════════════════════════════════════════════
+    //  RISK STATUS — now actually sends STOP commands to the EA
+    //  when SL/TP triggers. Previously it only updated the UI.
+    // ═══════════════════════════════════════════════════════════
     const fetchRiskStatus = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -206,11 +210,37 @@ export const Dashboard: React.FC = () => {
                 ) {
                     dismissedTriggers.current.add(sessionId);
                     setTriggerAlert(reason);
+
+                    // ─── Step 1: Update LOCAL state so UI shows "stopped" ───
                     setPipnexEnabled(false);
                     setNovaEnabled(false);
                     setStoredState('pipnexEnabled', false);
                     setStoredState('novaEnabled', false);
 
+                    // ═══════════════════════════════════════════════════════
+                    //  ★ THE ACTUAL FIX ★
+                    //  Send the disable commands to the EA. Without these,
+                    //  the EA keeps trading because it reads `PipNex_Enable`
+                    //  and `Nova_Enable` from MT5 GlobalVariables.
+                    // ═══════════════════════════════════════════════════════
+                    sendCommand('PipNex_Enable', 0).catch((err) =>
+                        console.error('Failed to send PipNex stop:', err)
+                    );
+                    sendCommand('Nova_Enable', 0).catch((err) =>
+                        console.error('Failed to send NOVA stop:', err)
+                    );
+
+                    // Also tell the backend to end the risk session
+                    fetch(`${API_URL}/risk/stop`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                    }).catch(() => {});
+
+                    console.log(
+                        `[Risk Guard] ${reason === 'sl_hit' ? 'SL' : 'TP'} hit — sent stop commands to EA`
+                    );
+
+                    // ─── Step 2: Toast notification ───
                     if (reason === 'sl_hit') {
                         toast.error(
                             `STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
@@ -223,6 +253,7 @@ export const Dashboard: React.FC = () => {
                         );
                     }
 
+                    // ─── Step 3: Dismiss the alert on the backend ───
                     fetch(`${API_URL}/risk/dismiss`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` },
@@ -535,25 +566,16 @@ export const Dashboard: React.FC = () => {
     };
 
     // ═══════════════════════════════════════════════════════════
-    //  EA NOT CONFIGURED STATE — with $150 price + buy options
+    //  EA NOT CONFIGURED STATE
     // ═══════════════════════════════════════════════════════════
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6 flex items-center justify-center">
                 <div className="w-full max-w-lg">
-
-                    {/* ─── Main Card ─────────────────────────────── */}
                     <div className="relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl overflow-hidden">
-
-                        {/* Top gradient line */}
                         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
-
-                        {/* Ambient glow */}
                         <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
                         <div className="relative p-6 sm:p-8">
-
-                            {/* Icon */}
                             <div className="flex justify-center mb-4">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-amber-500/40 blur-xl rounded-full" />
@@ -562,8 +584,6 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Title */}
                             <h2 className="text-2xl font-extrabold text-white text-center mb-2">
                                 EA Not Configured
                             </h2>
@@ -571,13 +591,8 @@ export const Dashboard: React.FC = () => {
                                 Your account is registered but your trading setup hasn't been activated yet. Complete the steps below to unlock full access.
                             </p>
 
-                            {/* ═══════════════════════════════════════════ */}
-                            {/*  PRICE CARD                                  */}
-                            {/* ═══════════════════════════════════════════ */}
                             <div className="relative bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-slate-900/40 border-2 border-amber-500/40 rounded-2xl p-5 mb-5 overflow-hidden">
-                                {/* Shine */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent -translate-x-full animate-shimmer" />
-
                                 <div className="relative flex items-center justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
@@ -600,8 +615,6 @@ export const Dashboard: React.FC = () => {
                                         <DollarSign size={26} className="text-white" />
                                     </div>
                                 </div>
-
-                                {/* What's included */}
                                 <div className="relative mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-2 gap-2">
                                     {[
                                         'PipNex Scalper Algo',
@@ -617,11 +630,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* ═══════════════════════════════════════════ */}
-                            {/*  ACTION BUTTONS                              */}
-                            {/* ═══════════════════════════════════════════ */}
                             <div className="space-y-2.5 mb-5">
-                                {/* WhatsApp CTA — primary action */}
                                 <a
                                     href={WHATSAPP_LINK}
                                     target="_blank"
@@ -648,7 +657,6 @@ export const Dashboard: React.FC = () => {
                                     <ArrowRight size={16} className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
                                 </a>
 
-                                {/* Refresh VPS */}
                                 <button
                                     onClick={() => refreshUserInfo(true)}
                                     disabled={refreshingUser}
@@ -659,20 +667,15 @@ export const Dashboard: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* ═══════════════════════════════════════════ */}
-                            {/*  INFO FOOTER                                 */}
-                            {/* ═══════════════════════════════════════════ */}
                             <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex items-start gap-2">
                                 <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
                                 <p className="text-[11px] text-blue-200 leading-relaxed">
                                     After completing payment, our team will configure your VPS and assign your MetaTrader 5 account. This usually takes less than 15 minutes.
                                 </p>
                             </div>
-
                         </div>
                     </div>
 
-                    {/* Sub-footer */}
                     <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-500">
                         <Shield size={10} className="text-emerald-400" />
                         <span>Secure payment · Lifetime access · 24/7 support</span>
@@ -686,7 +689,6 @@ export const Dashboard: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-5">
 
-                {/* ─── TRIGGER ALERT BANNER ───────────────────────── */}
                 {triggerAlert && (
                     <div className={`rounded-2xl p-4 border flex items-center gap-3 backdrop-blur ${
                         triggerAlert === 'sl_hit'
@@ -722,7 +724,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
@@ -778,7 +779,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── ACCOUNT INFO STRIP ─────────────────────────── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {accessKey && (
                         <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border border-slate-700/50 flex items-center gap-3">
@@ -828,7 +828,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── ACCOUNT STATS ──────────────────────────────── */}
                 {loading ? (
                     <div className="flex justify-center py-12">
                         <div className="text-center">
@@ -851,7 +850,6 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                {/* ─── RISK GUARD ─────────────────────────────────── */}
                 <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border overflow-hidden transition-all ${
                     riskSession?.is_active
                         ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
@@ -1051,7 +1049,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* ─── QUANTUM AI ─────────────────────────────────── */}
                 {account && (
                     <QuantumAICard
                         balance={account.balance}
@@ -1064,7 +1061,6 @@ export const Dashboard: React.FC = () => {
                     />
                 )}
 
-                {/* ─── COMMAND ERROR ──────────────────────────────── */}
                 {commandError && (
                     <div className="bg-rose-900/20 border border-rose-500/30 rounded-2xl p-3 text-rose-400 text-sm flex items-center gap-2">
                         <AlertCircle size={16} />
@@ -1072,7 +1068,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* ─── STRATEGY CARDS ─────────────────────────────── */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     <StrategyCard
                         type="pipnex"
@@ -1109,7 +1104,6 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* ─── FIRST-VISIT WELCOME MODAL ─────────────────────── */}
             {showWelcomeGuide && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl max-w-lg w-full p-6 md:p-8 relative">
@@ -1192,7 +1186,6 @@ export const Dashboard: React.FC = () => {
     );
 };
 
-// ---- Settings Definitions ----
 const PIPNEX_SETTINGS = [
     { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.01 },
     { key: 'PipStep', label: 'Pip Step', type: 'number', step: 1, min: 1, default: 10 },
