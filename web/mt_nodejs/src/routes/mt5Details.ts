@@ -33,11 +33,18 @@ async function fetchChartSymbolsFromVps(vpsAddress: string): Promise<{
 
         // Try multiple possible shapes (bridge API may vary)
         if (Array.isArray(data)) {
-            return { symbols: data.map((s: any) => typeof s === 'string' ? { symbol: s } : s).filter((s: any) => s.symbol), raw: data };
+            return {
+                symbols: data
+                    .map((s: any) => typeof s === 'string' ? { symbol: s } : s)
+                    .filter((s: any) => s.symbol),
+                raw: data,
+            };
         }
         if (Array.isArray(data.symbols)) {
             return {
-                symbols: data.symbols.map((s: any) => typeof s === 'string' ? { symbol: s } : s).filter((s: any) => s.symbol),
+                symbols: data.symbols
+                    .map((s: any) => typeof s === 'string' ? { symbol: s } : s)
+                    .filter((s: any) => s.symbol),
                 raw: data,
             };
         }
@@ -182,7 +189,7 @@ router.get('/admin/mt5-details', authMiddleware, adminAuth, async (req: AuthRequ
                     d.mt5_server, d.notes, d.created_at, d.updated_at,
                     u.email AS user_email
              FROM user_mt5_details d
-             JOIN "User" u ON u.id = d.user_id
+             JOIN users u ON u.id = d.user_id
              ORDER BY d.created_at DESC`
         );
         res.json({ details: result.rows });
