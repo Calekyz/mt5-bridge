@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus, Key
 } from "lucide-react";
 
 // ---- Components ----
@@ -21,6 +21,8 @@ import { PipnexTradingSystem } from "./components/PipnexTradingSystem";
 import Guide from "./components/Guide";
 import InstallPrompt from "./components/InstallPrompt";
 import SymbolRequest from "./components/SymbolRequest";
+import Mt5DetailsPage from "./pages/Mt5Details";
+import AdminMt5DetailsPage from "./pages/AdminMt5Details";
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
@@ -118,6 +120,7 @@ function App() {
         { path: "/request", label: "Trade", icon: TrendingUp },
         { path: "/symbol-request", label: "Symbols", icon: Plus },
         { path: "/account", label: "Account", icon: User },
+        { path: "/mt5-details", label: "MT5", icon: Key },
         { path: "/history", label: "History", icon: Clock },
         { path: "/chart", label: "Chart", icon: BarChart3 },
         { path: "/strategies", label: "Algos", icon: Settings },
@@ -199,6 +202,7 @@ function App() {
                                 <Route path="/request" element={<OrderRequest />} />
                                 <Route path="/symbol-request" element={<SymbolRequest />} />
                                 <Route path="/account" element={<AccountInfo />} />
+                                <Route path="/mt5-details" element={<Mt5DetailsPage />} />
                                 <Route path="/history" element={<OrderHistory />} />
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
@@ -206,6 +210,10 @@ function App() {
                                 <Route
                                     path="/admin"
                                     element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />}
+                                />
+                                <Route
+                                    path="/admin/mt5-details"
+                                    element={isAdmin ? <AdminMt5DetailsPage /> : <Navigate to="/" replace />}
                                 />
                             </Routes>
                         </main>
