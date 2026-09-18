@@ -1,5 +1,5 @@
 export type RiskLevel = 'conservative' | 'moderate' | 'aggressive';
-export type StrategyMode = 'scalper' | 'swing';
+export type StrategyMode = 'pipnex' | 'nova' | 'smc';
 
 export const RISK_LEVELS: { value: RiskLevel; label: string; description: string }[] = [
     { value: 'conservative', label: 'Conservative', description: 'Safest lot sizing, wider grid, fewer levels' },
@@ -8,8 +8,9 @@ export const RISK_LEVELS: { value: RiskLevel; label: string; description: string
 ];
 
 export const STRATEGY_MODES: { value: StrategyMode; label: string; description: string }[] = [
-    { value: 'scalper', label: 'Scalper', description: 'PipNex grid · high frequency' },
-    { value: 'swing',   label: 'Swing',   description: 'NOVA AI · Fibonacci levels' },
+    { value: 'pipnex', label: 'PipNex',      description: 'Scalper grid · high frequency' },
+    { value: 'nova',   label: 'NOVA',        description: 'Fibonacci swing · RSI + ATR' },
+    { value: 'smc',    label: 'SMC Trader',  description: 'HTF structure + POI + CHoCH' },
 ];
 
 export interface AccountHealth {
@@ -31,6 +32,14 @@ export interface PipnexSuggestion {
 }
 
 export interface NovaSuggestion {
+    LotSize: number;
+    SwingStrength: number;
+    RewardRisk: number;
+    MaxPositions: number;
+    reasons: Record<string, string>;
+}
+
+export interface SmcSuggestion {
     LotSize: number;
     SwingStrength: number;
     RewardRisk: number;
@@ -99,18 +108,12 @@ export function suggestPipnexSettings(
 ): PipnexSuggestion {
     const lotDivisor = risk === 'conservative' ? 10000 : risk === 'moderate' ? 5000 : 2500;
     let lot = roundLot(balance / lotDivisor);
-
     const lotCap = openCount > 8 ? 0.02 : 0.10;
     const cappedLot = Math.min(lot, lotCap);
-
     const pipStep = risk === 'conservative' ? 15 : risk === 'moderate' ? 12 : 8;
-
     const closeProfit = Math.max(1.0, Math.round(cappedLot * 100 * 100) / 100);
-
     const minProfitPercent = risk === 'conservative' ? 70 : risk === 'moderate' ? 60 : 50;
-
     const maxLevels = risk === 'conservative' ? 10 : risk === 'moderate' ? 15 : 20;
-
     const martingale = false;
 
     return {
@@ -134,14 +137,11 @@ export function suggestPipnexSettings(
 export function suggestNovaSettings(
     balance: number,
     risk: RiskLevel
-): NovaSettingsResult {
+): NovaSuggestion {
     const lotDivisor = risk === 'conservative' ? 20000 : risk === 'moderate' ? 10000 : 5000;
     const lotSize = roundLot(balance / lotDivisor);
-
     const swingStrength = risk === 'conservative' ? 40 : risk === 'moderate' ? 30 : 20;
-
     const rewardRisk = risk === 'conservative' ? 2.0 : risk === 'moderate' ? 3.0 : 4.0;
-
     const maxPositions = risk === 'conservative' ? 2 : risk === 'moderate' ? 3 : 5;
 
     return {
@@ -170,6 +170,51 @@ export function suggestNovaSettings(
     };
 }
 
+export function suggestSmcSettings(
+    balance: number,
+    risk: RiskLevel
+): SmcSuggestion {
+    // SMC is intraday structure-based — smaller lots and wider swing than PipNex,
+    // slightly tighter than NOVA because entries are faster (LTF CHoCH).
+    const lotDivisor = risk === 'conservative' ? 15000 : risk === 'moderate' ? 8000 : 4000;
+    const lotSize = roundLot(balance / lotDivisor);
+
+    // Swing strength: lower = faster fractal detection (good for M5/M15 LTF)
+    const swingStrength = risk === 'conservative' ? 8 : risk === 'moderate' ? 5 : 3;
+
+    // Reward/risk: SMC targets structure (HTF liquidity), so higher RR is natural
+    const rewardRisk = risk === 'conservative' ? 2.5 : risk === 'moderate' ? 3.0 : 4.0;
+
+    // Max positions: SMC stacks fewer concurrent positions per symbol
+    const maxPositions = risk === 'conservative' ? 3 : risk === 'moderate' ? 5 : 8;
+
+    return {
+        LotSize: lotSize,
+        SwingStrength: swingStrength,
+        RewardRisk: rewardRisk,
+        MaxPositions: maxPositions,
+        reasons: {
+            LotSize: `Balance ${fmt(balance)} ÷ ${lotDivisor} (${risk} risk) = ${lotSize.toFixed(2)} lots`,
+            SwingStrength: `${swingStrength}-bar fractal swing — ${
+                risk === 'conservative' ? 'cleaner HTF structure, fewer entries' :
+                risk === 'moderate' ? 'balanced HTF/LTF detection' :
+                'faster CHoCH detection, more entries'
+            }`,
+            RewardRisk: `Targets ${rewardRisk.toFixed(1)}× — SMC aims for HTF liquidity levels, so ${
+                risk === 'conservative' ? 'fewer but higher-quality setups' :
+                risk === 'moderate' ? 'standard structure targets' :
+                'larger runners to opposing POI'
+            }`,
+            MaxPositions: `${maxPositions} concurrent SMC trades — ${
+                risk === 'conservative' ? 'low stacking' :
+                risk === 'moderate' ? 'balanced multi-setup' :
+                'aggressive structure stacking'
+            }`,
+        },
+    };
+}
+
+// Keep legacy name for backward compatibility
 export type NovaSettingsResult = NovaSuggestion;
 
 export function scoreTradeHealth(
