@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Users, RefreshCw, Trash2, Eye, EyeOff, AlertCircle, Server,
-    Key, Copy, CheckCircle2,
+    Users, RefreshCw, Trash2, Eye, EyeOff, AlertCircle,
+    Key, Copy,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
