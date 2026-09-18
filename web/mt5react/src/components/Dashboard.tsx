@@ -429,6 +429,19 @@ export const Dashboard: React.FC = () => {
         else toast.warning(`Applied ${ok}/${ok + fail} NOVA settings`);
     };
 
+    const applySmcSuggestion = async (suggestion: SmcSuggestion) => {
+        const { LotSize, SwingStrength, RewardRisk, MaxPositions } = suggestion;
+        const values = { LotSize, SwingStrength, RewardRisk, MaxPositions };
+        let ok = 0, fail = 0;
+        for (const [key, value] of Object.entries(values)) {
+            try { await sendCommand(`Smc_${key}`, value as number); ok++; }
+            catch { fail++; }
+        }
+        setSmcSettings(prev => ({ ...prev, ...values }));
+        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} SMC settings`);
+        else toast.warning(`Applied ${ok}/${ok + fail} SMC settings`);
+    };
+
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
         pipnex: {}, nova: {}, smc: {},
     });
@@ -590,6 +603,24 @@ export const Dashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
+            {/* ═══ Slow color-shifting keyframes for active algo buttons ═══ */}
+            <style>{`
+                @keyframes slowPulseGreen {
+                    0%   { background-position:   0% 50%; }
+                    50%  { background-position: 100% 50%; }
+                    100% { background-position:   0% 50%; }
+                }
+                @keyframes slowPulseRed {
+                    0%   { background-position:   0% 50%; }
+                    50%  { background-position: 100% 50%; }
+                    100% { background-position:   0% 50%; }
+                }
+                @keyframes softGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), 0 0 40px rgba(239, 68, 68, 0.15); }
+                    50%      { box-shadow: 0 0 30px rgba(239, 68, 68, 0.65), 0 0 60px rgba(239, 68, 68, 0.30); }
+                }
+            `}</style>
+
             <div className="max-w-7xl mx-auto space-y-5">
 
                 {triggerAlert && (
@@ -876,6 +907,7 @@ export const Dashboard: React.FC = () => {
                         riskSession={riskSession}
                         onApplyPipnex={applyPipnexSuggestion}
                         onApplyNova={applyNovaSuggestion}
+                        onApplySmc={applySmcSuggestion}
                         disabled={!eaConnected}
                     />
                 )}
@@ -1033,6 +1065,13 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     onToggle, onInputChange, onInputBlur, onCheckboxChange,
     isToggling, settingsDef, disabled = false,
 }) => {
+    // ─── Animated gradient for the toggle button when algo is ACTIVE ───
+    const activeButtonStyle: React.CSSProperties | undefined = enabled ? {
+        backgroundImage: 'linear-gradient(90deg, #dc2626 0%, #ef4444 25%, #f87171 50%, #ef4444 75%, #dc2626 100%)',
+        backgroundSize: '300% 100%',
+        animation: 'slowPulseRed 5s ease-in-out infinite',
+    } : undefined;
+
     return (
         <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border transition-all duration-300 overflow-hidden ${
             enabled
@@ -1053,12 +1092,16 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             <p className="text-slate-400 text-xs">{description}</p>
                         </div>
                     </div>
-                    <button onClick={() => onToggle(type, !enabled)} disabled={isToggling || disabled}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${
+                    <button
+                        onClick={() => onToggle(type, !enabled)}
+                        disabled={isToggling || disabled}
+                        style={activeButtonStyle}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg ${
                             enabled
-                                ? 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-rose-600/20'
+                                ? 'text-white shadow-rose-600/40'
                                 : 'bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white shadow-emerald-600/20'
-                        } ${(isToggling || disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        } ${(isToggling || disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
                         {isToggling ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Working...
