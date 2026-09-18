@@ -4,10 +4,11 @@ import {
     ChevronDown, ChevronUp, CheckCircle2, Info, Zap, RefreshCw
 } from 'lucide-react';
 import {
-    analyzeAccount, suggestPipnexSettings, suggestNovaSettings,
+    analyzeAccount, suggestPipnexSettings, suggestNovaSettings, suggestSmcSettings,
     scoreTradeHealth, summarizeHealth,
     RISK_LEVELS, STRATEGY_MODES,
-    type RiskLevel, type StrategyMode, type PipnexSuggestion, type NovaSuggestion,
+    type RiskLevel, type StrategyMode,
+    type PipnexSuggestion, type NovaSuggestion, type SmcSuggestion,
 } from './quantumAI';
 
 interface QuantumAICardProps {
@@ -17,6 +18,7 @@ interface QuantumAICardProps {
     riskSession: any | null;
     onApplyPipnex: (settings: PipnexSuggestion) => Promise<void> | void;
     onApplyNova: (settings: NovaSuggestion) => Promise<void> | void;
+    onApplySmc: (settings: SmcSuggestion) => Promise<void> | void;
     disabled?: boolean;
 }
 
@@ -27,10 +29,11 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     riskSession,
     onApplyPipnex,
     onApplyNova,
+    onApplySmc,
     disabled = false,
 }) => {
     const [expanded, setExpanded] = useState(false);
-    const [mode, setMode] = useState<StrategyMode>('scalper');
+    const [mode, setMode] = useState<StrategyMode>('pipnex');
     const [risk, setRisk] = useState<RiskLevel>('moderate');
     const [analyzed, setAnalyzed] = useState(false);
     const [applying, setApplying] = useState(false);
@@ -51,6 +54,11 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
         [balance, risk]
     );
 
+    const smcSuggestion = useMemo(
+        () => suggestSmcSettings(balance, risk),
+        [balance, risk]
+    );
+
     const tradeScores = useMemo(
         () => (positions || []).map(p => scoreTradeHealth(p, positions, riskSession)),
         [positions, riskSession]
@@ -65,17 +73,23 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     const handleApply = async () => {
         setApplying(true);
         try {
-            if (mode === 'scalper') {
+            if (mode === 'pipnex') {
                 await onApplyPipnex(pipnexSuggestion);
-            } else {
+            } else if (mode === 'nova') {
                 await onApplyNova(novaSuggestion);
+            } else {
+                await onApplySmc(smcSuggestion);
             }
         } finally {
             setApplying(false);
         }
     };
 
-    const currentSuggestion = mode === 'scalper' ? pipnexSuggestion : novaSuggestion;
+    const currentSuggestion =
+        mode === 'pipnex' ? pipnexSuggestion :
+        mode === 'nova'   ? novaSuggestion   :
+                            smcSuggestion;
+
     const currentReasons = currentSuggestion.reasons;
 
     const healthColorMap = {
@@ -149,13 +163,13 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                                 Strategy
                             </label>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 {STRATEGY_MODES.map((m) => (
                                     <button
                                         key={m.value}
                                         onClick={() => { setMode(m.value); setAnalyzed(false); }}
                                         disabled={disabled}
-                                        className={`px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                                        className={`px-2 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
                                             mode === m.value
                                                 ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]'
                                                 : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/50'
@@ -222,14 +236,14 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 <div className="flex items-center gap-2 mb-3">
                                     <Zap size={12} className="text-amber-400" />
                                     <h3 className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                        Suggested Settings
+                                        Suggested Settings · {mode === 'pipnex' ? 'PipNex' : mode === 'nova' ? 'NOVA' : 'SMC Trader'}
                                     </h3>
                                 </div>
 
                                 <div className="bg-slate-900/50 rounded-xl border border-slate-700/40 divide-y divide-slate-700/40">
                                     {Object.entries(currentSuggestion).map(([key, value]) => {
                                         if (key === 'reasons') return null;
-                                        if (key === 'MaxLoss') return null; // ★ SL handles loss now
+                                        if (key === 'MaxLoss') return null;
                                         const reasonText = currentReasons[key];
                                         const displayValue = typeof value === 'boolean'
                                             ? (value ? 'ON' : 'OFF')
@@ -270,7 +284,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                     ) : (
                                         <>
                                             <CheckCircle2 size={14} />
-                                            Apply Suggestions
+                                            Apply to {mode === 'pipnex' ? 'PipNex' : mode === 'nova' ? 'NOVA' : 'SMC Trader'}
                                         </>
                                     )}
                                 </button>
