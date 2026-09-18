@@ -3,7 +3,8 @@ import {
     Eye, EyeOff, AlertCircle, Loader2, Mail, Lock,
     Sparkles, Shield, Zap, TrendingUp, MessageCircle,
     ArrowRight, Crown, CheckCircle2, Star,
-    ExternalLink, Building2, Send, X, DollarSign
+    ExternalLink, Building2, Send, X, DollarSign,
+    ChevronDown, ChevronUp, Scale, FileText,
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -40,14 +41,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     // ─── Telegram popup state (persisted dismissal) ─────────
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
 
+    // ─── Risk disclaimer dropdown ────────────────────────────
+    const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+    // ─── Rotating tagline (welcome ↔ advert) ─────────────────
+    const [taglineMode, setTaglineMode] = useState<'welcome' | 'advert'>('welcome');
+    const [taglineHidden, setTaglineHidden] = useState(false);
+
     useEffect(() => {
         const dismissed = localStorage.getItem('telegramPopupDismissed');
         if (!dismissed) {
-            // Small delay so it slides in after the page settles
             const t = setTimeout(() => setShowTelegramPopup(true), 1200);
             return () => clearTimeout(t);
         }
     }, []);
+
+    useEffect(() => {
+        const SLIDE_MS = 400;      // slide transition time
+        const WELCOME_MS = 3000;   // welcome stays visible 3s
+        const ADVERT_MS = 4500;    // advert stays visible 4.5s
+
+        let t1: ReturnType<typeof setTimeout>;
+        let t2: ReturnType<typeof setTimeout>;
+
+        if (taglineMode === 'welcome') {
+            t1 = setTimeout(() => {
+                setTaglineHidden(true);
+                t2 = setTimeout(() => {
+                    setTaglineMode('advert');
+                    setTaglineHidden(false);
+                }, SLIDE_MS);
+            }, WELCOME_MS);
+        } else {
+            t1 = setTimeout(() => {
+                setTaglineHidden(true);
+                t2 = setTimeout(() => {
+                    setTaglineMode('welcome');
+                    setTaglineHidden(false);
+                }, SLIDE_MS);
+            }, ADVERT_MS);
+        }
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [taglineMode]);
 
     const dismissTelegramPopup = () => {
         setShowTelegramPopup(false);
@@ -82,7 +121,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 return;
             }
 
-            // Login success
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             if (data.user.access_key) {
@@ -117,6 +155,45 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 backgroundAttachment: 'fixed',
             }}
         >
+            {/* ═══════ Animation keyframes ═══════ */}
+            <style>{`
+                @keyframes taglineShimmer {
+                    0%   { transform: translateX(-100%); }
+                    100% { transform: translateX(220%); }
+                }
+                @keyframes taglinePriceGlow {
+                    0%, 100% {
+                        text-shadow: 0 0 12px rgba(251, 191, 36, 0.55),
+                                     0 0 24px rgba(251, 191, 36, 0.30);
+                    }
+                    50% {
+                        text-shadow: 0 0 18px rgba(251, 191, 36, 0.85),
+                                     0 0 36px rgba(251, 191, 36, 0.55);
+                    }
+                }
+                @keyframes taglineArrowSlide {
+                    0%, 100% { transform: translateX(0); }
+                    50%      { transform: translateX(5px); }
+                }
+                @keyframes taglinePulseRing {
+                    0%   { transform: scale(1);    opacity: 0.7; }
+                    100% { transform: scale(1.9);  opacity: 0; }
+                }
+                @keyframes taglineTwinkle {
+                    0%, 100% { opacity: 0.25; transform: scale(0.9); }
+                    50%      { opacity: 1;    transform: scale(1.2); }
+                }
+                .tagline-price-glow {
+                    animation: taglinePriceGlow 3s ease-in-out infinite;
+                }
+                .tagline-arrow {
+                    animation: taglineArrowSlide 1.6s ease-in-out infinite;
+                }
+                .tagline-twinkle {
+                    animation: taglineTwinkle 2.4s ease-in-out infinite;
+                }
+            `}</style>
+
             {/* ─── Dark overlay ───────────────────────────────── */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
 
@@ -321,33 +398,111 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </div>
 
-                            {/* ─── Mode Title ────────────────────────── */}
-                            <div className="text-center mb-6">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
-                                    {mode === 'login' ? (
-                                        <>
-                                            <Sparkles size={12} className="text-blue-400" />
-                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                                Welcome Back
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Star size={12} className="text-amber-400" />
-                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                                Create Account
-                                            </span>
-                                        </>
-                                    )}
+                            {/* ═══════════════════════════════════════════════ */}
+                            {/*  ROTATING TAGLINE — Welcome ↔ Advert            */}
+                            {/* ═══════════════════════════════════════════════ */}
+                            <div className="relative h-[110px] mb-5 flex items-center justify-center">
+
+                                {/* ── STATE 1: Welcome text ── */}
+                                <div
+                                    className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${
+                                        taglineHidden && taglineMode === 'welcome'
+                                            ? 'opacity-0 -translate-y-6 scale-95'
+                                            : taglineMode === 'welcome'
+                                                ? 'opacity-100 translate-y-0 scale-100'
+                                                : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+                                    }`}
+                                    style={{ transitionDuration: '400ms' }}
+                                >
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
+                                        {mode === 'login' ? (
+                                            <>
+                                                <Sparkles size={12} className="text-blue-400" />
+                                                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                                                    Welcome Back
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Star size={12} className="text-amber-400" />
+                                                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                                                    Create Account
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <h2 className="text-xl font-bold text-white">
+                                        {mode === 'login' ? 'Sign in to your dashboard' : 'Create your account'}
+                                    </h2>
+                                    <p className="text-slate-400 text-xs mt-1">
+                                        {mode === 'login'
+                                            ? 'Enter your credentials to continue'
+                                            : 'Sign up to get started with trading'}
+                                    </p>
                                 </div>
-                                <h2 className="text-xl font-bold text-white">
-                                    {mode === 'login' ? 'Sign in to your dashboard' : 'Create your account'}
-                                </h2>
-                                <p className="text-slate-400 text-xs mt-1">
-                                    {mode === 'login'
-                                        ? 'Enter your credentials to continue'
-                                        : 'Sign up to get started with trading'}
-                                </p>
+
+                                {/* ── STATE 2: Advert ── */}
+                                <div
+                                    className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${
+                                        taglineHidden && taglineMode === 'advert'
+                                            ? 'opacity-0 -translate-y-6 scale-95'
+                                            : taglineMode === 'advert'
+                                                ? 'opacity-100 translate-y-0 scale-100'
+                                                : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+                                    }`}
+                                    style={{ transitionDuration: '400ms' }}
+                                >
+                                    {/* Pulsing "limited offer" badge */}
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-400/50 shadow-lg shadow-amber-500/20 relative overflow-hidden"
+                                         style={{
+                                             background: 'linear-gradient(90deg, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.25) 100%)',
+                                         }}
+                                    >
+                                        {/* shimmer */}
+                                        <span
+                                            className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                                            style={{ animation: 'taglineShimmer 2.5s ease-in-out infinite' }}
+                                        />
+                                        <span className="relative flex h-2 w-2">
+                                            <span
+                                                className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"
+                                                style={{ animation: 'taglinePulseRing 1.6s ease-out infinite' }}
+                                            />
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" />
+                                        </span>
+                                        <span className="relative text-[10px] font-extrabold uppercase tracking-widest text-amber-100">
+                                            Limited Offer
+                                        </span>
+                                        <Star size={10} className="relative text-amber-100 tagline-twinkle" />
+                                    </div>
+
+                                    {/* Headline with glowing price */}
+                                    <h2 className="text-xl font-black text-white mt-3 leading-tight">
+                                        Unlock <span className="tagline-price-glow bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">Lifetime Access</span>
+                                    </h2>
+
+                                    {/* Subtitle */}
+                                    <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
+                                        <span className="text-emerald-400 font-bold">3 Algos</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-blue-400 font-bold">Risk Guard</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-purple-400 font-bold">Quantum AI</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-amber-300 font-bold">{BOT_PRICE}</span>
+                                    </p>
+
+                                    {/* CTA hint */}
+                                    <a
+                                        href={WHATSAPP_LINK}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition"
+                                    >
+                                        Get started today
+                                        <ArrowRight size={11} className="tagline-arrow" />
+                                    </a>
+                                </div>
                             </div>
 
                             {/* ─── Broker Hint (signup only) ──────────── */}
@@ -563,11 +718,69 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </a>
                             </div>
 
-                            {/* ─── Footer ────────────────────────────── */}
-                            <div className="mt-5 text-center">
-                                <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
-                                    <Shield size={10} className="text-emerald-400" />
-                                    <span>Secured connection · v2.0</span>
+                            {/* ═══════════════════════════════════════════════ */}
+                            {/*  RISK DISCLAIMER — collapsible dropdown        */}
+                            {/* ═══════════════════════════════════════════════ */}
+                            <div className="mt-5 border border-slate-700/40 rounded-xl overflow-hidden bg-slate-950/40">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDisclaimer(!showDisclaimer)}
+                                    className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 hover:bg-slate-800/40 transition text-left"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Scale size={13} className="text-amber-400" />
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Risk Disclaimer
+                                        </span>
+                                    </div>
+                                    {showDisclaimer ? (
+                                        <ChevronUp size={14} className="text-slate-500" />
+                                    ) : (
+                                        <ChevronDown size={14} className="text-slate-500" />
+                                    )}
+                                </button>
+                                {showDisclaimer && (
+                                    <div className="px-3.5 pb-3 pt-1 border-t border-slate-700/40">
+                                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                                            Trading foreign exchange (Forex) and Contracts for Difference (CFDs) on margin
+                                            carries a high level of risk and may not be suitable for all investors. The high
+                                            degree of leverage can work against you as well as for you. Before deciding to trade,
+                                            you should carefully consider your investment objectives, level of experience, and
+                                            risk appetite. The possibility exists that you could sustain a loss of some or all
+                                            of your initial investment. You should be aware of all risks associated with Forex
+                                            and CFD trading. Past performance is not indicative of future results.
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-700/30">
+                                            <span className="text-slate-400 font-bold">PipTrader AI</span> provides automation
+                                            software only and does not offer financial advice, portfolio management, or
+                                            guaranteed returns. You are solely responsible for your trading decisions.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ═══════════════════════════════════════════════ */}
+                            {/*  COMPANY FOOTER                                 */}
+                            {/* ═══════════════════════════════════════════════ */}
+                            <div className="mt-5 pt-4 border-t border-slate-700/30">
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                    <div className="p-1 bg-emerald-500/15 rounded-md border border-emerald-500/30">
+                                        <Shield size={10} className="text-emerald-400" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                                        Secured Connection · v2.0
+                                    </span>
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
+                                        <FileText size={9} className="text-slate-600" />
+                                        <span className="font-semibold text-slate-400 uppercase tracking-wider">
+                                            © {new Date().getFullYear()} CALEKYZ DIGITALISED SERVICE ENTERPRISES
+                                        </span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-600 leading-relaxed max-w-[280px] mx-auto">
+                                        Registered under the Registrar of Companies, Republic of Kenya
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -581,18 +794,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             {showTelegramPopup && (
                 <div className="fixed bottom-5 right-5 z-[200] animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="relative group">
-                        {/* Ambient glow */}
                         <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-blue-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
 
-                        {/* Card */}
                         <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-blue-600/40 border border-sky-300/40 max-w-[280px]">
 
-                            {/* Telegram icon */}
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30 flex-shrink-0">
                                 <Send size={18} className="text-white" />
                             </div>
 
-                            {/* Text */}
                             <div className="min-w-0">
                                 <div className="text-white font-bold text-xs leading-tight">
                                     Join our Telegram
@@ -602,7 +811,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </div>
 
-                            {/* CTA button — hidden on very small, becomes icon-only */}
                             <a
                                 href={TELEGRAM_LINK}
                                 target="_blank"
@@ -613,7 +821,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 <ArrowRight size={14} />
                             </a>
 
-                            {/* Dismiss button */}
                             <button
                                 onClick={dismissTelegramPopup}
                                 className="absolute top-1 right-1 p-1 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition"
@@ -624,7 +831,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </button>
                         </div>
 
-                        {/* Small pulsing hint dot on first show */}
                         <span className="absolute -top-1 -left-1 flex h-3 w-3">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
