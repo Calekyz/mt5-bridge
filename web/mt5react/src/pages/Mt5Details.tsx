@@ -30,12 +30,14 @@ interface ChartSymbol {
 
 export const Mt5DetailsPage: React.FC = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
+    const token = localStorage.getItem('token');
 
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState<Mt5Details | null>(null);
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     const [form, setForm] = useState({
         label: '',
@@ -51,16 +53,44 @@ export const Mt5DetailsPage: React.FC = () => {
     const [symbolsFetchedAt, setSymbolsFetchedAt] = useState<Date | null>(null);
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
 
-    const token = localStorage.getItem('token');
+    // ─── Read VPS from localStorage (single source of truth) ────
+    useEffect(() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            setVpsAddress(user.vps_address || null);
+        } catch {
+            setVpsAddress(null);
+        }
+    }, []);
 
     // ─── Load own details ────────────────────────────────────
     const loadDetails = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const res = await fetch(`${API_URL}/mt5-details`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error('Failed to load details');
+
+            if (res.status === 401) {
+                setLoadError('Session expired — please log in again');
+                setEditing(true);
+                return;
+            }
+
+            if (!res.ok) {
+                let serverMsg = `Server returned ${res.status}`;
+                try {
+                    const data = await res.json();
+                    if (data.error) serverMsg = data.error;
+                } catch { /* ignore */ }
+                // Don't block — show empty form
+                setLoadError(serverMsg);
+                setDetails(null);
+                setEditing(true);
+                return;
+            }
+
             const data = await res.json();
             if (data.details) {
                 setDetails(data.details);
@@ -77,24 +107,30 @@ export const Mt5DetailsPage: React.FC = () => {
                 setEditing(true);
             }
         } catch (err: any) {
-            toast.error('Failed to load MT5 details: ' + err.message);
+            setLoadError(err.message || 'Network error');
+            setDetails(null);
+            setEditing(true);
         } finally {
             setLoading(false);
         }
     }, [API_URL, token]);
 
-    // ─── Load chart symbols from VPS ────────────────────────
+    // ─── Load chart symbols from VPS (ONLY if VPS assigned) ──
     const loadSymbols = useCallback(async () => {
+        if (!vpsAddress) {
+            setSymbols([]);
+            setSymbolsError(null);
+            return;
+        }
         setSymbolsLoading(true);
         setSymbolsError(null);
         try {
             const res = await fetch(`${API_URL}/mt5-details/symbols`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error('Failed to fetch symbols');
+            if (!res.ok) throw new Error(`Bridge returned ${res.status}`);
             const data = await res.json();
             setSymbols(data.symbols || []);
-            setVpsAddress(data.vps || null);
             setSymbolsError(data.error || null);
             setSymbolsFetchedAt(new Date());
         } catch (err: any) {
@@ -103,12 +139,22 @@ export const Mt5DetailsPage: React.FC = () => {
         } finally {
             setSymbolsLoading(false);
         }
-    }, [API_URL, token]);
+    }, [API_URL, token, vpsAddress]);
 
+    // Initial load
+    useEffect(() => { loadDetails(); }, [loadDetails]);
+
+    // Symbols: only when VPS exists. Auto-refresh every 30s.
     useEffect(() => {
-        loadDetails();
+        if (!vpsAddress) {
+            setSymbols([]);
+            setSymbolsError(null);
+            return;
+        }
         loadSymbols();
-    }, [loadDetails, loadSymbols]);
+        const interval = setInterval(loadSymbols, 30000);
+        return () => clearInterval(interval);
+    }, [vpsAddress, loadSymbols]);
 
     // ─── Save (create or update) ────────────────────────────
     const handleSave = async () => {
@@ -131,6 +177,7 @@ export const Mt5DetailsPage: React.FC = () => {
             if (!res.ok) throw new Error(data.error || 'Save failed');
             setDetails(data.details);
             setEditing(false);
+            setLoadError(null);
             toast.success(isCreate ? 'MT5 details saved' : 'MT5 details updated');
         } catch (err: any) {
             toast.error(err.message);
@@ -170,6 +217,18 @@ export const Mt5DetailsPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* Soft warning if load failed */}
+                {loadError && !details && (
+                    <div className="bg-amber-900/20 border border-amber-500/40 rounded-xl p-3 flex items-start gap-2">
+                        <AlertCircle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-amber-200">
+                                Could not load previous details ({loadError}). You can still submit below.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* MT5 Details Card */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
@@ -370,11 +429,15 @@ export const Mt5DetailsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Symbols on Chart Card */}
+                {/* Symbols on Chart Card — only meaningful when VPS exists */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700">
+                            <div className={`p-2 rounded-xl ${
+                                vpsAddress
+                                    ? 'bg-gradient-to-br from-purple-600 to-indigo-700'
+                                    : 'bg-slate-700/60'
+                            }`}>
                                 <BarChart3 size={18} className="text-white" />
                             </div>
                             <div>
@@ -382,15 +445,16 @@ export const Mt5DetailsPage: React.FC = () => {
                                     Symbols on Chart
                                 </h2>
                                 <p className="text-slate-500 text-[10px] mt-0.5">
-                                    {vpsAddress ? `From VPS · ${vpsAddress}` : 'Waiting for VPS assignment'}
-                                    {symbolsFetchedAt && ` · Refreshed ${symbolsFetchedAt.toLocaleTimeString()}`}
+                                    {vpsAddress
+                                        ? `From VPS · ${vpsAddress}${symbolsFetchedAt ? ` · Refreshed ${symbolsFetchedAt.toLocaleTimeString()}` : ''}`
+                                        : 'Waiting for VPS assignment'}
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={loadSymbols}
-                            disabled={symbolsLoading}
-                            className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700/60 transition disabled:opacity-50"
+                            disabled={symbolsLoading || !vpsAddress}
+                            className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700/60 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <RefreshCw size={12} className={symbolsLoading ? 'animate-spin' : ''} />
                             Refresh
@@ -398,7 +462,14 @@ export const Mt5DetailsPage: React.FC = () => {
                     </div>
 
                     <div className="p-5">
-                        {symbolsLoading && symbols.length === 0 ? (
+                        {!vpsAddress ? (
+                            <div className="text-center py-6">
+                                <Server size={28} className="text-slate-600 mx-auto mb-2" />
+                                <p className="text-slate-500 text-xs">
+                                    No VPS assigned yet. Ask admin to set up your VPS — symbols will appear here once connected.
+                                </p>
+                            </div>
+                        ) : symbolsLoading && symbols.length === 0 ? (
                             <div className="flex justify-center py-6">
                                 <div className="w-6 h-6 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                             </div>
