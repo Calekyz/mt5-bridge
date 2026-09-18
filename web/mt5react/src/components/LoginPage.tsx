@@ -56,10 +56,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         }
     }, []);
 
+    // ─── Tagline rotation (DOUBLED timings) ─────────────────
     useEffect(() => {
-        const SLIDE_MS = 400;      // slide transition time
-        const WELCOME_MS = 3000;   // welcome stays visible 3s
-        const ADVERT_MS = 4500;    // advert stays visible 4.5s
+        const SLIDE_MS = 800;       // slide transition (was 400)
+        const WELCOME_MS = 6000;    // welcome stays 6s (was 3s)
+        const ADVERT_MS = 9000;     // advert stays 9s (was 4.5s)
 
         let t1: ReturnType<typeof setTimeout>;
         let t2: ReturnType<typeof setTimeout>;
@@ -400,6 +401,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
                             {/* ═══════════════════════════════════════════════ */}
                             {/*  ROTATING TAGLINE — Welcome ↔ Advert            */}
+                            {/*  Timings: welcome 6s · slide 0.8s · advert 9s   */}
                             {/* ═══════════════════════════════════════════════ */}
                             <div className="relative h-[110px] mb-5 flex items-center justify-center">
 
@@ -412,7 +414,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                                 ? 'opacity-100 translate-y-0 scale-100'
                                                 : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
                                     }`}
-                                    style={{ transitionDuration: '400ms' }}
+                                    style={{ transitionDuration: '800ms' }}
                                 >
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
                                         {mode === 'login' ? (
@@ -450,7 +452,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                                 ? 'opacity-100 translate-y-0 scale-100'
                                                 : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
                                     }`}
-                                    style={{ transitionDuration: '400ms' }}
+                                    style={{ transitionDuration: '800ms' }}
                                 >
                                     {/* Pulsing "limited offer" badge */}
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-400/50 shadow-lg shadow-amber-500/20 relative overflow-hidden"
@@ -458,7 +460,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                              background: 'linear-gradient(90deg, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.25) 100%)',
                                          }}
                                     >
-                                        {/* shimmer */}
                                         <span
                                             className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                                             style={{ animation: 'taglineShimmer 2.5s ease-in-out infinite' }}
@@ -476,12 +477,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         <Star size={10} className="relative text-amber-100 tagline-twinkle" />
                                     </div>
 
-                                    {/* Headline with glowing price */}
                                     <h2 className="text-xl font-black text-white mt-3 leading-tight">
                                         Unlock <span className="tagline-price-glow bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">Lifetime Access</span>
                                     </h2>
 
-                                    {/* Subtitle */}
                                     <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
                                         <span className="text-emerald-400 font-bold">3 Algos</span>
                                         <span className="text-slate-600">·</span>
@@ -492,7 +491,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         <span className="text-amber-300 font-bold">{BOT_PRICE}</span>
                                     </p>
 
-                                    {/* CTA hint */}
                                     <a
                                         href={WHATSAPP_LINK}
                                         target="_blank"
