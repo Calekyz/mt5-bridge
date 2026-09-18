@@ -10,7 +10,6 @@ import {
 
 const router = Router();
 
-// ─── Helper: Get user's VPS address ──────────────────────
 async function getUserVps(userId: number): Promise<string | null> {
     const result = await query(
         'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
@@ -19,7 +18,6 @@ async function getUserVps(userId: number): Promise<string | null> {
     return result.rows[0]?.vps_address || null;
 }
 
-// ─── POST /v1/risk/start ──────────────────────────────────
 router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -65,7 +63,6 @@ router.post('/risk/start', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── POST /v1/risk/stop ───────────────────────────────────
 router.post('/risk/stop', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -81,7 +78,6 @@ router.post('/risk/stop', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── GET /v1/risk/status ─────────────────────────────────
 router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -128,8 +124,6 @@ router.get('/risk/status', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── POST /v1/risk/dismiss ────────────────────────────────
-// Frontend calls this after showing the toast, so it won't re-fire.
 router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
@@ -146,7 +140,6 @@ router.post('/risk/dismiss', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// ─── Helper: Close all open positions on a VPS ────────────
 async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; failed: number; total: number }> {
     let closed = 0;
     let failed = 0;
@@ -156,7 +149,6 @@ async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; 
         const orders = await fetchOrderList(vpsAddress);
         console.log(`   📋 Raw response keys:`, Object.keys(orders || {}));
 
-        // Try multiple possible keys
         const opened: any[] =
             orders?.opened ||
             orders?.data?.opened ||
@@ -182,7 +174,6 @@ async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; 
                 failed++;
             }
 
-            // Small delay between closes to let the EA process
             await new Promise(r => setTimeout(r, 300));
         }
     } catch (err: any) {
@@ -192,7 +183,6 @@ async function closeAllPositions(vpsAddress: string): Promise<{ closed: number; 
     return { closed, failed, total: closed + failed };
 }
 
-// ─── Internal monitor function ────────────────────────────
 export async function monitorRiskSessions() {
     try {
         const sessions = await query(`
@@ -225,12 +215,22 @@ export async function monitorRiskSessions() {
                     console.log(`🛑 Risk triggered for user ${s.user_id}: ${message}`);
                     console.log(`🛑 VPS: ${s.vps_address}`);
 
-                    // Step 1: Stop master EA FIRST
+                    // Step 1a: Master kill switch
                     try {
                         await setGlobalVariable('Master_Enabled', 0, s.vps_address);
                         console.log(`   ✓ Master_Enabled set to 0`);
                     } catch (err: any) {
                         console.error(`   ✗ Failed to stop master: ${err.message}`);
+                    }
+
+                    // Step 1b: Stop all 3 individual EAs (belt + braces)
+                    try {
+                        await setGlobalVariable('PipNex_Enable', 0, s.vps_address);
+                        await setGlobalVariable('Nova_Enable', 0, s.vps_address);
+                        await setGlobalVariable('Smc_Enable', 0, s.vps_address);
+                        console.log(`   ✓ PipNex_Enable / Nova_Enable / Smc_Enable all set to 0`);
+                    } catch (err: any) {
+                        console.error(`   ✗ Failed to stop individual EAs: ${err.message}`);
                     }
 
                     // Small delay so the EA processes the master stop
