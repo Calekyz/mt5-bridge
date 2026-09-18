@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-type StrategyType = 'pipnex' | 'nova';
+type StrategyType = 'pipnex' | 'nova' | 'smc';
 
 const BOT_PRICE = '$150';
 const WHATSAPP_NUMBER = '254116081230';
@@ -23,16 +23,30 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
+const PREFIX: Record<StrategyType, string> = {
+    pipnex: 'PipNex_',
+    nova:   'Nova_',
+    smc:    'Smc_',
+};
+const ENABLE_KEY: Record<StrategyType, string> = {
+    pipnex: 'PipNex_Enable',
+    nova:   'Nova_Enable',
+    smc:    'Smc_Enable',
+};
+const DISPLAY_NAME: Record<StrategyType, string> = {
+    pipnex: 'PipNex',
+    nova:   'NOVA',
+    smc:    'SMC',
+};
+
 function getStoredState(key: string, defaultValue: boolean): boolean {
     const stored = localStorage.getItem(key);
     if (stored === null) return defaultValue;
     return stored === 'true';
 }
-
 function setStoredState(key: string, value: boolean) {
     localStorage.setItem(key, String(value));
 }
-
 function loadStoredSettings(key: string): Record<string, any> {
     try {
         const raw = localStorage.getItem(key);
@@ -40,17 +54,10 @@ function loadStoredSettings(key: string): Record<string, any> {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') return parsed;
         return {};
-    } catch {
-        return {};
-    }
+    } catch { return {}; }
 }
-
 function saveStoredSettings(key: string, value: Record<string, any>) {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-        // ignore
-    }
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
 interface RiskSession {
@@ -64,7 +71,6 @@ interface RiskSession {
     triggered_at: string | null;
     created_at: string;
 }
-
 interface RiskCurrent {
     balance: number;
     equity: number;
@@ -78,21 +84,19 @@ export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { account, loading, error, refetch } = useAccount();
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
-    const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
-    const [novaEnabled, setNovaEnabled] = useState(() => getStoredState('novaEnabled', false));
 
-    const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>(
-        () => loadStoredSettings('pipnexSettings')
-    );
-    const [novaSettings, setNovaSettings] = useState<Record<string, any>>(
-        () => loadStoredSettings('novaSettings')
-    );
+    const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
+    const [novaEnabled, setNovaEnabled]     = useState(() => getStoredState('novaEnabled', false));
+    const [smcEnabled, setSmcEnabled]       = useState(() => getStoredState('smcEnabled', false));
+
+    const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>(() => loadStoredSettings('pipnexSettings'));
+    const [novaSettings, setNovaSettings]     = useState<Record<string, any>>(() => loadStoredSettings('novaSettings'));
+    const [smcSettings, setSmcSettings]       = useState<Record<string, any>>(() => loadStoredSettings('smcSettings'));
 
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
-
     const [positions, setPositions] = useState<any[]>([]);
 
     const [slInput, setSlInput] = useState<string>(() => localStorage.getItem('riskSl') || '');
@@ -100,9 +104,7 @@ export const Dashboard: React.FC = () => {
     const [riskSession, setRiskSession] = useState<RiskSession | null>(null);
     const [riskCurrent, setRiskCurrent] = useState<RiskCurrent | null>(null);
     const [triggerAlert, setTriggerAlert] = useState<string | null>(null);
-
     const [autoCloseEnabled, setAutoCloseEnabled] = useState(() => getStoredState('autoCloseEnabled', false));
-
     const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
     const dismissedTriggers = useRef<Set<number>>(new Set());
@@ -113,18 +115,10 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => { localStorage.setItem('riskSl', slInput); }, [slInput]);
     useEffect(() => { localStorage.setItem('riskTp', tpInput); }, [tpInput]);
-
-    useEffect(() => {
-        saveStoredSettings('pipnexSettings', pipnexSettings);
-    }, [pipnexSettings]);
-
-    useEffect(() => {
-        saveStoredSettings('novaSettings', novaSettings);
-    }, [novaSettings]);
-
-    useEffect(() => {
-        setStoredState('autoCloseEnabled', autoCloseEnabled);
-    }, [autoCloseEnabled]);
+    useEffect(() => { saveStoredSettings('pipnexSettings', pipnexSettings); }, [pipnexSettings]);
+    useEffect(() => { saveStoredSettings('novaSettings', novaSettings); }, [novaSettings]);
+    useEffect(() => { saveStoredSettings('smcSettings', smcSettings); }, [smcSettings]);
+    useEffect(() => { setStoredState('autoCloseEnabled', autoCloseEnabled); }, [autoCloseEnabled]);
 
     useEffect(() => {
         const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
@@ -138,7 +132,6 @@ export const Dashboard: React.FC = () => {
         localStorage.setItem('hasSeenWelcomeGuide', 'true');
         setShowWelcomeGuide(false);
     };
-
     const goToGuide = () => {
         localStorage.setItem('hasSeenWelcomeGuide', 'true');
         setShowWelcomeGuide(false);
@@ -151,9 +144,7 @@ export const Dashboard: React.FC = () => {
             try {
                 const user = JSON.parse(userStr);
                 setVpsAddress(user.vps_address || null);
-            } catch (e) {
-                console.error('Failed to parse user', e);
-            }
+            } catch (e) { console.error('Failed to parse user', e); }
         }
     };
 
@@ -179,15 +170,9 @@ export const Dashboard: React.FC = () => {
         } catch (err: any) {
             console.error('Refresh user info error:', err);
             if (showToast) toast.error('Failed to refresh user info: ' + err.message);
-        } finally {
-            setRefreshingUser(false);
-        }
+        } finally { setRefreshingUser(false); }
     };
 
-    // ═══════════════════════════════════════════════════════════
-    //  RISK STATUS — now actually sends STOP commands to the EA
-    //  when SL/TP triggers. Previously it only updated the UI.
-    // ═══════════════════════════════════════════════════════════
     const fetchRiskStatus = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -204,83 +189,62 @@ export const Dashboard: React.FC = () => {
                 const sessionId = data.session.id;
                 const reason = data.session.trigger_reason;
 
-                if (
-                    (reason === 'sl_hit' || reason === 'tp_hit') &&
-                    !dismissedTriggers.current.has(sessionId)
-                ) {
+                if ((reason === 'sl_hit' || reason === 'tp_hit') &&
+                    !dismissedTriggers.current.has(sessionId)) {
                     dismissedTriggers.current.add(sessionId);
                     setTriggerAlert(reason);
 
-                    // ─── Step 1: Update LOCAL state so UI shows "stopped" ───
                     setPipnexEnabled(false);
                     setNovaEnabled(false);
+                    setSmcEnabled(false);
                     setStoredState('pipnexEnabled', false);
                     setStoredState('novaEnabled', false);
+                    setStoredState('smcEnabled', false);
 
-                    // ═══════════════════════════════════════════════════════
-                    //  ★ THE ACTUAL FIX ★
-                    //  Send the disable commands to the EA. Without these,
-                    //  the EA keeps trading because it reads `PipNex_Enable`
-                    //  and `Nova_Enable` from MT5 GlobalVariables.
-                    // ═══════════════════════════════════════════════════════
-                    sendCommand('PipNex_Enable', 0).catch((err) =>
-                        console.error('Failed to send PipNex stop:', err)
-                    );
-                    sendCommand('Nova_Enable', 0).catch((err) =>
-                        console.error('Failed to send NOVA stop:', err)
-                    );
+                    sendCommand('PipNex_Enable', 0).catch(err => console.error('PipNex stop:', err));
+                    sendCommand('Nova_Enable', 0).catch(err => console.error('Nova stop:', err));
+                    sendCommand('Smc_Enable', 0).catch(err => console.error('SMC stop:', err));
 
-                    // Also tell the backend to end the risk session
                     fetch(`${API_URL}/risk/stop`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` },
                     }).catch(() => {});
 
-                    console.log(
-                        `[Risk Guard] ${reason === 'sl_hit' ? 'SL' : 'TP'} hit — sent stop commands to EA`
-                    );
+                    console.log(`[Risk Guard] ${reason === 'sl_hit' ? 'SL' : 'TP'} hit — all EAs stopped`);
 
-                    // ─── Step 2: Toast notification ───
                     if (reason === 'sl_hit') {
                         toast.error(
-                            `STOP LOSS HIT — Algo stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
+                            `STOP LOSS HIT — All algos stopped. Drawdown: $${data.session.sl_amount?.toFixed(2)}`,
                             { autoClose: 8000, position: 'top-center' }
                         );
                     } else {
                         toast.success(
-                            `TARGET PROFIT HIT — Algo stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`,
+                            `TARGET PROFIT HIT — All algos stopped. Profit: $${data.session.tp_amount?.toFixed(2)}`,
                             { autoClose: 8000, position: 'top-center' }
                         );
                     }
 
-                    // ─── Step 3: Dismiss the alert on the backend ───
                     fetch(`${API_URL}/risk/dismiss`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` },
                     }).catch(() => {});
 
                     if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-                    bannerTimeoutRef.current = setTimeout(() => {
-                        setTriggerAlert(null);
-                    }, 30000);
+                    bannerTimeoutRef.current = setTimeout(() => setTriggerAlert(null), 30000);
                 }
             } else {
                 setRiskSession(null);
                 setRiskCurrent(null);
             }
-        } catch (err) {
-            // silent
-        }
+        } catch { /* silent */ }
     };
 
     useEffect(() => {
         loadUserFromStorage();
         refreshUserInfo(false);
         fetchRiskStatus();
-
         const userInterval = setInterval(() => refreshUserInfo(false), 30000);
         const riskInterval = setInterval(fetchRiskStatus, 5000);
-
         return () => {
             clearInterval(userInterval);
             clearInterval(riskInterval);
@@ -294,9 +258,7 @@ export const Dashboard: React.FC = () => {
             try {
                 const data = await getOrders();
                 setPositions(data.opened || []);
-            } catch {
-                // silent
-            }
+            } catch { /* silent */ }
         };
         fetchPositions();
         const interval = setInterval(fetchPositions, 3000);
@@ -305,10 +267,7 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => {
         const checkEaHealth = async () => {
-            if (!vpsAddress) {
-                setEaConnected(false);
-                return;
-            }
+            if (!vpsAddress) { setEaConnected(false); return; }
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${API_URL}/ea/status`, {
@@ -321,12 +280,8 @@ export const Dashboard: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     setEaConnected(data.connected);
-                } else {
-                    setEaConnected(false);
-                }
-            } catch {
-                setEaConnected(false);
-            }
+                } else setEaConnected(false);
+            } catch { setEaConnected(false); }
         };
         checkEaHealth();
         const interval = setInterval(checkEaHealth, 15000);
@@ -341,15 +296,12 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
+    useEffect(() => { setStoredState('smcEnabled', smcEnabled); }, [smcEnabled]);
 
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
         const tp = parseFloat(tpInput);
-
-        if ((!sl || sl <= 0) && (!tp || tp <= 0)) {
-            return true;
-        }
-
+        if ((!sl || sl <= 0) && (!tp || tp <= 0)) return true;
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/risk/start`, {
@@ -358,10 +310,7 @@ export const Dashboard: React.FC = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    sl: sl > 0 ? sl : null,
-                    tp: tp > 0 ? tp : null,
-                }),
+                body: JSON.stringify({ sl: sl > 0 ? sl : null, tp: tp > 0 ? tp : null }),
             });
             if (!res.ok) {
                 const data = await res.json();
@@ -385,9 +334,7 @@ export const Dashboard: React.FC = () => {
             setRiskSession(null);
             setRiskCurrent(null);
             setTriggerAlert(null);
-        } catch (err: any) {
-            console.error('Stop risk session error:', err);
-        }
+        } catch (err: any) { console.error('Stop risk session error:', err); }
     };
 
     const toggleStrategy = async (type: StrategyType, enable: boolean) => {
@@ -399,44 +346,43 @@ export const Dashboard: React.FC = () => {
         setCommandError(null);
         try {
             if (enable) {
-                const currentPipnex = type === 'pipnex' ? true : pipnexEnabled;
-                const currentNova = type === 'nova' ? true : novaEnabled;
-                if (!riskSession?.is_active && (currentPipnex || currentNova)) {
+                const anyEnabled =
+                    (type === 'pipnex' ? true : pipnexEnabled) ||
+                    (type === 'nova'   ? true : novaEnabled) ||
+                    (type === 'smc'    ? true : smcEnabled);
+                if (!riskSession?.is_active && anyEnabled) {
                     const ok = await startRiskSession();
-                    if (!ok) {
-                        setIsToggling(null);
-                        return;
-                    }
+                    if (!ok) { setIsToggling(null); return; }
                 }
             }
 
-            const varName = type === 'pipnex' ? 'PipNex_Enable' : 'Nova_Enable';
-            await sendCommand(varName, enable ? 1 : 0);
+            await sendCommand(ENABLE_KEY[type], enable ? 1 : 0);
 
-            if (type === 'pipnex') {
-                setPipnexEnabled(enable);
-                if (enable) {
-                    for (const [key, value] of Object.entries(pipnexSettings)) {
-                        await sendCommand(`PipNex_${key}`, value);
-                    }
-                }
-            } else {
-                setNovaEnabled(enable);
-                if (enable) {
-                    for (const [key, value] of Object.entries(novaSettings)) {
-                        await sendCommand(`Nova_${key}`, value);
-                    }
+            const settings =
+                type === 'pipnex' ? pipnexSettings :
+                type === 'nova'   ? novaSettings   :
+                                    smcSettings;
+
+            if (enable) {
+                for (const [key, value] of Object.entries(settings)) {
+                    if (key === 'MartingaleLevel' && !settings.Martingale) continue;
+                    await sendCommand(`${PREFIX[type]}${key}`, value);
                 }
             }
+
+            if (type === 'pipnex') setPipnexEnabled(enable);
+            else if (type === 'nova') setNovaEnabled(enable);
+            else setSmcEnabled(enable);
 
             if (!enable) {
-                const stillEnabled = type === 'pipnex' ? novaEnabled : pipnexEnabled;
-                if (!stillEnabled) {
-                    await stopRiskSession();
-                }
+                const stillEnabled =
+                    (type === 'pipnex' ? (novaEnabled || smcEnabled) :
+                     type === 'nova'   ? (pipnexEnabled || smcEnabled) :
+                                         (pipnexEnabled || novaEnabled));
+                if (!stillEnabled) await stopRiskSession();
             }
 
-            toast.success(`${type === 'pipnex' ? 'PipNex' : 'NOVA'} ${enable ? 'started' : 'stopped'}`);
+            toast.success(`${DISPLAY_NAME[type]} ${enable ? 'started' : 'stopped'}`);
         } catch (err: any) {
             setCommandError(err.message || 'Failed to toggle strategy');
             toast.error(`Failed to ${enable ? 'start' : 'stop'} ${type}`);
@@ -447,74 +393,56 @@ export const Dashboard: React.FC = () => {
 
     const updateSetting = async (type: StrategyType, key: string, value: number | boolean) => {
         try {
-            const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
-            await sendCommand(`${prefix}${key}`, value);
-            if (type === 'pipnex') {
-                setPipnexSettings(prev => ({ ...prev, [key]: value }));
-            } else {
-                setNovaSettings(prev => ({ ...prev, [key]: value }));
-            }
+            await sendCommand(`${PREFIX[type]}${key}`, value);
+            if (type === 'pipnex') setPipnexSettings(prev => ({ ...prev, [key]: value }));
+            else if (type === 'nova') setNovaSettings(prev => ({ ...prev, [key]: value }));
+            else setSmcSettings(prev => ({ ...prev, [key]: value }));
             toast.success(`${key} updated to ${value}`);
-        } catch (err: any) {
-            toast.error(`Failed to update ${key}`);
-        }
+        } catch { toast.error(`Failed to update ${key}`); }
     };
 
     const applyPipnexSuggestion = async (suggestion: PipnexSuggestion) => {
         const { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale } = suggestion;
         const values = { Lot, PipStep, CloseProfit, MinProfitPercent, MaxLevels, Martingale };
-
-        let ok = 0;
-        let fail = 0;
+        let ok = 0, fail = 0;
         for (const [key, value] of Object.entries(values)) {
             try {
                 await sendCommand(`PipNex_${key}`, value as number | boolean);
                 ok++;
-            } catch (err) {
-                console.error(`Quantum AI: failed PipNex_${key}`, err);
-                fail++;
-            }
+            } catch { fail++; }
         }
         setPipnexSettings(prev => ({ ...prev, ...values }));
-        if (fail === 0) {
-            toast.success(`✅ Quantum AI applied ${ok} PipNex settings`);
-        } else {
-            toast.warning(`Applied ${ok}/${ok + fail} PipNex settings`);
-        }
+        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} PipNex settings`);
+        else toast.warning(`Applied ${ok}/${ok + fail} PipNex settings`);
     };
 
     const applyNovaSuggestion = async (suggestion: NovaSuggestion) => {
         const { LotSize, SwingStrength, RewardRisk, MaxPositions } = suggestion;
         const values = { LotSize, SwingStrength, RewardRisk, MaxPositions };
-
-        let ok = 0;
-        let fail = 0;
+        let ok = 0, fail = 0;
         for (const [key, value] of Object.entries(values)) {
-            try {
-                await sendCommand(`Nova_${key}`, value as number);
-                ok++;
-            } catch (err) {
-                console.error(`Quantum AI: failed Nova_${key}`, err);
-                fail++;
-            }
+            try { await sendCommand(`Nova_${key}`, value as number); ok++; }
+            catch { fail++; }
         }
         setNovaSettings(prev => ({ ...prev, ...values }));
-        if (fail === 0) {
-            toast.success(`✅ Quantum AI applied ${ok} NOVA settings`);
-        } else {
-            toast.warning(`Applied ${ok}/${ok + fail} NOVA settings`);
-        }
+        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} NOVA settings`);
+        else toast.warning(`Applied ${ok}/${ok + fail} NOVA settings`);
     };
 
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
-        pipnex: {},
-        nova: {},
+        pipnex: {}, nova: {}, smc: {},
     });
 
     useEffect(() => {
         const initLocal = (type: StrategyType) => {
-            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
-            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
+            const settings =
+                type === 'pipnex' ? pipnexSettings :
+                type === 'nova'   ? novaSettings   :
+                                    smcSettings;
+            const defs =
+                type === 'pipnex' ? PIPNEX_SETTINGS :
+                type === 'nova'   ? NOVA_SETTINGS   :
+                                    SMC_SETTINGS;
             const inputs: Record<string, string> = {};
             for (const def of defs) {
                 if (def.type === 'number') {
@@ -526,13 +454,11 @@ export const Dashboard: React.FC = () => {
         };
         initLocal('pipnex');
         initLocal('nova');
-    }, [pipnexSettings, novaSettings]);
+        initLocal('smc');
+    }, [pipnexSettings, novaSettings, smcSettings]);
 
     const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
-        setLocalInputs(prev => ({
-            ...prev,
-            [type]: { ...prev[type], [key]: rawValue },
-        }));
+        setLocalInputs(prev => ({ ...prev, [type]: { ...prev[type], [key]: rawValue } }));
     };
 
     const handleInputBlur = (type: StrategyType, key: string) => {
@@ -541,32 +467,32 @@ export const Dashboard: React.FC = () => {
         if (!isNaN(num)) {
             updateSetting(type, key, num);
         } else {
-            const settings = type === 'pipnex' ? pipnexSettings : novaSettings;
-            const defs = type === 'pipnex' ? PIPNEX_SETTINGS : NOVA_SETTINGS;
-            const def = defs.find(d => d.key === key);
+            const settings =
+                type === 'pipnex' ? pipnexSettings :
+                type === 'nova'   ? novaSettings   :
+                                    smcSettings;
+            const defs =
+                type === 'pipnex' ? PIPNEX_SETTINGS :
+                type === 'nova'   ? NOVA_SETTINGS   :
+                                    SMC_SETTINGS;
+            const def = defs.find((d: any) => d.key === key);
             if (def) {
                 const currentVal = settings[key] ?? def.default;
-                setLocalInputs(prev => ({
-                    ...prev,
-                    [type]: { ...prev[type], [key]: String(currentVal) },
-                }));
+                setLocalInputs(prev => ({ ...prev, [type]: { ...prev[type], [key]: String(currentVal) } }));
             }
         }
     };
 
     const handleCheckboxChange = (type: StrategyType, key: string, checked: boolean) => {
-        const prefix = type === 'pipnex' ? 'PipNex_' : 'Nova_';
-        sendCommand(`${prefix}${key}`, checked).catch(console.error);
-        if (type === 'pipnex') {
-            setPipnexSettings(prev => ({ ...prev, [key]: checked }));
-        } else {
-            setNovaSettings(prev => ({ ...prev, [key]: checked }));
-        }
+        sendCommand(`${PREFIX[type]}${key}`, checked).catch(console.error);
+        if (type === 'pipnex') setPipnexSettings(prev => ({ ...prev, [key]: checked }));
+        else if (type === 'nova') setNovaSettings(prev => ({ ...prev, [key]: checked }));
+        else setSmcSettings(prev => ({ ...prev, [key]: checked }));
         toast.success(`${key} ${checked ? 'enabled' : 'disabled'}`);
     };
 
     // ═══════════════════════════════════════════════════════════
-    //  EA NOT CONFIGURED STATE
+    //  EA NOT CONFIGURED SCREEN
     // ═══════════════════════════════════════════════════════════
     if (!vpsAddress) {
         return (
@@ -584,9 +510,7 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            <h2 className="text-2xl font-extrabold text-white text-center mb-2">
-                                EA Not Configured
-                            </h2>
+                            <h2 className="text-2xl font-extrabold text-white text-center mb-2">EA Not Configured</h2>
                             <p className="text-slate-400 text-sm text-center mb-6 max-w-md mx-auto">
                                 Your account is registered but your trading setup hasn't been activated yet. Complete the steps below to unlock full access.
                             </p>
@@ -597,9 +521,7 @@ export const Dashboard: React.FC = () => {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <Crown size={14} className="text-amber-400" />
-                                            <span className="text-[10px] text-amber-300 uppercase tracking-widest font-bold">
-                                                Lifetime Access
-                                            </span>
+                                            <span className="text-[10px] text-amber-300 uppercase tracking-widest font-bold">Lifetime Access</span>
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-4xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">
@@ -607,21 +529,14 @@ export const Dashboard: React.FC = () => {
                                             </span>
                                             <span className="text-xs text-slate-400 line-through">$400</span>
                                         </div>
-                                        <p className="text-[11px] text-slate-400 mt-1">
-                                            One-time payment · No monthly fees · Trade forever
-                                        </p>
+                                        <p className="text-[11px] text-slate-400 mt-1">One-time payment · No monthly fees · Trade forever</p>
                                     </div>
                                     <div className="flex-shrink-0 p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg shadow-amber-600/30 ring-1 ring-amber-300/40">
                                         <DollarSign size={26} className="text-white" />
                                     </div>
                                 </div>
                                 <div className="relative mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-2 gap-2">
-                                    {[
-                                        'PipNex Scalper Algo',
-                                        'NOVA Swing Algo',
-                                        'Risk Guard protection',
-                                        'Quantum AI advisor',
-                                    ].map((item, i) => (
+                                    {['PipNex Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Risk Guard protection'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-300">
                                             <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />
                                             <span className="truncate">{item}</span>
@@ -631,12 +546,8 @@ export const Dashboard: React.FC = () => {
                             </div>
 
                             <div className="space-y-2.5 mb-5">
-                                <a
-                                    href={WHATSAPP_LINK}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-xl p-3.5 border border-emerald-400/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
-                                >
+                                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"
+                                   className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-xl p-3.5 border border-emerald-400/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     <div className="relative flex items-center gap-3">
                                         <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/20">
@@ -645,23 +556,16 @@ export const Dashboard: React.FC = () => {
                                         <div>
                                             <div className="text-white font-bold text-sm flex items-center gap-2">
                                                 Get Lifetime Access
-                                                <span className="text-[10px] bg-white/25 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">
-                                                    {BOT_PRICE}
-                                                </span>
+                                                <span className="text-[10px] bg-white/25 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">{BOT_PRICE}</span>
                                             </div>
-                                            <div className="text-emerald-100 text-[11px]">
-                                                Chat on WhatsApp · fastest setup
-                                            </div>
+                                            <div className="text-emerald-100 text-[11px]">Chat on WhatsApp · fastest setup</div>
                                         </div>
                                     </div>
                                     <ArrowRight size={16} className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
                                 </a>
 
-                                <button
-                                    onClick={() => refreshUserInfo(true)}
-                                    disabled={refreshingUser}
-                                    className="w-full flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white py-3 px-4 rounded-xl text-sm font-semibold transition disabled:opacity-50"
-                                >
+                                <button onClick={() => refreshUserInfo(true)} disabled={refreshingUser}
+                                    className="w-full flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white py-3 px-4 rounded-xl text-sm font-semibold transition disabled:opacity-50">
                                     <RefreshCw size={14} className={refreshingUser ? 'animate-spin' : ''} />
                                     {refreshingUser ? 'Refreshing...' : 'Already paid? Refresh access'}
                                 </button>
@@ -675,7 +579,6 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
                     <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-500">
                         <Shield size={10} className="text-emerald-400" />
                         <span>Secure payment · Lifetime access · 24/7 support</span>
@@ -711,14 +614,11 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div className="text-xs opacity-80 mt-0.5">
                                 {triggerAlert === 'sl_hit'
-                                    ? `Your algo was stopped automatically to protect your account.`
-                                    : `Your algo was stopped automatically — profit target reached.`}
+                                    ? `All algos were stopped automatically to protect your account.`
+                                    : `All algos were stopped automatically — profit target reached.`}
                             </div>
                         </div>
-                        <button
-                            onClick={() => setTriggerAlert(null)}
-                            className="text-xs underline opacity-70 hover:opacity-100 flex-shrink-0"
-                        >
+                        <button onClick={() => setTriggerAlert(null)} className="text-xs underline opacity-70 hover:opacity-100 flex-shrink-0">
                             Dismiss
                         </button>
                     </div>
@@ -733,9 +633,7 @@ export const Dashboard: React.FC = () => {
                             <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
                                 Trading Dashboard
                             </h1>
-                            <p className="text-slate-400 text-xs mt-0.5">
-                                Live account · EA control · Risk management
-                            </p>
+                            <p className="text-slate-400 text-xs mt-0.5">Live account · EA control · Risk management</p>
                         </div>
                     </div>
 
@@ -755,24 +653,16 @@ export const Dashboard: React.FC = () => {
                             <>
                                 <Wifi size={16} className="text-emerald-400" />
                                 <div>
-                                    <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                                        EA Connected
-                                    </div>
-                                    <div className="text-slate-500 text-[10px]">
-                                        {vpsAddress}
-                                    </div>
+                                    <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider">EA Connected</div>
+                                    <div className="text-slate-500 text-[10px]">{vpsAddress}</div>
                                 </div>
                             </>
                         ) : (
                             <>
                                 <WifiOff size={16} className="text-rose-400" />
                                 <div>
-                                    <div className="text-rose-400 text-xs font-bold uppercase tracking-wider">
-                                        EA Disconnected
-                                    </div>
-                                    <div className="text-slate-500 text-[10px]">
-                                        Check VPS or EA
-                                    </div>
+                                    <div className="text-rose-400 text-xs font-bold uppercase tracking-wider">EA Disconnected</div>
+                                    <div className="text-slate-500 text-[10px]">Check VPS or EA</div>
                                 </div>
                             </>
                         )}
@@ -786,12 +676,8 @@ export const Dashboard: React.FC = () => {
                                 <Key size={14} className="text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                                    Access Key
-                                </div>
-                                <code className="text-white font-mono text-xs truncate block">
-                                    {accessKey}
-                                </code>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Access Key</div>
+                                <code className="text-white font-mono text-xs truncate block">{accessKey}</code>
                             </div>
                         </div>
                     )}
@@ -806,21 +692,14 @@ export const Dashboard: React.FC = () => {
                             <Server size={14} className="text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                                VPS Address
-                            </div>
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">VPS Address</div>
                             <div className="flex items-center gap-2">
-                                <code className={`font-mono text-xs truncate ${
-                                    vpsAddress ? 'text-white' : 'text-amber-400'
-                                }`}>
+                                <code className={`font-mono text-xs truncate ${vpsAddress ? 'text-white' : 'text-amber-400'}`}>
                                     {vpsAddress || 'Pending assignment...'}
                                 </code>
-                                <button
-                                    onClick={() => refreshUserInfo(true)}
-                                    disabled={refreshingUser}
+                                <button onClick={() => refreshUserInfo(true)} disabled={refreshingUser}
                                     className="text-slate-500 hover:text-blue-400 transition disabled:opacity-50 flex-shrink-0"
-                                    title="Refresh VPS info"
-                                >
+                                    title="Refresh VPS info">
                                     <RefreshCw size={12} className={refreshingUser ? 'animate-spin' : ''} />
                                 </button>
                             </div>
@@ -874,9 +753,7 @@ export const Dashboard: React.FC = () => {
                                         </span>
                                     )}
                                 </h2>
-                                <p className="text-slate-500 text-[10px] mt-0.5">
-                                    Auto-stops your algo when SL or TP is hit
-                                </p>
+                                <p className="text-slate-500 text-[10px] mt-0.5">Auto-stops all algos when SL or TP is hit</p>
                             </div>
                         </div>
                     </div>
@@ -885,41 +762,29 @@ export const Dashboard: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="flex items-center gap-1.5 text-[10px] text-rose-400 uppercase tracking-wider font-bold mb-1.5">
-                                    <TrendingDown size={11} />
-                                    Stop Loss ($)
+                                    <TrendingDown size={11} />Stop Loss ($)
                                 </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
+                                <input type="number" step="0.01" min="0"
                                     value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
                                     onChange={(e) => setSlInput(e.target.value)}
                                     placeholder="e.g. 100"
                                     disabled={riskSession?.is_active}
                                     className="w-full bg-slate-900/60 border border-rose-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Algo stops if equity drops by this amount
-                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">Algo stops if equity drops by this amount</p>
                             </div>
                             <div>
                                 <label className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase tracking-wider font-bold mb-1.5">
-                                    <TrendingUp size={11} />
-                                    Take Profit ($)
+                                    <TrendingUp size={11} />Take Profit ($)
                                 </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
+                                <input type="number" step="0.01" min="0"
                                     value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
                                     onChange={(e) => setTpInput(e.target.value)}
                                     placeholder="e.g. 200"
                                     disabled={riskSession?.is_active}
                                     className="w-full bg-slate-900/60 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Algo stops when equity rises by this amount
-                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">Algo stops when equity rises by this amount</p>
                             </div>
                         </div>
 
@@ -931,51 +796,33 @@ export const Dashboard: React.FC = () => {
                             <div className="flex items-center justify-between gap-3">
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                     <div className={`p-1.5 rounded-lg flex-shrink-0 border ${
-                                        autoCloseEnabled
-                                            ? 'bg-rose-500/20 border-rose-500/40'
-                                            : 'bg-slate-800/60 border-slate-700/40'
+                                        autoCloseEnabled ? 'bg-rose-500/20 border-rose-500/40' : 'bg-slate-800/60 border-slate-700/40'
                                     }`}>
                                         <Sparkles size={14} className={autoCloseEnabled ? "text-rose-300" : "text-slate-500"} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-xs font-bold text-white uppercase tracking-wider">
-                                                Auto-Close Positions
-                                            </span>
+                                            <span className="text-xs font-bold text-white uppercase tracking-wider">Auto-Close Positions</span>
                                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                                                autoCloseEnabled
-                                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                                                    : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
+                                                autoCloseEnabled ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
                                             }`}>
                                                 {autoCloseEnabled ? '● Enabled' : '○ Disabled'}
                                             </span>
                                         </div>
                                         <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
-                                            When ON, all open positions close automatically if Stop Loss or Take Profit hits, or the algo stops. Leave OFF to manage closes manually.
+                                            When ON, all open positions close automatically if Stop Loss or Take Profit hits, or any algo stops.
                                         </p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setAutoCloseEnabled(!autoCloseEnabled)}
-                                    aria-pressed={autoCloseEnabled}
-                                    aria-label="Toggle auto-close"
+                                <button type="button" onClick={() => setAutoCloseEnabled(!autoCloseEnabled)}
+                                    aria-pressed={autoCloseEnabled} aria-label="Toggle auto-close"
                                     className={`relative inline-flex items-center flex-shrink-0 w-14 h-7 rounded-full transition-all duration-300 shadow-lg ${
-                                        autoCloseEnabled
-                                            ? 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/40'
-                                            : 'bg-slate-700 shadow-slate-900/40'
-                                    } cursor-pointer hover:scale-105 active:scale-95`}
-                                >
-                                    <span
-                                        className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
-                                            autoCloseEnabled ? 'translate-x-7' : 'translate-x-0'
-                                        }`}
-                                    >
-                                        {autoCloseEnabled ? (
-                                            <span className="w-2 h-2 rounded-full bg-rose-500" />
-                                        ) : (
-                                            <span className="w-2 h-2 rounded-full bg-slate-400" />
-                                        )}
+                                        autoCloseEnabled ? 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/40' : 'bg-slate-700 shadow-slate-900/40'
+                                    } cursor-pointer hover:scale-105 active:scale-95`}>
+                                    <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                        autoCloseEnabled ? 'translate-x-7' : 'translate-x-0'
+                                    }`}>
+                                        {autoCloseEnabled ? <span className="w-2 h-2 rounded-full bg-rose-500" /> : <span className="w-2 h-2 rounded-full bg-slate-400" />}
                                     </span>
                                 </button>
                             </div>
@@ -984,57 +831,29 @@ export const Dashboard: React.FC = () => {
                         {riskSession?.is_active && riskCurrent && (
                             <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
-                                        Start Balance
-                                    </div>
-                                    <div className="font-mono text-sm text-white font-bold">
-                                        ${riskSession.starting_balance.toFixed(2)}
-                                    </div>
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Start Balance</div>
+                                    <div className="font-mono text-sm text-white font-bold">${riskSession.starting_balance.toFixed(2)}</div>
                                 </div>
                                 <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
-                                        Current Equity
-                                    </div>
-                                    <div className="font-mono text-sm text-white font-bold">
-                                        ${riskCurrent.equity.toFixed(2)}
-                                    </div>
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Current Equity</div>
+                                    <div className="font-mono text-sm text-white font-bold">${riskCurrent.equity.toFixed(2)}</div>
                                 </div>
                                 <div className={`rounded-xl p-3 border ${
-                                    riskCurrent.raw_drawdown > 0
-                                        ? 'bg-rose-900/20 border-rose-500/30'
-                                        : 'bg-slate-900/60 border-slate-700/40'
+                                    riskCurrent.raw_drawdown > 0 ? 'bg-rose-900/20 border-rose-500/30' : 'bg-slate-900/60 border-slate-700/40'
                                 }`}>
-                                    <div className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1">
-                                        Drawdown
-                                    </div>
-                                    <div className={`font-mono text-sm font-bold ${
-                                        riskCurrent.raw_drawdown > 0 ? 'text-rose-400' : 'text-slate-500'
-                                    }`}>
+                                    <div className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1">Drawdown</div>
+                                    <div className={`font-mono text-sm font-bold ${riskCurrent.raw_drawdown > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
                                         ${riskCurrent.raw_drawdown.toFixed(2)}
-                                        {riskSession.sl_amount && (
-                                            <span className="text-[10px] opacity-60 ml-1">
-                                                / ${riskSession.sl_amount.toFixed(2)}
-                                            </span>
-                                        )}
+                                        {riskSession.sl_amount && <span className="text-[10px] opacity-60 ml-1">/ ${riskSession.sl_amount.toFixed(2)}</span>}
                                     </div>
                                 </div>
                                 <div className={`rounded-xl p-3 border ${
-                                    riskCurrent.raw_profit > 0
-                                        ? 'bg-emerald-900/20 border-emerald-500/30'
-                                        : 'bg-slate-900/60 border-slate-700/40'
+                                    riskCurrent.raw_profit > 0 ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-slate-900/60 border-slate-700/40'
                                 }`}>
-                                    <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">
-                                        Profit
-                                    </div>
-                                    <div className={`font-mono text-sm font-bold ${
-                                        riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'
-                                    }`}>
+                                    <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">Profit</div>
+                                    <div className={`font-mono text-sm font-bold ${riskCurrent.raw_profit > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
                                         ${riskCurrent.raw_profit.toFixed(2)}
-                                        {riskSession.tp_amount && (
-                                            <span className="text-[10px] opacity-60 ml-1">
-                                                / ${riskSession.tp_amount.toFixed(2)}
-                                            </span>
-                                        )}
+                                        {riskSession.tp_amount && <span className="text-[10px] opacity-60 ml-1">/ ${riskSession.tp_amount.toFixed(2)}</span>}
                                     </div>
                                 </div>
                             </div>
@@ -1070,36 +889,37 @@ export const Dashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     <StrategyCard
-                        type="pipnex"
-                        label="PipNex Algo"
-                        icon="📈"
+                        type="pipnex" label="PipNex Algo" icon="📈"
                         description="Scalper grid with martingale"
-                        enabled={pipnexEnabled}
-                        settings={pipnexSettings}
+                        enabled={pipnexEnabled} settings={pipnexSettings}
                         localInputs={localInputs.pipnex}
-                        onToggle={toggleStrategy}
-                        onInputChange={handleInputChange}
-                        onInputBlur={handleInputBlur}
-                        onCheckboxChange={handleCheckboxChange}
+                        onToggle={toggleStrategy} onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur} onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'pipnex'}
-                        settingsDef={PIPNEX_SETTINGS}
-                        disabled={!eaConnected}
+                        settingsDef={PIPNEX_SETTINGS} disabled={!eaConnected}
                     />
                     <StrategyCard
-                        type="nova"
-                        label="NOVA EDGE AI"
-                        icon="🤖"
-                        description="Swing trading with Fibonacci levels"
-                        enabled={novaEnabled}
-                        settings={novaSettings}
+                        type="nova" label="NOVA EDGE AI" icon="🤖"
+                        description="Fibonacci swing with RSI + ATR"
+                        enabled={novaEnabled} settings={novaSettings}
                         localInputs={localInputs.nova}
-                        onToggle={toggleStrategy}
-                        onInputChange={handleInputChange}
-                        onInputBlur={handleInputBlur}
-                        onCheckboxChange={handleCheckboxChange}
+                        onToggle={toggleStrategy} onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur} onCheckboxChange={handleCheckboxChange}
                         isToggling={isToggling === 'nova'}
-                        settingsDef={NOVA_SETTINGS}
-                        disabled={!eaConnected}
+                        settingsDef={NOVA_SETTINGS} disabled={!eaConnected}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                    <StrategyCard
+                        type="smc" label="SMC Swing Trader" icon="📊"
+                        description="HTF structure + POI (OB/FVG) + LTF CHoCH"
+                        enabled={smcEnabled} settings={smcSettings}
+                        localInputs={localInputs.smc}
+                        onToggle={toggleStrategy} onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur} onCheckboxChange={handleCheckboxChange}
+                        isToggling={isToggling === 'smc'}
+                        settingsDef={SMC_SETTINGS} disabled={!eaConnected}
                     />
                 </div>
             </div>
@@ -1107,26 +927,16 @@ export const Dashboard: React.FC = () => {
             {showWelcomeGuide && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl max-w-lg w-full p-6 md:p-8 relative">
-                        <button
-                            onClick={dismissWelcomeGuide}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
-                        >
+                        <button onClick={dismissWelcomeGuide} className="absolute top-4 right-4 text-slate-400 hover:text-white transition">
                             <XIcon size={20} />
                         </button>
-
                         <div className="flex justify-center mb-4">
                             <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-600/30">
                                 <BookOpen className="text-white" size={32} />
                             </div>
                         </div>
-
-                        <h2 className="text-2xl font-bold text-white text-center mb-2">
-                            Welcome to PipTrader AI
-                        </h2>
-                        <p className="text-slate-400 text-sm text-center mb-6">
-                            You're all set up. Here's what you need to know.
-                        </p>
-
+                        <h2 className="text-2xl font-bold text-white text-center mb-2">Welcome to PipTrader AI</h2>
+                        <p className="text-slate-400 text-sm text-center mb-6">You're all set up. Here's what you need to know.</p>
                         <div className="space-y-3 mb-6">
                             <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
                                 <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30">
@@ -1143,7 +953,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <div className="text-xs font-bold text-white mb-0.5">Click Start Algo</div>
-                                    <div className="text-[11px] text-slate-400">Enable PipNex or NOVA to begin trading</div>
+                                    <div className="text-[11px] text-slate-400">Enable any of the 3 algos to begin trading</div>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
@@ -1156,26 +966,17 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-
                         <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 mb-6 flex items-start gap-2">
                             <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-[11px] text-blue-200">
-                                Need more help? Check out the full User Guide anytime from the top bar.
-                            </p>
+                            <p className="text-[11px] text-blue-200">Need more help? Check out the full User Guide anytime from the top bar.</p>
                         </div>
-
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <button
-                                onClick={goToGuide}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20"
-                            >
-                                <BookOpen size={18} />
-                                Read the Guide
+                            <button onClick={goToGuide}
+                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20">
+                                <BookOpen size={18} />Read the Guide
                             </button>
-                            <button
-                                onClick={dismissWelcomeGuide}
-                                className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition border border-slate-700/60"
-                            >
+                            <button onClick={dismissWelcomeGuide}
+                                className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition border border-slate-700/60">
                                 I'm Ready to Trade
                             </button>
                         </div>
@@ -1193,11 +994,19 @@ const PIPNEX_SETTINGS = [
     { key: 'MinProfitPercent', label: 'Min Profit %', type: 'number', step: 1, min: 0, max: 100, default: 60 },
     { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
     { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
+    { key: 'MartingaleLevel', label: 'Martingale Level', type: 'number', step: 1, min: 1, max: 10, default: 1, dependsOn: 'Martingale' },
 ];
 
 const NOVA_SETTINGS = [
     { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.05 },
     { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1, default: 30 },
+    { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1, default: 3.0 },
+    { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
+];
+
+const SMC_SETTINGS = [
+    { key: 'LotSize', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.05 },
+    { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1, default: 5 },
     { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1, default: 3.0 },
     { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
 ];
@@ -1235,9 +1044,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className={`p-2.5 rounded-xl text-2xl ${
-                            enabled
-                                ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40'
-                                : 'bg-slate-800/60'
+                            enabled ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40' : 'bg-slate-800/60'
                         }`}>
                             {icon}
                         </div>
@@ -1246,41 +1053,31 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             <p className="text-slate-400 text-xs">{description}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => onToggle(type, !enabled)}
-                        disabled={isToggling || disabled}
+                    <button onClick={() => onToggle(type, !enabled)} disabled={isToggling || disabled}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${
                             enabled
                                 ? 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-rose-600/20'
                                 : 'bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white shadow-emerald-600/20'
-                        } ${(isToggling || disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
+                        } ${(isToggling || disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {isToggling ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                Working...
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Working...
                             </>
                         ) : enabled ? (
-                            <>
-                                <Square size={16} /> Stop Algo
-                            </>
+                            <><Square size={16} /> Stop Algo</>
                         ) : (
-                            <>
-                                <Play size={16} /> Start Algo
-                            </>
+                            <><Play size={16} /> Start Algo</>
                         )}
                     </button>
                 </div>
                 {enabled && (
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        Algorithm Running
+                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />Algorithm Running
                     </div>
                 )}
                 {disabled && (
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-amber-400 font-bold uppercase tracking-wider">
-                        <AlertTriangle size={12} />
-                        EA Offline
+                        <AlertTriangle size={12} />EA Offline
                     </div>
                 )}
             </div>
@@ -1288,12 +1085,12 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
             <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <Zap size={12} className="text-blue-400" />
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                        Parameters
-                    </span>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Parameters</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {settingsDef.map((setting) => {
+                        if (setting.dependsOn && !settings[setting.dependsOn]) return null;
+
                         const isBool = setting.type === 'checkbox';
                         const rawValue = localInputs[setting.key] ?? String(settings[setting.key] ?? setting.default);
                         const currentValue = settings[setting.key] ?? setting.default;
@@ -1302,47 +1099,30 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                         if (isBool) {
                             const checked = !!settings[setting.key];
                             return (
-                                <div
-                                    key={setting.key}
+                                <div key={setting.key}
                                     className={`bg-slate-900/40 rounded-xl p-3.5 border transition-all ${
-                                        checked
-                                            ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
-                                            : 'border-slate-700/40'
-                                    }`}
-                                >
+                                        checked ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10' : 'border-slate-700/40'
+                                    }`}>
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
-                                                {setting.label}
-                                            </div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{setting.label}</div>
                                             <div className={`text-[11px] font-bold uppercase tracking-wider ${
                                                 checked ? 'text-emerald-400' : 'text-slate-500'
                                             }`}>
                                                 {checked ? '● ON' : '○ OFF'}
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => onCheckboxChange(type, setting.key, !checked)}
-                                            disabled={disabled}
-                                            aria-pressed={checked}
-                                            aria-label={`Toggle ${setting.label}`}
+                                        <button type="button" onClick={() => onCheckboxChange(type, setting.key, !checked)}
+                                            disabled={disabled} aria-pressed={checked} aria-label={`Toggle ${setting.label}`}
                                             className={`relative inline-flex items-center flex-shrink-0 w-14 h-7 rounded-full transition-all duration-300 shadow-lg ${
                                                 checked
                                                     ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/40'
                                                     : 'bg-slate-700 shadow-slate-900/40'
-                                            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
-                                        >
-                                            <span
-                                                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
-                                                    checked ? 'translate-x-7' : 'translate-x-0'
-                                                }`}
-                                            >
-                                                {checked ? (
-                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                                ) : (
-                                                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                                                )}
+                                            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}>
+                                            <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                                checked ? 'translate-x-7' : 'translate-x-0'
+                                            }`}>
+                                                {checked ? <span className="w-2 h-2 rounded-full bg-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-slate-400" />}
                                             </span>
                                         </button>
                                     </div>
@@ -1351,24 +1131,16 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                         }
 
                         return (
-                            <div
-                                key={setting.key}
-                                className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-700/40 hover:border-slate-600/60 transition-all"
-                            >
+                            <div key={setting.key} className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-700/40 hover:border-slate-600/60 transition-all">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                        {setting.label}
-                                    </label>
+                                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{setting.label}</label>
                                     {isChanged && (
                                         <span className="text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30 font-bold">
                                             changed
                                         </span>
                                     )}
                                 </div>
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={rawValue}
+                                <input type="text" inputMode="decimal" value={rawValue}
                                     onChange={(e) => onInputChange(type, setting.key, e.target.value)}
                                     onBlur={() => onInputBlur(type, setting.key)}
                                     disabled={disabled}
