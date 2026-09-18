@@ -62,6 +62,46 @@ export const Mt5DetailsPage: React.FC = () => {
     const [symbolsFetchedAt, setSymbolsFetchedAt] = useState<Date | null>(null);
     const [vpsAddress, setVpsAddress] = useState<string | null>(null);
 
+    // ─── Premium badge rotation state ──────────────────────
+    // Two phases: 'text' (shows "Premium Available") and 'advert' (shows mini ad).
+    // Text: 2s → slide out → Advert: 5s → slide out → Text. Loops forever.
+    const [badgeMode, setBadgeMode] = useState<'text' | 'advert'>('text');
+    const [badgeHidden, setBadgeHidden] = useState(false);
+
+    useEffect(() => {
+        const SLIDE_MS = 400;      // time for slide out/in
+        const TEXT_MS = 2000;      // how long text stays visible
+        const ADVERT_MS = 5000;    // how long advert stays visible
+
+        let t1: ReturnType<typeof setTimeout>;
+        let t2: ReturnType<typeof setTimeout>;
+
+        if (badgeMode === 'text') {
+            // Show text for TEXT_MS, then slide out
+            t1 = setTimeout(() => {
+                setBadgeHidden(true);                       // slide out
+                t2 = setTimeout(() => {
+                    setBadgeMode('advert');
+                    setBadgeHidden(false);                  // slide in
+                }, SLIDE_MS);
+            }, TEXT_MS);
+        } else {
+            // Show advert for ADVERT_MS, then slide out
+            t1 = setTimeout(() => {
+                setBadgeHidden(true);                       // slide out
+                t2 = setTimeout(() => {
+                    setBadgeMode('text');
+                    setBadgeHidden(false);                  // slide in
+                }, SLIDE_MS);
+            }, ADVERT_MS);
+        }
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [badgeMode]);
+
     // ─── Read VPS from localStorage (single source of truth) ────
     useEffect(() => {
         try {
@@ -253,6 +293,14 @@ export const Mt5DetailsPage: React.FC = () => {
                     0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
                     50%      { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
                 }
+                @keyframes advertGlow {
+                    0%, 100% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.55)); }
+                    50%      { filter: drop-shadow(0 0 14px rgba(251,191,36,0.95)); }
+                }
+                @keyframes advertScan {
+                    0%   { transform: translateX(-120%); }
+                    100% { transform: translateX(220%); }
+                }
                 .premium-banner-bg {
                     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
                     background-size: 400% 400%;
@@ -347,16 +395,63 @@ export const Mt5DetailsPage: React.FC = () => {
 
                             {/* Left: copy */}
                             <div className="flex-1 min-w-0">
-                                {/* Badge */}
-                                <div className="inline-flex items-center gap-2 bg-amber-400/15 border border-amber-300/40 rounded-full px-3 py-1 mb-3 premium-badge">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"
-                                              style={{ animation: 'pulseRing 1.6s ease-out infinite' }} />
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" />
-                                    </span>
-                                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-200">
-                                        Premium Available
-                                    </span>
+                                {/* ═══════ Auto-rotating badge ═══════ */}
+                                <div className="relative inline-flex mb-3" style={{ minWidth: '190px', height: '28px' }}>
+                                    {/* ── TEXT STATE: "Premium Available" ── */}
+                                    <div
+                                        className={`absolute inset-0 inline-flex items-center gap-2 rounded-full px-3 py-1 premium-badge transition-all duration-400 ease-in-out ${
+                                            badgeHidden && badgeMode === 'text'
+                                                ? 'opacity-0 -translate-y-6 scale-95'
+                                                : badgeMode === 'text'
+                                                    ? 'opacity-100 translate-y-0 scale-100'
+                                                    : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+                                        }`}
+                                        style={{
+                                            background: 'rgba(251, 191, 36, 0.15)',
+                                            border: '1px solid rgba(252, 211, 77, 0.4)',
+                                            transitionDuration: '400ms',
+                                        }}
+                                    >
+                                        <span className="relative flex h-2 w-2">
+                                            <span
+                                                className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"
+                                                style={{ animation: 'pulseRing 1.6s ease-out infinite' }}
+                                            />
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" />
+                                        </span>
+                                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-200">
+                                            Premium Available
+                                        </span>
+                                    </div>
+
+                                    {/* ── ADVERT STATE: animated mini ad ── */}
+                                    <div
+                                        className={`absolute inset-0 inline-flex items-center gap-2 rounded-full px-3 py-1 transition-all duration-400 ease-in-out overflow-hidden ${
+                                            badgeHidden && badgeMode === 'advert'
+                                                ? 'opacity-0 -translate-y-6 scale-95'
+                                                : badgeMode === 'advert'
+                                                    ? 'opacity-100 translate-y-0 scale-100'
+                                                    : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+                                        }`}
+                                        style={{
+                                            background: 'linear-gradient(90deg, rgba(251,191,36,0.25) 0%, rgba(249,115,22,0.30) 50%, rgba(251,191,36,0.25) 100%)',
+                                            border: '1px solid rgba(253, 224, 71, 0.55)',
+                                            transitionDuration: '400ms',
+                                        }}
+                                    >
+                                        {/* scan line */}
+                                        <span
+                                            className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                                            style={{ animation: 'advertScan 2.2s ease-in-out infinite' }}
+                                        />
+                                        <span style={{ animation: 'advertGlow 1.8s ease-in-out infinite' }}>
+                                            <Crown size={13} className="text-amber-100 drop-shadow" />
+                                        </span>
+                                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-50 whitespace-nowrap">
+                                            PipTrader&nbsp;AI&nbsp;·&nbsp;$150
+                                        </span>
+                                        <Star size={10} className="text-yellow-100 premium-twinkle" />
+                                    </div>
                                 </div>
 
                                 {/* Headline */}
