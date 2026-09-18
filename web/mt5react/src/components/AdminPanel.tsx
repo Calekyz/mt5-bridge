@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
     Users, Shield, Crown, Server, CheckCircle2, XCircle, Search,
-    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X
+    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X, ExternalLink
 } from 'lucide-react';
 
 interface User {
@@ -105,7 +106,6 @@ export const AdminPanel: React.FC = () => {
 
     useEffect(() => { loadData(); }, []);
 
-    // Reset to page 1 whenever the search term or page size changes
     useEffect(() => { setUserPage(1); }, [userSearch, userPageSize]);
 
     const handleAddUser = async (e: React.FormEvent) => {
@@ -294,7 +294,6 @@ export const AdminPanel: React.FC = () => {
         return { totalUsers, admins, withVps, totalKeys, usedKeys, unusedKeys };
     }, [users, keys]);
 
-    // ─── Filtered + Paginated Users ──────────────────────────
     const filteredUsers = useMemo(() => {
         const q = userSearch.trim().toLowerCase();
         if (!q) return users;
@@ -313,7 +312,6 @@ export const AdminPanel: React.FC = () => {
         return filteredUsers.slice(start, start + userPageSize);
     }, [filteredUsers, safePage, userPageSize]);
 
-    // ─── Filtered Keys ───────────────────────────────────────
     const filteredKeys = keySearch
         ? keys.filter(k =>
             k.key_code.toLowerCase().includes(keySearch.toLowerCase()) ||
@@ -351,14 +349,24 @@ export const AdminPanel: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={loadData}
-                        disabled={loading}
-                        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-                    >
-                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                        <span className="hidden sm:inline">Refresh</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to="/admin/mt5-details"
+                            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <Key size={16} />
+                            <span>User MT5 Details</span>
+                            <ExternalLink size={12} className="opacity-70" />
+                        </Link>
+                        <button
+                            onClick={loadData}
+                            disabled={loading}
+                            className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+                        >
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                            <span className="hidden sm:inline">Refresh</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* QUICK STATS */}
@@ -420,9 +428,7 @@ export const AdminPanel: React.FC = () => {
                     </div>
                 )}
 
-                {/* ═══════════════════════════════════════════════════ */}
-                {/*  SEARCH BAR — TOP LEVEL (always visible)             */}
-                {/* ═══════════════════════════════════════════════════ */}
+                {/* SEARCH BAR */}
                 <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl border border-slate-700/50 p-4 sm:p-5">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
@@ -447,7 +453,6 @@ export const AdminPanel: React.FC = () => {
                             autoComplete="off"
                             spellCheck={false}
                         />
-                        {/* Live count badge inside input */}
                         <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-2">
                             <span className={`text-xs font-bold px-2 py-1 rounded-md border ${
                                 userSearch
@@ -459,7 +464,6 @@ export const AdminPanel: React.FC = () => {
                                 {userSearch ? `${filteredUsers.length} match${filteredUsers.length !== 1 ? 'es' : ''}` : `${stats.totalUsers} total`}
                             </span>
                         </div>
-                        {/* Clear button */}
                         {userSearch && (
                             <button
                                 onClick={() => setUserSearch('')}
@@ -471,7 +475,6 @@ export const AdminPanel: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Quick hints */}
                     {!userSearch && (
                         <div className="mt-2.5 flex flex-wrap gap-2 text-[10px]">
                             <span className="text-slate-500 uppercase tracking-wider font-semibold">Try:</span>
@@ -689,7 +692,6 @@ export const AdminPanel: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Page size selector */}
                         <div className="flex items-center gap-2">
                             <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                                 Per page
@@ -853,7 +855,6 @@ export const AdminPanel: React.FC = () => {
                         </table>
                     </div>
 
-                    {/* PAGINATION */}
                     {filteredUsers.length > 0 && (
                         <div className="px-5 py-3 bg-slate-900/40 border-t border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="text-xs text-slate-500">
@@ -873,7 +874,6 @@ export const AdminPanel: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                {/* First */}
                                 <button
                                     onClick={() => setUserPage(1)}
                                     disabled={safePage <= 1}
@@ -883,7 +883,6 @@ export const AdminPanel: React.FC = () => {
                                     «
                                 </button>
 
-                                {/* Prev */}
                                 <button
                                     onClick={() => setUserPage(p => Math.max(1, p - 1))}
                                     disabled={safePage <= 1}
@@ -893,7 +892,6 @@ export const AdminPanel: React.FC = () => {
                                     Prev
                                 </button>
 
-                                {/* Page indicator */}
                                 <div className="flex items-center gap-1 bg-slate-950/60 border border-slate-700/50 rounded-lg px-3 py-1.5">
                                     <span className="text-xs text-slate-500">Page</span>
                                     <span className="text-xs font-bold text-white font-mono">{safePage}</span>
@@ -901,7 +899,6 @@ export const AdminPanel: React.FC = () => {
                                     <span className="text-xs font-mono text-slate-400">{totalPages}</span>
                                 </div>
 
-                                {/* Next */}
                                 <button
                                     onClick={() => setUserPage(p => Math.min(totalPages, p + 1))}
                                     disabled={safePage >= totalPages}
@@ -911,7 +908,6 @@ export const AdminPanel: React.FC = () => {
                                     <ChevronRight size={12} />
                                 </button>
 
-                                {/* Last */}
                                 <button
                                     onClick={() => setUserPage(totalPages)}
                                     disabled={safePage >= totalPages}
