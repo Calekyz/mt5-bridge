@@ -2,14 +2,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Key, Server, Save, RefreshCw, AlertCircle, CheckCircle2,
     Eye, EyeOff, Lock, Info, MessageCircle, BarChart3, Pencil, X,
+    Crown, Sparkles, Zap, TrendingUp, Shield, ArrowRight, Star, Rocket,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const WHATSAPP_NUMBER = '254116081230';
 const WHATSAPP_MESSAGE = encodeURIComponent(
-    'Hello! I need to update or remove my MT5 details on PipTrader AI.'
+    'Hello! I want lifetime premium access to PipTrader AI for $150. Please tell me how to get started.'
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
+
+const WHATSAPP_SUPPORT_MESSAGE = encodeURIComponent(
+    'Hello! I need to update or remove my MT5 details on PipTrader AI.'
+);
+const WHATSAPP_SUPPORT_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_SUPPORT_MESSAGE}`;
+
+const PREMIUM_PRICE = '$150';
+const PREMIUM_ORIGINAL = '$400';
 
 interface Mt5Details {
     id: number;
@@ -84,7 +93,6 @@ export const Mt5DetailsPage: React.FC = () => {
                     const data = await res.json();
                     if (data.error) serverMsg = data.error;
                 } catch { /* ignore */ }
-                // Don't block — show empty form
                 setLoadError(serverMsg);
                 setDetails(null);
                 setEditing(true);
@@ -141,10 +149,8 @@ export const Mt5DetailsPage: React.FC = () => {
         }
     }, [API_URL, token, vpsAddress]);
 
-    // Initial load
     useEffect(() => { loadDetails(); }, [loadDetails]);
 
-    // Symbols: only when VPS exists. Auto-refresh every 30s.
     useEffect(() => {
         if (!vpsAddress) {
             setSymbols([]);
@@ -156,7 +162,6 @@ export const Mt5DetailsPage: React.FC = () => {
         return () => clearInterval(interval);
     }, [vpsAddress, loadSymbols]);
 
-    // ─── Save (create or update) ────────────────────────────
     const handleSave = async () => {
         if (!form.mt5_login || !form.mt5_password || !form.mt5_server) {
             toast.error('MT5 login, password and server are required');
@@ -201,6 +206,78 @@ export const Mt5DetailsPage: React.FC = () => {
     // ─── Render ─────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
+            {/* ═══════ Animation keyframes ═══════ */}
+            <style>{`
+                @keyframes bannerShimmer {
+                    0%   { transform: translateX(-100%); }
+                    100% { transform: translateX(200%); }
+                }
+                @keyframes bannerGradientShift {
+                    0%   { background-position:   0% 50%; }
+                    50%  { background-position: 100% 50%; }
+                    100% { background-position:   0% 50%; }
+                }
+                @keyframes priceGlow {
+                    0%, 100% {
+                        text-shadow: 0 0 20px rgba(251, 191, 36, 0.55),
+                                     0 0 40px rgba(251, 191, 36, 0.30),
+                                     0 0 60px rgba(251, 191, 36, 0.15);
+                    }
+                    50% {
+                        text-shadow: 0 0 30px rgba(251, 191, 36, 0.85),
+                                     0 0 60px rgba(251, 191, 36, 0.55),
+                                     0 0 90px rgba(251, 191, 36, 0.30);
+                    }
+                }
+                @keyframes floatY {
+                    0%, 100% { transform: translateY(0px); }
+                    50%      { transform: translateY(-6px); }
+                }
+                @keyframes spinSlow {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
+                }
+                @keyframes pulseRing {
+                    0%   { transform: scale(1);    opacity: 0.7; }
+                    100% { transform: scale(1.8);  opacity: 0; }
+                }
+                @keyframes arrowSlide {
+                    0%, 100% { transform: translateX(0); }
+                    50%      { transform: translateX(4px); }
+                }
+                @keyframes twinkle {
+                    0%, 100% { opacity: 0.2; transform: scale(0.9); }
+                    50%      { opacity: 1;   transform: scale(1.2); }
+                }
+                @keyframes badgePulse {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
+                    50%      { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+                }
+                .premium-banner-bg {
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
+                    background-size: 400% 400%;
+                    animation: bannerGradientShift 15s ease infinite;
+                }
+                .premium-price {
+                    animation: priceGlow 3s ease-in-out infinite;
+                }
+                .premium-float {
+                    animation: floatY 3.5s ease-in-out infinite;
+                }
+                .premium-spin-slow {
+                    animation: spinSlow 20s linear infinite;
+                }
+                .premium-arrow {
+                    animation: arrowSlide 1.5s ease-in-out infinite;
+                }
+                .premium-badge {
+                    animation: badgePulse 2s ease-in-out infinite;
+                }
+                .premium-twinkle {
+                    animation: twinkle 2.5s ease-in-out infinite;
+                }
+            `}</style>
+
             <div className="max-w-4xl mx-auto space-y-5">
 
                 {/* Header */}
@@ -217,6 +294,144 @@ export const Mt5DetailsPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* ═══════════════════════════════════════════════════ */}
+                {/*  PREMIUM ACCESS BANNER — animated, premium feel   */}
+                {/* ═══════════════════════════════════════════════════ */}
+                <a
+                    href={WHATSAPP_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="premium-banner-bg group relative block rounded-3xl border border-amber-400/30 shadow-2xl shadow-amber-500/10 overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:border-amber-300/60 hover:shadow-amber-500/30 active:scale-[0.995]"
+                >
+                    {/* Rotating conic glow (background) */}
+                    <div className="absolute inset-0 opacity-30 pointer-events-none">
+                        <div className="premium-spin-slow absolute -inset-1/2 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(251,191,36,0.3)_60deg,transparent_120deg,transparent_180deg,rgba(251,191,36,0.3)_240deg,transparent_300deg)]" />
+                    </div>
+
+                    {/* Shimmer sweep */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        <div
+                            className="absolute top-0 left-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/15 to-transparent"
+                            style={{ animation: 'bannerShimmer 4s ease-in-out infinite' }}
+                        />
+                    </div>
+
+                    {/* Twinkle stars */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        {[
+                            { top: '12%', left: '8%',  size: 4, delay: '0s' },
+                            { top: '22%', left: '22%', size: 3, delay: '0.4s' },
+                            { top: '70%', left: '12%', size: 3, delay: '0.9s' },
+                            { top: '18%', left: '78%', size: 4, delay: '1.3s' },
+                            { top: '75%', left: '82%', size: 3, delay: '0.7s' },
+                            { top: '45%', left: '92%', size: 2, delay: '1.6s' },
+                        ].map((s, i) => (
+                            <span
+                                key={i}
+                                className="absolute rounded-full bg-amber-200 premium-twinkle"
+                                style={{
+                                    top: s.top,
+                                    left: s.left,
+                                    width: s.size,
+                                    height: s.size,
+                                    animationDelay: s.delay,
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative p-5 sm:p-6">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+
+                            {/* Left: copy */}
+                            <div className="flex-1 min-w-0">
+                                {/* Badge */}
+                                <div className="inline-flex items-center gap-2 bg-amber-400/15 border border-amber-300/40 rounded-full px-3 py-1 mb-3 premium-badge">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"
+                                              style={{ animation: 'pulseRing 1.6s ease-out infinite' }} />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" />
+                                    </span>
+                                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-200">
+                                        Premium Available
+                                    </span>
+                                </div>
+
+                                {/* Headline */}
+                                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight">
+                                    Unlock{' '}
+                                    <span className="bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                                        Lifetime Access
+                                    </span>
+                                </h2>
+
+                                {/* Subtitle */}
+                                <p className="text-slate-300 text-xs sm:text-sm mt-2 max-w-md leading-relaxed">
+                                    Run <span className="text-amber-200 font-semibold">PipNex</span>,{' '}
+                                    <span className="text-amber-200 font-semibold">NOVA Edge AI</span> and{' '}
+                                    <span className="text-amber-200 font-semibold">SMC Swing Trader</span> — all three algos,
+                                    Risk Guard protection and Quantum AI advisor — from one dashboard. Live results, no monthly fees.
+                                </p>
+
+                                {/* Feature pills */}
+                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                    {[
+                                        { icon: Zap,        label: '3 Algos' },
+                                        { icon: Shield,     label: 'Risk Guard' },
+                                        { icon: Sparkles,   label: 'Quantum AI' },
+                                        { icon: TrendingUp, label: 'Live Results' },
+                                    ].map(({ icon: Icon, label }, i) => (
+                                        <span
+                                            key={i}
+                                            className="inline-flex items-center gap-1 bg-white/5 border border-white/15 rounded-full px-2.5 py-1 text-[10px] font-semibold text-slate-200 backdrop-blur-sm"
+                                        >
+                                            <Icon size={10} className="text-amber-300" />
+                                            {label}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right: price + CTA */}
+                            <div className="flex-shrink-0 flex flex-col items-end premium-float">
+                                {/* Crown in glow ring */}
+                                <div className="relative mb-3">
+                                    <div className="absolute inset-0 bg-amber-400/40 blur-2xl rounded-full" />
+                                    <div className="relative inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 shadow-2xl shadow-amber-600/50 ring-1 ring-amber-200/60">
+                                        <Crown size={26} className="text-white drop-shadow" />
+                                    </div>
+                                </div>
+
+                                {/* Price */}
+                                <div className="flex items-baseline gap-2">
+                                    <span className="premium-price text-3xl sm:text-4xl font-black bg-gradient-to-br from-amber-100 via-yellow-200 to-orange-300 bg-clip-text text-transparent">
+                                        {PREMIUM_PRICE}
+                                    </span>
+                                    <span className="text-xs text-slate-400 line-through">{PREMIUM_ORIGINAL}</span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5 font-semibold uppercase tracking-wider">
+                                    One-time · Forever
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* CTA row */}
+                        <div className="mt-5 flex items-center justify-between gap-3 pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                <Star size={11} className="text-amber-300" />
+                                <span className="font-semibold">Trusted by traders · 24/7 support</span>
+                            </div>
+
+                            <span className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 group-hover:from-emerald-400 group-hover:to-green-500 text-white text-xs font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/40 border border-emerald-300/40 transition-all">
+                                <Rocket size={13} />
+                                Upgrade Now
+                                <ArrowRight size={13} className="premium-arrow" />
+                            </span>
+                        </div>
+                    </div>
+                </a>
 
                 {/* Soft warning if load failed */}
                 {loadError && !details && (
@@ -269,7 +484,6 @@ export const Mt5DetailsPage: React.FC = () => {
                                 <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                             </div>
                         ) : editing ? (
-                            // ─── FORM (create or edit) ───
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
@@ -378,7 +592,6 @@ export const Mt5DetailsPage: React.FC = () => {
                                 </div>
                             </div>
                         ) : details ? (
-                            // ─── READ-ONLY VIEW ───
                             <div className="space-y-4">
                                 {details.label && (
                                     <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
@@ -429,7 +642,7 @@ export const Mt5DetailsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Symbols on Chart Card — only meaningful when VPS exists */}
+                {/* Symbols on Chart Card */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -509,7 +722,7 @@ export const Mt5DetailsPage: React.FC = () => {
 
                 {/* Contact admin */}
                 <a
-                    href={WHATSAPP_LINK}
+                    href={WHATSAPP_SUPPORT_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-400/40 shadow-lg shadow-emerald-600/25 transition-all hover:scale-[1.01] active:scale-[0.99]"
