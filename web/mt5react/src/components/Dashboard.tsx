@@ -4,7 +4,7 @@ import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
 import { getOrders } from '../api/nodejsApiClient';
 import { QuantumAICard } from './QuantumAICard';
-import type { PipnexSuggestion, NovaSuggestion } from './quantumAI';
+import type { PipnexSuggestion, NovaSuggestion, SmcSuggestion } from './quantumAI';
 import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
