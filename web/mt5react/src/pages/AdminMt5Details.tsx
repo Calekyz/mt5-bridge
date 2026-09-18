@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Users, RefreshCw, Trash2, Eye, EyeOff, AlertCircle,
-    Key, Copy,
+    Key, Copy, Search, X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -26,6 +26,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [removingId, setRemovingId] = useState<number | null>(null);
     const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+    const [search, setSearch] = useState('');
 
     const loadRows = useCallback(async () => {
         setLoading(true);
@@ -44,6 +45,20 @@ export const AdminMt5DetailsPage: React.FC = () => {
     }, [API_URL, token]);
 
     useEffect(() => { loadRows(); }, [loadRows]);
+
+    // ─── Filter rows by search query ─────────────────────────
+    const filteredRows = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return rows;
+        return rows.filter((row) =>
+            row.user_email.toLowerCase().includes(q) ||
+            (row.label || '').toLowerCase().includes(q) ||
+            row.mt5_login.toLowerCase().includes(q) ||
+            row.mt5_server.toLowerCase().includes(q) ||
+            (row.notes || '').toLowerCase().includes(q) ||
+            String(row.user_id).includes(q)
+        );
+    }, [rows, search]);
 
     const handleRemove = async (row: AdminMt5Row) => {
         if (!confirm(`Remove MT5 details for ${row.user_email}?\nLogin: ${row.mt5_login}\n\nThis cannot be undone.`)) return;
@@ -99,6 +114,86 @@ export const AdminMt5DetailsPage: React.FC = () => {
                     </button>
                 </div>
 
+                {/* ═══════════════════════════════════════════════ */}
+                {/*  SEARCH BAR                                     */}
+                {/* ═══════════════════════════════════════════════ */}
+                {rows.length > 0 && (
+                    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                                <Search size={14} className="text-white" />
+                            </div>
+                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                Find User
+                            </h2>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                                Search by email, login, server, or ID
+                            </span>
+                        </div>
+
+                        <div className="relative">
+                            <Search
+                                size={18}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                            />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Type an email, MT5 login, server, or user ID..."
+                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                autoComplete="off"
+                                spellCheck={false}
+                            />
+                            {/* Live count */}
+                            <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                <span
+                                    className={`text-xs font-bold px-2 py-1 rounded-md border ${
+                                        search
+                                            ? filteredRows.length > 0
+                                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                            : 'bg-slate-700/40 text-slate-400 border-slate-600/40'
+                                    }`}
+                                >
+                                    {search
+                                        ? `${filteredRows.length} match${filteredRows.length !== 1 ? 'es' : ''}`
+                                        : `${rows.length} total`}
+                                </span>
+                            </div>
+                            {/* Clear button */}
+                            {search && (
+                                <button
+                                    onClick={() => setSearch('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-white bg-slate-800/60 hover:bg-rose-500/20 rounded-lg transition"
+                                    title="Clear search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Quick hints */}
+                        {!search && (
+                            <div className="mt-2.5 flex flex-wrap gap-2 text-[10px]">
+                                <span className="text-slate-500 uppercase tracking-wider font-semibold">Try:</span>
+                                {['@gmail.com', 'Main', 'ICMarkets', '5123'].map((hint) => (
+                                    <button
+                                        key={hint}
+                                        onClick={() => setSearch(hint)}
+                                        className="px-2 py-0.5 bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/50 rounded-md font-mono transition"
+                                    >
+                                        {hint}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════ */}
+                {/*  RESULTS                                        */}
+                {/* ═══════════════════════════════════════════════ */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     {loading ? (
                         <div className="flex justify-center py-12">
@@ -109,9 +204,28 @@ export const AdminMt5DetailsPage: React.FC = () => {
                             <Users size={32} className="text-slate-600 mx-auto mb-3" />
                             <p className="text-slate-500 text-sm">No MT5 details submitted yet.</p>
                         </div>
+                    ) : filteredRows.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/60 mb-3">
+                                <Search size={28} className="text-slate-500" />
+                            </div>
+                            <div className="text-slate-300 text-sm font-semibold mb-1">
+                                No matches found
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                                No matches for "<span className="text-white font-mono">{search}</span>"
+                            </div>
+                            <button
+                                onClick={() => setSearch('')}
+                                className="mt-4 inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            >
+                                <X size={12} />
+                                Clear search
+                            </button>
+                        </div>
                     ) : (
                         <div className="divide-y divide-slate-700/40">
-                            {rows.map((row) => {
+                            {filteredRows.map((row) => {
                                 const isRevealed = !!revealed[row.id];
                                 return (
                                     <div key={row.id} className="p-5">
