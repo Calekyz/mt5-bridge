@@ -23,6 +23,8 @@ import InstallPrompt from "./components/InstallPrompt";
 import SymbolRequest from "./components/SymbolRequest";
 import Mt5DetailsPage from "./pages/Mt5Details";
 import AdminMt5DetailsPage from "./pages/AdminMt5Details";
+import Unsubscribe from "./pages/Unsubscribe";
+import AdminUnsubscribes from "./pages/AdminUnsubscribes";
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
@@ -136,6 +138,28 @@ function App() {
     const navItems: any[] = [...sideItems];
     navItems.splice(middleIndex, 0, { path: "/", label: "Home", icon: Home, isHome: true });
 
+    // ═══════════════════════════════════════════════════════════
+    //  PUBLIC ROUTE: /unsubscribe
+    //  Bypasses auth + loader entirely — opened from email links
+    // ═══════════════════════════════════════════════════════════
+    if (typeof window !== 'undefined' && window.location.pathname === '/unsubscribe') {
+        return (
+            <>
+                <Unsubscribe />
+                <ToastContainer
+                    position="top-right"
+                    autoClose={3000}
+                    hideProgressBar={false}
+                    newestOnTop
+                    closeOnClick
+                    pauseOnHover
+                    draggable
+                    theme="dark"
+                />
+            </>
+        );
+    }
+
     if (!authChecked || showLoader) {
         return <Loader />;
     }
@@ -214,6 +238,10 @@ function App() {
                                 <Route
                                     path="/admin/mt5-details"
                                     element={isAdmin ? <AdminMt5DetailsPage /> : <Navigate to="/" replace />}
+                                />
+                                <Route
+                                    path="/admin/unsubscribes"
+                                    element={isAdmin ? <AdminUnsubscribes /> : <Navigate to="/" replace />}
                                 />
                             </Routes>
                         </main>
