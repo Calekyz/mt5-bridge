@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Mail, AlertCircle, CheckCircle2, Loader2, Shield,
-    MessageCircle, ArrowRight, Info, X, MailX,
+    MessageCircle, ArrowRight, Info, MailX,
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
