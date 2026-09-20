@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
     Users, Shield, Crown, Server, CheckCircle2, XCircle, Search,
-    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X, ExternalLink
+    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X, ExternalLink, MailX
 } from 'lucide-react';
 
 interface User {
@@ -349,13 +349,21 @@ export const AdminPanel: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <Link
                             to="/admin/mt5-details"
                             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
                         >
                             <Key size={16} />
                             <span>User MT5 Details</span>
+                            <ExternalLink size={12} className="opacity-70" />
+                        </Link>
+                        <Link
+                            to="/admin/unsubscribes"
+                            className="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-rose-600/20 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <MailX size={16} />
+                            <span>Unsubscribed</span>
                             <ExternalLink size={12} className="opacity-70" />
                         </Link>
                         <button
