@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    MailX, RefreshCw, Trash2, AlertCircle, Search, X, Mail,
+    MailX, RefreshCw, AlertCircle, Search, X, Mail,
     MessageSquare, UserCheck, Users,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
