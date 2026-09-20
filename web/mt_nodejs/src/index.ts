@@ -9,7 +9,8 @@ import orderRoutes from './routes/order/orderRoutes';
 import historyRoutes from './routes/history/historyRoutes';
 import eaRoutes from './routes/eaRoutes';
 import riskRoutes, { monitorRiskSessions } from './routes/risk';
-import mt5DetailsRoutes from './routes/mt5Details';   // ← NEW
+import mt5DetailsRoutes from './routes/mt5Details';
+import unsubscribeRoutes from './routes/unsubscribe';   // ← NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -35,7 +36,8 @@ app.use('/v1', orderRoutes);
 app.use('/v1', historyRoutes);
 app.use('/v1', eaRoutes);
 app.use('/v1', riskRoutes);
-app.use('/v1', mt5DetailsRoutes);   // ← NEW: user MT5 details + admin list
+app.use('/v1', mt5DetailsRoutes);
+app.use('/v1', unsubscribeRoutes);   // ← NEW: public unsubscribe + admin list
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
