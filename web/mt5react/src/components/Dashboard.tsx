@@ -365,7 +365,9 @@ export const Dashboard: React.FC = () => {
 
             if (enable) {
                 for (const [key, value] of Object.entries(settings)) {
+                    // Skip dependent fields whose parent is off
                     if (key === 'MartingaleLevel' && !settings.Martingale) continue;
+                    if (key === 'MartingaleBatch' && !settings.Martingale) continue;
                     await sendCommand(`${PREFIX[type]}${key}`, value);
                 }
             }
@@ -603,7 +605,6 @@ export const Dashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
-            {/* ═══ Slow color-shifting keyframes for active algo buttons ═══ */}
             <style>{`
                 @keyframes slowPulseGreen {
                     0%   { background-position:   0% 50%; }
@@ -1026,7 +1027,9 @@ const PIPNEX_SETTINGS = [
     { key: 'MinProfitPercent', label: 'Min Profit %', type: 'number', step: 1, min: 0, max: 100, default: 60 },
     { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
     { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
-    { key: 'MartingaleLevel', label: 'Martingale Level', type: 'number', step: 1, min: 1, max: 10, default: 1, dependsOn: 'Martingale' },
+    // ── Martingale sub-settings — shown only when Martingale is ON ──
+    { key: 'MartingaleLevel', label: 'Martingale Activation', type: 'number', step: 1, min: 1, max: 20, default: 1, dependsOn: 'Martingale' },
+    { key: 'MartingaleBatch', label: 'Martingale Batch Size', type: 'number', step: 1, min: 1, max: 20, default: 7, dependsOn: 'Martingale' },
 ];
 
 const NOVA_SETTINGS = [
@@ -1065,7 +1068,6 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
     onToggle, onInputChange, onInputBlur, onCheckboxChange,
     isToggling, settingsDef, disabled = false,
 }) => {
-    // ─── Animated gradient for the toggle button when algo is ACTIVE ───
     const activeButtonStyle: React.CSSProperties | undefined = enabled ? {
         backgroundImage: 'linear-gradient(90deg, #dc2626 0%, #ef4444 25%, #f87171 50%, #ef4444 75%, #dc2626 100%)',
         backgroundSize: '300% 100%',
