@@ -4,7 +4,8 @@ import {
     Shield, TrendingDown, BarChart3, HelpCircle,
     Wrench, Star, MessageCircle, ChevronRight, Search, X,
     AlertTriangle, CheckCircle2, XCircle, DollarSign, Server,
-    Info, ListOrdered, LineChart, Zap
+    Info, ListOrdered, LineChart, Zap,
+    Activity, Target, Waves, Layers, Globe, Settings, Clock
 } from 'lucide-react';
 
 interface GuideSection {
@@ -56,7 +57,7 @@ const Guide: React.FC = () => {
                             </li>
                             <li className="flex items-start gap-2">
                                 <CheckCircle2 className="text-emerald-400 mt-0.5 flex-shrink-0" size={16} />
-                                <span>The algorithms <strong className="text-white">PipNex</strong> and <strong className="text-white">NOVA EDGE AI</strong> run 24/7.</span>
+                                <span>Four algorithms — <strong className="text-white">PipNex</strong>, <strong className="text-white">NOVA EDGE AI</strong>, <strong className="text-white">SMC Swing Trader</strong>, and <strong className="text-white">Punex Asian Session</strong> — run 24/7.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <CheckCircle2 className="text-emerald-400 mt-0.5 flex-shrink-0" size={16} />
@@ -290,7 +291,473 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 4. START / STOP ──────────────────────────────────
+        // ─── 4. THE ALGORITHMS (NEW) ─────────────────────────
+        {
+            id: 'algorithms',
+            title: 'The Algorithms',
+            icon: <Activity size={16} />,
+            content: (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
+                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                            <Activity className="text-white" size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-white">The Algorithms</h2>
+                            <p className="text-slate-500 text-xs">What each algo does & how to configure it</p>
+                        </div>
+                    </div>
+
+                    <p className="text-slate-300 leading-relaxed">
+                        PipTrader AI ships with <strong className="text-white">4 trading algorithms</strong>. Each one targets
+                        a different market condition and trade style. You can run them individually or combine them, but
+                        for <strong className="text-white">small accounts we recommend running just one at a time</strong>.
+                    </p>
+
+                    {/* ─── Quick comparison table ─── */}
+                    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl p-5 border border-slate-700/50 overflow-x-auto">
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
+                            <ListOrdered size={16} className="text-blue-400" /> Quick comparison
+                        </h3>
+                        <table className="w-full text-sm min-w-[640px]">
+                            <thead>
+                                <tr className="border-b border-slate-700/50">
+                                    <th className="text-left py-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-wider">Algo</th>
+                                    <th className="text-left py-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-wider">Type</th>
+                                    <th className="text-left py-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-wider">Frequency</th>
+                                    <th className="text-left py-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-wider">Best Market</th>
+                                    <th className="text-left py-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-wider">Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-slate-300">
+                                <tr className="border-b border-slate-700/30">
+                                    <td className="py-2.5 font-semibold text-white">PipNex</td>
+                                    <td className="py-2.5">Grid scalper</td>
+                                    <td className="py-2.5"><span className="text-amber-400">High</span> (10–50/day)</td>
+                                    <td className="py-2.5">Ranging</td>
+                                    <td className="py-2.5"><span className="text-rose-400 font-semibold">High</span></td>
+                                </tr>
+                                <tr className="border-b border-slate-700/30">
+                                    <td className="py-2.5 font-semibold text-white">NOVA Edge AI</td>
+                                    <td className="py-2.5">Fibonacci swing</td>
+                                    <td className="py-2.5"><span className="text-blue-400">Medium</span> (1–5/day)</td>
+                                    <td className="py-2.5">Trending</td>
+                                    <td className="py-2.5"><span className="text-amber-400 font-semibold">Medium</span></td>
+                                </tr>
+                                <tr className="border-b border-slate-700/30">
+                                    <td className="py-2.5 font-semibold text-white">SMC Swing Trader</td>
+                                    <td className="py-2.5">Structure swing</td>
+                                    <td className="py-2.5"><span className="text-blue-400">Low</span> (1–3/day)</td>
+                                    <td className="py-2.5">Trending + POI</td>
+                                    <td className="py-2.5"><span className="text-amber-400 font-semibold">Medium</span></td>
+                                </tr>
+                                <tr>
+                                    <td className="py-2.5 font-semibold text-white">Punex Asian Session</td>
+                                    <td className="py-2.5">Session breakout</td>
+                                    <td className="py-2.5"><span className="text-emerald-400">Very low</span> (1/day)</td>
+                                    <td className="py-2.5">Volatile (news)</td>
+                                    <td className="py-2.5"><span className="text-emerald-400 font-semibold">Low</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ═══════════════════════════════════════════ */}
+                    {/*  ALGO 1 — PipNex                            */}
+                    {/* ═══════════════════════════════════════════ */}
+                    <div className="bg-gradient-to-br from-amber-900/20 via-slate-900/50 to-slate-900/60 border border-amber-500/30 rounded-2xl p-5 md:p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg shadow-amber-600/30">
+                                <Target className="text-white" size={22} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-extrabold text-white">PipNex Algo</h3>
+                                <p className="text-amber-300 text-xs">Scalper grid with martingale · High frequency</p>
+                            </div>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                                <AlertTriangle size={11} /> High Risk
+                            </span>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Info size={12} /> What it does
+                                </h4>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    PipNex opens a **grid of trades** in one direction and adds more positions every time price
+                                    moves against it by a set pip distance. When the combined profit reaches your target, all
+                                    positions close together. It works best in **ranging markets** where price bounces up
+                                    and down inside a zone.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Zap size={12} /> How it trades
+                                </h4>
+                                <ul className="space-y-1.5 text-sm text-slate-300">
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-amber-400 mt-1 flex-shrink-0" /><span>Opens first position in the selected direction</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-amber-400 mt-1 flex-shrink-0" /><span>Adds more positions every <strong className="text-white">Pip Step</strong> move against it</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-amber-400 mt-1 flex-shrink-0" /><span>Closes all when combined profit hits <strong className="text-white">Close Profit</strong></span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-amber-400 mt-1 flex-shrink-0" /><span>Optional martingale doubles lot size after N levels to recover faster</span></li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Settings size={12} /> Settings explained
+                                </h4>
+                                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
+                                    {[
+                                        { key: 'Lot', desc: 'Size of the first trade. Higher = higher risk & reward.' },
+                                        { key: 'Pip Step', desc: 'Distance price must move before adding a new level. Smaller = more trades.' },
+                                        { key: 'Close Profit ($)', desc: 'Total profit target before closing all trades together.' },
+                                        { key: 'Min Profit %', desc: 'Minimum % of trades that must be in profit before closing (safety).' },
+                                        { key: 'Max Levels', desc: 'Maximum number of grid levels to open. 20 is default — higher is riskier.' },
+                                        { key: 'Martingale', desc: 'Doubles lot size after N levels to recover losses faster. Risky!' },
+                                        { key: 'Martingale Activation', desc: 'Which level martingale kicks in from (e.g. 7 = level 7+ uses doubled lots).' },
+                                        { key: 'Martingale Batch', desc: 'How many levels before the multiplier applies again (7 = every 7 levels).' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                            <span className="text-[11px] font-mono font-bold text-amber-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] text-slate-400">{s.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/60 border border-amber-500/30 rounded-xl p-3">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-[11px] text-slate-300">
+                                        <strong className="text-white">Recommended for:</strong> Accounts $500+, traders comfortable with
+                                        drawdown. Use <strong className="text-white">low lot sizes</strong> (0.01) and set Risk Guard
+                                        Stop Loss. <strong className="text-rose-300">Always keep martingale OFF</strong> unless you
+                                        fully understand compounding risk.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ═══════════════════════════════════════════ */}
+                    {/*  ALGO 2 — NOVA                              */}
+                    {/* ═══════════════════════════════════════════ */}
+                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/50 to-slate-900/60 border border-blue-500/30 rounded-2xl p-5 md:p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/30">
+                                <Waves className="text-white" size={22} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-extrabold text-white">NOVA Edge AI</h3>
+                                <p className="text-blue-300 text-xs">Fibonacci swing · RSI + ATR · Medium frequency</p>
+                            </div>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                                Medium Risk
+                            </span>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Info size={12} /> What it does
+                                </h4>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    NOVA looks at the **most recent swing high and low** on your chart, draws Fibonacci retracement
+                                    levels between them, and enters when price pulls back to key levels (38.2%, 61.8%, 78.6%).
+                                    It uses **RSI** as a filter and **ATR-based stops** for adaptive risk. Best on **trending
+                                    markets** where price pulls back then continues.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Zap size={12} /> How it trades
+                                </h4>
+                                <ul className="space-y-1.5 text-sm text-slate-300">
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Detects trend using higher-timeframe EMA</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Waits for price to pull back into a Fibonacci level</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Confirms with RSI (not overbought for buys, not oversold for sells)</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Sets SL based on ATR, TP based on your Reward/Risk</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Moves to break-even at 1R, trails after 500 points profit</span></li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Settings size={12} /> Settings explained
+                                </h4>
+                                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
+                                    {[
+                                        { key: 'Lot Size', desc: 'Fixed lot size for each trade.' },
+                                        { key: 'Swing Strength', desc: 'How many bars to look back for the swing. Higher = smoother, fewer signals.' },
+                                        { key: 'Reward/Risk', desc: 'Target multiple of risk. 3.0 = aims for 3x profit vs. the loss if SL is hit.' },
+                                        { key: 'Max Positions', desc: 'Maximum concurrent trades allowed. Fewer = lower exposure.' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                            <span className="text-[11px] font-mono font-bold text-blue-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] text-slate-400">{s.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/60 border border-blue-500/30 rounded-xl p-3">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-[11px] text-slate-300">
+                                        <strong className="text-white">Recommended for:</strong> Beginners and swing traders.
+                                        Works well on <strong className="text-white">EURUSD, GBPUSD, XAUUSD</strong>. Set Reward/Risk
+                                        to 3.0 for a good balance. Best on H1–H4 charts.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ═══════════════════════════════════════════ */}
+                    {/*  ALGO 3 — SMC                               */}
+                    {/* ═══════════════════════════════════════════ */}
+                    <div className="bg-gradient-to-br from-purple-900/20 via-slate-900/50 to-slate-900/60 border border-purple-500/30 rounded-2xl p-5 md:p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/30">
+                                <Layers className="text-white" size={22} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-extrabold text-white">SMC Swing Trader</h3>
+                                <p className="text-purple-300 text-xs">HTF structure + Order Blocks + CHoCH · Low frequency</p>
+                            </div>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                                Medium Risk
+                            </span>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Info size={12} /> What it does
+                                </h4>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    SMC (Smart Money Concepts) is a **structure-based strategy**. It identifies the higher-timeframe
+                                    trend, marks unmitigated Order Blocks and Fair Value Gaps (POIs), and waits for price to
+                                    return to those zones. When price returns, it looks for a **Change of Character (CHoCH)** on
+                                    a lower timeframe to confirm the reversal before entering. Very selective — fires only on
+                                    A+ setups.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Zap size={12} /> How it trades
+                                </h4>
+                                <ul className="space-y-1.5 text-sm text-slate-300">
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Reads HTF trend (HH+HL = bullish, LH+LL = bearish)</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Marks valid Order Blocks and Fair Value Gaps</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Waits for price to return to the POI</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Confirms with LTF CHoCH inside the POI</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Places market or limit order with HTF liquidity target</span></li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Settings size={12} /> Settings explained
+                                </h4>
+                                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
+                                    {[
+                                        { key: 'Lot Size', desc: 'Fixed lot size for each trade.' },
+                                        { key: 'Swing Strength', desc: 'Bars for fractal detection. Lower = faster CHoCH, more entries.' },
+                                        { key: 'Reward/Risk', desc: 'Target multiple. SMC aims for HTF liquidity, so 3.0+ is common.' },
+                                        { key: 'Max Positions', desc: 'Concurrent positions allowed. SMC stacks few trades per symbol.' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                            <span className="text-[11px] font-mono font-bold text-purple-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] text-slate-400">{s.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/60 border border-purple-500/30 rounded-xl p-3">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-[11px] text-slate-300">
+                                        <strong className="text-white">Recommended for:</strong> Traders who can wait for quality
+                                        setups. Fires <strong className="text-white">1–3 times per day</strong>. Requires patience —
+                                        no trades on choppy days is normal. Best on trending pairs.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ═══════════════════════════════════════════ */}
+                    {/*  ALGO 4 — Punex                             */}
+                    {/* ═══════════════════════════════════════════ */}
+                    <div className="bg-gradient-to-br from-emerald-900/20 via-slate-900/50 to-slate-900/60 border border-emerald-500/30 rounded-2xl p-5 md:p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-xl shadow-lg shadow-emerald-600/30">
+                                <Globe className="text-white" size={22} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-extrabold text-white">Punex Asian Session</h3>
+                                <p className="text-emerald-300 text-xs">Asian range sweep + Order Block · 1 trade/day</p>
+                            </div>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                                Low Risk
+                            </span>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Info size={12} /> What it does
+                                </h4>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    Punex runs <strong className="text-white">once per day</strong>. It measures the overnight
+                                    (Asian session) price range, then waits for London/New York to <strong className="text-white">sweep</strong>
+                                    above the high or below the low. When that happens, it looks for an Order Block and enters
+                                    at a 50% retracement of the block, with the target being the opposite side of the range.
+                                    Classic "liquidity grab + reversal" setup.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Clock size={12} /> When it trades
+                                </h4>
+                                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
+                                    {[
+                                        { key: 'Asian session', val: '00:00 – 06:00 (server time) — range build' },
+                                        { key: 'London open', val: '06:00 onwards — sweep detection begins' },
+                                        { key: 'Trade window', val: 'One setup per day. If no sweep, no trade.' },
+                                        { key: 'Session ends', val: 'Auto-resets at midnight server time' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                            <span className="text-[11px] font-mono font-bold text-emerald-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] text-slate-400">{s.val}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Zap size={12} /> How it trades
+                                </h4>
+                                <ul className="space-y-1.5 text-sm text-slate-300">
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-emerald-400 mt-1 flex-shrink-0" /><span>Locks the Asian session high / low</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-emerald-400 mt-1 flex-shrink-0" /><span>Waits for price to sweep either side and close back inside</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-emerald-400 mt-1 flex-shrink-0" /><span>Finds the Order Block that caused the reversal</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-emerald-400 mt-1 flex-shrink-0" /><span>Enters at 50% depth of the OB</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-emerald-400 mt-1 flex-shrink-0" /><span>Splits the position into 2–4 legs with separate TPs (50% at TP1, rest at TP2)</span></li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Settings size={12} /> Settings explained
+                                </h4>
+                                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
+                                    {[
+                                        { key: 'Use Fixed Lot', desc: 'ON = fixed lot size (predictable). OFF = risk % of balance.' },
+                                        { key: 'Lot', desc: 'Fixed lot when Use Fixed Lot is ON.' },
+                                        { key: 'Risk %', desc: 'Balance % risked per setup when Use Fixed Lot is OFF.' },
+                                        { key: 'Reward/Risk', desc: 'Target multiple. 2.0 is the strategy default.' },
+                                        { key: 'Positions to Split', desc: 'How many legs to divide the position into. 4 = 2 at TP1, 2 at TP2.' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                            <span className="text-[11px] font-mono font-bold text-emerald-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] text-slate-400">{s.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900/60 border border-emerald-500/30 rounded-xl p-3">
+                                <div className="flex items-start gap-2">
+                                    <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-[11px] text-slate-300">
+                                        <strong className="text-white">Recommended for:</strong> Traders who want a
+                                        <strong className="text-white"> low-stress, low-frequency strategy</strong>. One trade per day
+                                        = perfect for beginners and busy people. Works best on volatile pairs (XAUUSD, GBPJPY).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ─── Running Multiple Algos ─── */}
+                    <div className="bg-gradient-to-br from-amber-900/20 to-slate-900/40 border border-amber-500/30 rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-amber-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                            <AlertTriangle size={16} /> Running multiple algos at once
+                        </h4>
+                        <ul className="space-y-2 text-sm text-slate-300">
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-400 mt-1">•</span>
+                                <span>All algos share the <strong className="text-white">same account balance and buying power</strong>.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-400 mt-1">•</span>
+                                <span>Running 2+ algos multiplies your <strong className="text-white">exposure and drawdown risk</strong>.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-400 mt-1">•</span>
+                                <span><strong className="text-white">For accounts under $1,000</strong>, run only one algo at a time.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-400 mt-1">•</span>
+                                <span>Recommended combos: <strong className="text-white">NOVA + Punex</strong> (diversified) or <strong className="text-white">SMC + Punex</strong> (structure + session).</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-400 mt-1">•</span>
+                                <span>Risk Guard monitors <strong className="text-white">all running algos together</strong> — one SL/TP trigger stops everything.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* ─── Choosing Your Algo ─── */}
+                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-blue-500/30 rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-blue-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                            <Info size={16} /> Which algo should I start with?
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-300">
+                            <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-400 mb-1">
+                                    Beginners
+                                </div>
+                                <div className="text-white font-bold">Start with Punex</div>
+                                <p className="text-[11px] text-slate-400 mt-1">1 trade/day, low risk, easy to monitor.</p>
+                            </div>
+                            <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-blue-400 mb-1">
+                                    Swing traders
+                                </div>
+                                <div className="text-white font-bold">NOVA or SMC</div>
+                                <p className="text-[11px] text-slate-400 mt-1">1–5 trades/day, structure-based, technical.</p>
+                            </div>
+                            <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-amber-400 mb-1">
+                                    Active traders
+                                </div>
+                                <div className="text-white font-bold">PipNex</div>
+                                <p className="text-[11px] text-slate-400 mt-1">10–50 trades/day, needs watching, higher risk.</p>
+                            </div>
+                            <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-purple-400 mb-1">
+                                    Experienced + funded
+                                </div>
+                                <div className="text-white font-bold">2 algos at once</div>
+                                <p className="text-[11px] text-slate-400 mt-1">NOVA + Punex, or SMC + Punex for diversification.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ),
+        },
+
+        // ─── 5. START / STOP ──────────────────────────────────
         {
             id: 'start-stop',
             title: 'Starting & Stopping',
@@ -339,7 +806,7 @@ const Guide: React.FC = () => {
                             <Info size={16} /> Important
                         </h4>
                         <ul className="space-y-2 text-sm text-slate-300">
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Stopping one algo does not affect the other</span></li>
+                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Stopping one algo does not affect the others</span></li>
                             <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Stopping <strong className="text-white">all</strong> algos also ends the Risk Guard session</span></li>
                             <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>You must click <strong className="text-white">Start Algo</strong> again after an EA restart</span></li>
                         </ul>
@@ -348,7 +815,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 5. RISK GUARD ────────────────────────────────────
+        // ─── 6. RISK GUARD ────────────────────────────────────
         {
             id: 'risk-guard',
             title: 'Risk Guard (SL/TP)',
@@ -431,7 +898,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 6. VIEWING TRADES ────────────────────────────────
+        // ─── 7. VIEWING TRADES ────────────────────────────────
         {
             id: 'trades',
             title: 'Viewing Trades',
@@ -482,7 +949,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 7. COMMON QUESTIONS ─────────────────────────────
+        // ─── 8. COMMON QUESTIONS ─────────────────────────────
         {
             id: 'faq',
             title: 'FAQ',
@@ -505,11 +972,12 @@ const Guide: React.FC = () => {
                             { q: 'Can I close my browser?', a: 'Yes. The algo keeps running, and Risk Guard keeps monitoring.' },
                             { q: 'What happens if I forget my password?', a: 'Contact your administrator to reset it.' },
                             { q: 'What is the access key for?', a: 'It identifies your account. Never share it with anyone.' },
-                            { q: 'Can I run both algorithms at the same time?', a: "Yes, but they share the account's buying power. Not recommended for beginners." },
-                            { q: "What's the minimum balance I need?", a: 'PipNex: $200+. NOVA: $500+. Depends on your broker.' },
+                            { q: 'Can I run multiple algorithms at the same time?', a: "Yes, but they share the account's buying power. Not recommended for accounts under $1,000." },
+                            { q: "What's the minimum balance I need?", a: 'PipNex: $500+. NOVA: $300+. SMC: $300+. Punex: $200+. Depends on your broker.' },
                             { q: 'What if the EA shows "Disconnected"?', a: 'Wait 30 seconds and refresh. If it stays disconnected, contact admin.' },
                             { q: 'Will the bot trade while I sleep?', a: "Yes. That's the point of automation." },
                             { q: 'Can I withdraw profits?', a: "Yes, directly from your MetaTrader 5 or the broker's portal." },
+                            { q: 'Which algo should I choose?', a: 'Beginners: start with Punex (1 trade/day, low risk). Swing traders: NOVA or SMC. Active traders: PipNex.' },
                         ].map((item, i) => (
                             <details key={i} className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden group">
                                 <summary className="cursor-pointer p-4 font-semibold text-white hover:bg-slate-700/30 transition flex items-center justify-between list-none">
@@ -531,7 +999,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 8. TROUBLESHOOTING ──────────────────────────────
+        // ─── 9. TROUBLESHOOTING ──────────────────────────────
         {
             id: 'troubleshooting',
             title: 'Troubleshooting',
@@ -555,7 +1023,7 @@ const Guide: React.FC = () => {
                             { problem: 'Failed to send command', cause: "EA busy, or command didn't reach the server.", fix: 'Wait 5s, try again. If it keeps failing, refresh the page.' },
                             { problem: 'Risk Guard failed', cause: 'Could not reach the EA to capture starting balance.', fix: 'Ensure EA shows Connected. Try starting the algo again.' },
                             { problem: "Algo won't start", cause: 'VPS not set, EA offline, or button not clicked.', fix: 'Check VPS Address, EA status, and click Start Algo again.' },
-                            { problem: "Trades aren't opening", cause: "Algo running but market conditions haven't triggered a signal.", fix: 'Wait — PipNex can wait 30+ mins. NOVA might wait hours.' },
+                            { problem: "Trades aren't opening", cause: "Algo running but market conditions haven't triggered a signal.", fix: 'Wait — PipNex can wait 30+ mins. NOVA/SMC might wait hours. Punex waits until London open.' },
                             { problem: 'Order history is empty', cause: 'No trades in the selected date range.', fix: 'Widen the date range — try the 90-day preset or a custom range.' },
                         ].map((item, i) => (
                             <div key={i} className="bg-gradient-to-br from-rose-900/10 via-slate-800/40 to-slate-900/60 border border-slate-700/50 rounded-2xl p-5">
@@ -587,7 +1055,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 9. BEST PRACTICES ───────────────────────────────
+        // ─── 10. BEST PRACTICES ──────────────────────────────
         {
             id: 'best-practices',
             title: 'Best Practices',
@@ -617,6 +1085,7 @@ const Guide: React.FC = () => {
                                     'Check the dashboard once a day',
                                     'Keep your access key private',
                                     'Write down SL/TP values',
+                                    'Start with Punex if you are a beginner',
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-start gap-2">
                                         <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -632,11 +1101,12 @@ const Guide: React.FC = () => {
                             <ul className="space-y-2.5 text-sm text-slate-300">
                                 {[
                                     "Don't set huge lot sizes",
-                                    "Don't run both algos on small accounts",
+                                    "Don't run multiple algos on small accounts",
                                     "Don't ignore 'EA Disconnected'",
                                     "Don't share your login",
                                     "Don't stop algo during a losing streak",
                                     "Don't chase losses with bigger lots",
+                                    "Don't enable martingale without understanding it",
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-start gap-2">
                                         <XCircle size={14} className="text-rose-400 flex-shrink-0 mt-0.5" />
@@ -650,7 +1120,7 @@ const Guide: React.FC = () => {
             ),
         },
 
-        // ─── 10. NEED HELP ───────────────────────────────────
+        // ─── 11. NEED HELP ───────────────────────────────────
         {
             id: 'support',
             title: 'Need Help?',
