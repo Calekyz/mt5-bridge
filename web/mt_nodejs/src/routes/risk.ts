@@ -223,12 +223,13 @@ export async function monitorRiskSessions() {
                         console.error(`   ✗ Failed to stop master: ${err.message}`);
                     }
 
-                    // Step 1b: Stop all 3 individual EAs (belt + braces)
+                    // Step 1b: Stop all 4 individual EAs (belt + braces)
                     try {
                         await setGlobalVariable('PipNex_Enable', 0, s.vps_address);
                         await setGlobalVariable('Nova_Enable', 0, s.vps_address);
                         await setGlobalVariable('Smc_Enable', 0, s.vps_address);
-                        console.log(`   ✓ PipNex_Enable / Nova_Enable / Smc_Enable all set to 0`);
+                        await setGlobalVariable('Punex_Enable', 0, s.vps_address);
+                        console.log(`   ✓ PipNex_Enable / Nova_Enable / Smc_Enable / Punex_Enable all set to 0`);
                     } catch (err: any) {
                         console.error(`   ✗ Failed to stop individual EAs: ${err.message}`);
                     }
