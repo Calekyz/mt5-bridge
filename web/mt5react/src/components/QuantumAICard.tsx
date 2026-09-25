@@ -4,11 +4,11 @@ import {
     ChevronDown, ChevronUp, CheckCircle2, Info, Zap, RefreshCw
 } from 'lucide-react';
 import {
-    analyzeAccount, suggestPipnexSettings, suggestNovaSettings, suggestSmcSettings,
+    analyzeAccount, suggestPipnexSettings, suggestNovaSettings, suggestSmcSettings, suggestPunexSettings,
     scoreTradeHealth, summarizeHealth,
     RISK_LEVELS, STRATEGY_MODES,
     type RiskLevel, type StrategyMode,
-    type PipnexSuggestion, type NovaSuggestion, type SmcSuggestion,
+    type PipnexSuggestion, type NovaSuggestion, type SmcSuggestion, type PunexSuggestion,
 } from './quantumAI';
 
 interface QuantumAICardProps {
@@ -19,6 +19,7 @@ interface QuantumAICardProps {
     onApplyPipnex: (settings: PipnexSuggestion) => Promise<void> | void;
     onApplyNova: (settings: NovaSuggestion) => Promise<void> | void;
     onApplySmc: (settings: SmcSuggestion) => Promise<void> | void;
+    onApplyPunex: (settings: PunexSuggestion) => Promise<void> | void;
     disabled?: boolean;
 }
 
@@ -30,6 +31,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     onApplyPipnex,
     onApplyNova,
     onApplySmc,
+    onApplyPunex,
     disabled = false,
 }) => {
     const [expanded, setExpanded] = useState(false);
@@ -59,6 +61,11 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
         [balance, risk]
     );
 
+    const punexSuggestion = useMemo(
+        () => suggestPunexSettings(balance, risk),
+        [balance, risk]
+    );
+
     const tradeScores = useMemo(
         () => (positions || []).map(p => scoreTradeHealth(p, positions, riskSession)),
         [positions, riskSession]
@@ -77,8 +84,10 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                 await onApplyPipnex(pipnexSuggestion);
             } else if (mode === 'nova') {
                 await onApplyNova(novaSuggestion);
-            } else {
+            } else if (mode === 'smc') {
                 await onApplySmc(smcSuggestion);
+            } else {
+                await onApplyPunex(punexSuggestion);
             }
         } finally {
             setApplying(false);
@@ -88,9 +97,16 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     const currentSuggestion =
         mode === 'pipnex' ? pipnexSuggestion :
         mode === 'nova'   ? novaSuggestion   :
-                            smcSuggestion;
+        mode === 'smc'    ? smcSuggestion    :
+                            punexSuggestion;
 
     const currentReasons = currentSuggestion.reasons;
+
+    const modeLabel =
+        mode === 'pipnex' ? 'PipNex' :
+        mode === 'nova'   ? 'NOVA'   :
+        mode === 'smc'    ? 'SMC'    :
+                            'Punex';
 
     const healthColorMap = {
         emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', dot: 'bg-emerald-400' },
@@ -163,7 +179,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
                                 Strategy
                             </label>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {STRATEGY_MODES.map((m) => (
                                     <button
                                         key={m.value}
@@ -236,7 +252,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                 <div className="flex items-center gap-2 mb-3">
                                     <Zap size={12} className="text-amber-400" />
                                     <h3 className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                        Suggested Settings · {mode === 'pipnex' ? 'PipNex' : mode === 'nova' ? 'NOVA' : 'SMC Trader'}
+                                        Suggested Settings · {modeLabel}
                                     </h3>
                                 </div>
 
@@ -284,7 +300,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                     ) : (
                                         <>
                                             <CheckCircle2 size={14} />
-                                            Apply to {mode === 'pipnex' ? 'PipNex' : mode === 'nova' ? 'NOVA' : 'SMC Trader'}
+                                            Apply to {modeLabel}
                                         </>
                                     )}
                                 </button>
