@@ -4,7 +4,7 @@ import { useAccount, sendCommand } from '../hooks/useApi';
 import { AccountStats } from './AccountStats';
 import { getOrders } from '../api/nodejsApiClient';
 import { QuantumAICard } from './QuantumAICard';
-import type { PipnexSuggestion, NovaSuggestion, SmcSuggestion } from './quantumAI';
+import type { PipnexSuggestion, NovaSuggestion, SmcSuggestion, PunexSuggestion } from './quantumAI';
 import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-type StrategyType = 'pipnex' | 'nova' | 'smc';
+type StrategyType = 'pipnex' | 'nova' | 'smc' | 'punex';
 
 const BOT_PRICE = '$150';
 const WHATSAPP_NUMBER = '254116081230';
@@ -27,16 +27,19 @@ const PREFIX: Record<StrategyType, string> = {
     pipnex: 'PipNex_',
     nova:   'Nova_',
     smc:    'Smc_',
+    punex:  'Punex_',
 };
 const ENABLE_KEY: Record<StrategyType, string> = {
     pipnex: 'PipNex_Enable',
     nova:   'Nova_Enable',
     smc:    'Smc_Enable',
+    punex:  'Punex_Enable',
 };
 const DISPLAY_NAME: Record<StrategyType, string> = {
     pipnex: 'PipNex',
     nova:   'NOVA',
     smc:    'SMC',
+    punex:  'Punex',
 };
 
 function getStoredState(key: string, defaultValue: boolean): boolean {
@@ -88,10 +91,12 @@ export const Dashboard: React.FC = () => {
     const [pipnexEnabled, setPipnexEnabled] = useState(() => getStoredState('pipnexEnabled', false));
     const [novaEnabled, setNovaEnabled]     = useState(() => getStoredState('novaEnabled', false));
     const [smcEnabled, setSmcEnabled]       = useState(() => getStoredState('smcEnabled', false));
+    const [punexEnabled, setPunexEnabled]   = useState(() => getStoredState('punexEnabled', false));
 
     const [pipnexSettings, setPipnexSettings] = useState<Record<string, any>>(() => loadStoredSettings('pipnexSettings'));
     const [novaSettings, setNovaSettings]     = useState<Record<string, any>>(() => loadStoredSettings('novaSettings'));
     const [smcSettings, setSmcSettings]       = useState<Record<string, any>>(() => loadStoredSettings('smcSettings'));
+    const [punexSettings, setPunexSettings]   = useState<Record<string, any>>(() => loadStoredSettings('punexSettings'));
 
     const [isToggling, setIsToggling] = useState<string | null>(null);
     const [commandError, setCommandError] = useState<string | null>(null);
@@ -118,6 +123,7 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { saveStoredSettings('pipnexSettings', pipnexSettings); }, [pipnexSettings]);
     useEffect(() => { saveStoredSettings('novaSettings', novaSettings); }, [novaSettings]);
     useEffect(() => { saveStoredSettings('smcSettings', smcSettings); }, [smcSettings]);
+    useEffect(() => { saveStoredSettings('punexSettings', punexSettings); }, [punexSettings]);
     useEffect(() => { setStoredState('autoCloseEnabled', autoCloseEnabled); }, [autoCloseEnabled]);
 
     useEffect(() => {
@@ -197,13 +203,16 @@ export const Dashboard: React.FC = () => {
                     setPipnexEnabled(false);
                     setNovaEnabled(false);
                     setSmcEnabled(false);
+                    setPunexEnabled(false);
                     setStoredState('pipnexEnabled', false);
                     setStoredState('novaEnabled', false);
                     setStoredState('smcEnabled', false);
+                    setStoredState('punexEnabled', false);
 
                     sendCommand('PipNex_Enable', 0).catch(err => console.error('PipNex stop:', err));
                     sendCommand('Nova_Enable', 0).catch(err => console.error('Nova stop:', err));
                     sendCommand('Smc_Enable', 0).catch(err => console.error('SMC stop:', err));
+                    sendCommand('Punex_Enable', 0).catch(err => console.error('Punex stop:', err));
 
                     fetch(`${API_URL}/risk/stop`, {
                         method: 'POST',
@@ -297,6 +306,7 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { setStoredState('pipnexEnabled', pipnexEnabled); }, [pipnexEnabled]);
     useEffect(() => { setStoredState('novaEnabled', novaEnabled); }, [novaEnabled]);
     useEffect(() => { setStoredState('smcEnabled', smcEnabled); }, [smcEnabled]);
+    useEffect(() => { setStoredState('punexEnabled', punexEnabled); }, [punexEnabled]);
 
     const startRiskSession = async (): Promise<boolean> => {
         const sl = parseFloat(slInput);
@@ -349,7 +359,8 @@ export const Dashboard: React.FC = () => {
                 const anyEnabled =
                     (type === 'pipnex' ? true : pipnexEnabled) ||
                     (type === 'nova'   ? true : novaEnabled) ||
-                    (type === 'smc'    ? true : smcEnabled);
+                    (type === 'smc'    ? true : smcEnabled) ||
+                    (type === 'punex'  ? true : punexEnabled);
                 if (!riskSession?.is_active && anyEnabled) {
                     const ok = await startRiskSession();
                     if (!ok) { setIsToggling(null); return; }
@@ -361,11 +372,11 @@ export const Dashboard: React.FC = () => {
             const settings =
                 type === 'pipnex' ? pipnexSettings :
                 type === 'nova'   ? novaSettings   :
-                                    smcSettings;
+                type === 'smc'    ? smcSettings    :
+                                    punexSettings;
 
             if (enable) {
                 for (const [key, value] of Object.entries(settings)) {
-                    // Skip dependent fields whose parent is off
                     if (key === 'MartingaleLevel' && !settings.Martingale) continue;
                     if (key === 'MartingaleBatch' && !settings.Martingale) continue;
                     await sendCommand(`${PREFIX[type]}${key}`, value);
@@ -374,13 +385,15 @@ export const Dashboard: React.FC = () => {
 
             if (type === 'pipnex') setPipnexEnabled(enable);
             else if (type === 'nova') setNovaEnabled(enable);
-            else setSmcEnabled(enable);
+            else if (type === 'smc') setSmcEnabled(enable);
+            else setPunexEnabled(enable);
 
             if (!enable) {
                 const stillEnabled =
-                    (type === 'pipnex' ? (novaEnabled || smcEnabled) :
-                     type === 'nova'   ? (pipnexEnabled || smcEnabled) :
-                                         (pipnexEnabled || novaEnabled));
+                    (type === 'pipnex' ? (novaEnabled || smcEnabled || punexEnabled) :
+                     type === 'nova'   ? (pipnexEnabled || smcEnabled || punexEnabled) :
+                     type === 'smc'    ? (pipnexEnabled || novaEnabled || punexEnabled) :
+                                         (pipnexEnabled || novaEnabled || smcEnabled));
                 if (!stillEnabled) await stopRiskSession();
             }
 
@@ -398,7 +411,8 @@ export const Dashboard: React.FC = () => {
             await sendCommand(`${PREFIX[type]}${key}`, value);
             if (type === 'pipnex') setPipnexSettings(prev => ({ ...prev, [key]: value }));
             else if (type === 'nova') setNovaSettings(prev => ({ ...prev, [key]: value }));
-            else setSmcSettings(prev => ({ ...prev, [key]: value }));
+            else if (type === 'smc') setSmcSettings(prev => ({ ...prev, [key]: value }));
+            else setPunexSettings(prev => ({ ...prev, [key]: value }));
             toast.success(`${key} updated to ${value}`);
         } catch { toast.error(`Failed to update ${key}`); }
     };
@@ -444,8 +458,21 @@ export const Dashboard: React.FC = () => {
         else toast.warning(`Applied ${ok}/${ok + fail} SMC settings`);
     };
 
+    const applyPunexSuggestion = async (suggestion: PunexSuggestion) => {
+        const { Lot, RiskPercent, RewardRisk, NumPositions, UseFixedLot } = suggestion;
+        const values = { Lot, RiskPercent, RewardRisk, NumPositions, UseFixedLot };
+        let ok = 0, fail = 0;
+        for (const [key, value] of Object.entries(values)) {
+            try { await sendCommand(`Punex_${key}`, value as number | boolean); ok++; }
+            catch { fail++; }
+        }
+        setPunexSettings(prev => ({ ...prev, ...values }));
+        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} Punex settings`);
+        else toast.warning(`Applied ${ok}/${ok + fail} Punex settings`);
+    };
+
     const [localInputs, setLocalInputs] = useState<Record<string, Record<string, string>>>({
-        pipnex: {}, nova: {}, smc: {},
+        pipnex: {}, nova: {}, smc: {}, punex: {},
     });
 
     useEffect(() => {
@@ -453,11 +480,13 @@ export const Dashboard: React.FC = () => {
             const settings =
                 type === 'pipnex' ? pipnexSettings :
                 type === 'nova'   ? novaSettings   :
-                                    smcSettings;
+                type === 'smc'    ? smcSettings    :
+                                    punexSettings;
             const defs =
                 type === 'pipnex' ? PIPNEX_SETTINGS :
                 type === 'nova'   ? NOVA_SETTINGS   :
-                                    SMC_SETTINGS;
+                type === 'smc'    ? SMC_SETTINGS    :
+                                    PUNEX_SETTINGS;
             const inputs: Record<string, string> = {};
             for (const def of defs) {
                 if (def.type === 'number') {
@@ -470,7 +499,8 @@ export const Dashboard: React.FC = () => {
         initLocal('pipnex');
         initLocal('nova');
         initLocal('smc');
-    }, [pipnexSettings, novaSettings, smcSettings]);
+        initLocal('punex');
+    }, [pipnexSettings, novaSettings, smcSettings, punexSettings]);
 
     const handleInputChange = (type: StrategyType, key: string, rawValue: string) => {
         setLocalInputs(prev => ({ ...prev, [type]: { ...prev[type], [key]: rawValue } }));
@@ -485,11 +515,13 @@ export const Dashboard: React.FC = () => {
             const settings =
                 type === 'pipnex' ? pipnexSettings :
                 type === 'nova'   ? novaSettings   :
-                                    smcSettings;
+                type === 'smc'    ? smcSettings    :
+                                    punexSettings;
             const defs =
                 type === 'pipnex' ? PIPNEX_SETTINGS :
                 type === 'nova'   ? NOVA_SETTINGS   :
-                                    SMC_SETTINGS;
+                type === 'smc'    ? SMC_SETTINGS    :
+                                    PUNEX_SETTINGS;
             const def = defs.find((d: any) => d.key === key);
             if (def) {
                 const currentVal = settings[key] ?? def.default;
@@ -502,7 +534,8 @@ export const Dashboard: React.FC = () => {
         sendCommand(`${PREFIX[type]}${key}`, checked).catch(console.error);
         if (type === 'pipnex') setPipnexSettings(prev => ({ ...prev, [key]: checked }));
         else if (type === 'nova') setNovaSettings(prev => ({ ...prev, [key]: checked }));
-        else setSmcSettings(prev => ({ ...prev, [key]: checked }));
+        else if (type === 'smc') setSmcSettings(prev => ({ ...prev, [key]: checked }));
+        else setPunexSettings(prev => ({ ...prev, [key]: checked }));
         toast.success(`${key} ${checked ? 'enabled' : 'disabled'}`);
     };
 
@@ -551,7 +584,7 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="relative mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-2 gap-2">
-                                    {['PipNex Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Risk Guard protection'].map((item, i) => (
+                                    {['PipNex Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Punex Asian Session'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-300">
                                             <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />
                                             <span className="truncate">{item}</span>
@@ -909,6 +942,7 @@ export const Dashboard: React.FC = () => {
                         onApplyPipnex={applyPipnexSuggestion}
                         onApplyNova={applyNovaSuggestion}
                         onApplySmc={applySmcSuggestion}
+                        onApplyPunex={applyPunexSuggestion}
                         disabled={!eaConnected}
                     />
                 )}
@@ -954,6 +988,16 @@ export const Dashboard: React.FC = () => {
                         isToggling={isToggling === 'smc'}
                         settingsDef={SMC_SETTINGS} disabled={!eaConnected}
                     />
+                    <StrategyCard
+                        type="punex" label="Punex Asian Session" icon="🌏"
+                        description="Asian range sweep + Order Block 50% entry"
+                        enabled={punexEnabled} settings={punexSettings}
+                        localInputs={localInputs.punex}
+                        onToggle={toggleStrategy} onInputChange={handleInputChange}
+                        onInputBlur={handleInputBlur} onCheckboxChange={handleCheckboxChange}
+                        isToggling={isToggling === 'punex'}
+                        settingsDef={PUNEX_SETTINGS} disabled={!eaConnected}
+                    />
                 </div>
             </div>
 
@@ -986,7 +1030,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <div className="text-xs font-bold text-white mb-0.5">Click Start Algo</div>
-                                    <div className="text-[11px] text-slate-400">Enable any of the 3 algos to begin trading</div>
+                                    <div className="text-[11px] text-slate-400">Enable any of the 4 algos to begin trading</div>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
@@ -1027,7 +1071,6 @@ const PIPNEX_SETTINGS = [
     { key: 'MinProfitPercent', label: 'Min Profit %', type: 'number', step: 1, min: 0, max: 100, default: 60 },
     { key: 'MaxLevels', label: 'Max Levels', type: 'number', step: 1, min: 1, default: 20 },
     { key: 'Martingale', label: 'Martingale', type: 'checkbox', default: false },
-    // ── Martingale sub-settings — shown only when Martingale is ON ──
     { key: 'MartingaleLevel', label: 'Martingale Activation', type: 'number', step: 1, min: 1, max: 20, default: 1, dependsOn: 'Martingale' },
     { key: 'MartingaleBatch', label: 'Martingale Batch Size', type: 'number', step: 1, min: 1, max: 20, default: 7, dependsOn: 'Martingale' },
 ];
@@ -1044,6 +1087,14 @@ const SMC_SETTINGS = [
     { key: 'SwingStrength', label: 'Swing Strength', type: 'number', step: 1, min: 1, default: 5 },
     { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.1, default: 3.0 },
     { key: 'MaxPositions', label: 'Max Positions', type: 'number', step: 1, min: 1, default: 5 },
+];
+
+const PUNEX_SETTINGS = [
+    { key: 'UseFixedLot', label: 'Use Fixed Lot', type: 'checkbox', default: true },
+    { key: 'Lot', label: 'Lot Size', type: 'number', step: 0.01, min: 0.01, default: 0.10 },
+    { key: 'RiskPercent', label: 'Risk % (if not fixed)', type: 'number', step: 0.1, min: 0.1, max: 10, default: 1.0 },
+    { key: 'RewardRisk', label: 'Reward/Risk', type: 'number', step: 0.1, min: 0.5, default: 2.0 },
+    { key: 'NumPositions', label: 'Positions to Split', type: 'number', step: 1, min: 1, max: 10, default: 4 },
 ];
 
 interface StrategyCardProps {
