@@ -1,5 +1,5 @@
 export type RiskLevel = 'conservative' | 'moderate' | 'aggressive';
-export type StrategyMode = 'pipnex' | 'nova' | 'smc';
+export type StrategyMode = 'pipnex' | 'nova' | 'smc' | 'punex';
 
 export const RISK_LEVELS: { value: RiskLevel; label: string; description: string }[] = [
     { value: 'conservative', label: 'Conservative', description: 'Safest lot sizing, wider grid, fewer levels' },
@@ -10,7 +10,8 @@ export const RISK_LEVELS: { value: RiskLevel; label: string; description: string
 export const STRATEGY_MODES: { value: StrategyMode; label: string; description: string }[] = [
     { value: 'pipnex', label: 'PipNex',      description: 'Scalper grid · high frequency' },
     { value: 'nova',   label: 'NOVA',        description: 'Fibonacci swing · RSI + ATR' },
-    { value: 'smc',    label: 'SMC Trader',  description: 'HTF structure + POI + CHoCH' },
+    { value: 'smc',    label: 'SMC',         description: 'HTF structure + POI + CHoCH' },
+    { value: 'punex',  label: 'Punex',       description: 'Asian range sweep + OB entry' },
 ];
 
 export interface AccountHealth {
@@ -44,6 +45,15 @@ export interface SmcSuggestion {
     SwingStrength: number;
     RewardRisk: number;
     MaxPositions: number;
+    reasons: Record<string, string>;
+}
+
+export interface PunexSuggestion {
+    UseFixedLot: boolean;
+    Lot: number;
+    RiskPercent: number;
+    RewardRisk: number;
+    NumPositions: number;
     reasons: Record<string, string>;
 }
 
@@ -174,18 +184,10 @@ export function suggestSmcSettings(
     balance: number,
     risk: RiskLevel
 ): SmcSuggestion {
-    // SMC is intraday structure-based — smaller lots and wider swing than PipNex,
-    // slightly tighter than NOVA because entries are faster (LTF CHoCH).
     const lotDivisor = risk === 'conservative' ? 15000 : risk === 'moderate' ? 8000 : 4000;
     const lotSize = roundLot(balance / lotDivisor);
-
-    // Swing strength: lower = faster fractal detection (good for M5/M15 LTF)
     const swingStrength = risk === 'conservative' ? 8 : risk === 'moderate' ? 5 : 3;
-
-    // Reward/risk: SMC targets structure (HTF liquidity), so higher RR is natural
     const rewardRisk = risk === 'conservative' ? 2.5 : risk === 'moderate' ? 3.0 : 4.0;
-
-    // Max positions: SMC stacks fewer concurrent positions per symbol
     const maxPositions = risk === 'conservative' ? 3 : risk === 'moderate' ? 5 : 8;
 
     return {
@@ -214,7 +216,46 @@ export function suggestSmcSettings(
     };
 }
 
-// Keep legacy name for backward compatibility
+export function suggestPunexSettings(
+    balance: number,
+    risk: RiskLevel
+): PunexSuggestion {
+    // Punex is a once-per-day session strategy — one setup per Asian range.
+    // Position splitting (4 legs by default) is core to the strategy.
+    const lotDivisor = risk === 'conservative' ? 20000 : risk === 'moderate' ? 10000 : 5000;
+    const lot = roundLot(balance / lotDivisor);
+
+    const useFixedLot = risk === 'conservative'; // conservative = fixed lot, others = risk-based
+    const riskPercent = risk === 'conservative' ? 0.5 : risk === 'moderate' ? 1.0 : 2.0;
+    const rewardRisk = risk === 'conservative' ? 1.5 : risk === 'moderate' ? 2.0 : 3.0;
+    const numPositions = risk === 'conservative' ? 2 : risk === 'moderate' ? 4 : 6;
+
+    return {
+        UseFixedLot: useFixedLot,
+        Lot: lot,
+        RiskPercent: riskPercent,
+        RewardRisk: rewardRisk,
+        NumPositions: numPositions,
+        reasons: {
+            UseFixedLot: useFixedLot
+                ? 'Fixed lot for conservative — one setup per day, predictable size'
+                : 'Risk-based sizing for balanced sizing across volatility',
+            Lot: `Balance ${fmt(balance)} ÷ ${lotDivisor} (${risk} risk) = ${lot.toFixed(2)} lots`,
+            RiskPercent: `${riskPercent}% risk per setup — Asian range gives one high-quality setup per day`,
+            RewardRisk: `Targets ${rewardRisk.toFixed(1)}× — ${
+                risk === 'conservative' ? 'faster TP1, smaller runner' :
+                risk === 'moderate' ? 'standard R:R' :
+                'large runner to sweep extreme'
+            }`,
+            NumPositions: `${numPositions} legs split — ${
+                risk === 'conservative' ? 'fewer legs, less fragmentation' :
+                risk === 'moderate' ? 'balanced split (2x TP1 + 2x TP2)' :
+                'more legs for granular TP scaling'
+            }`,
+        },
+    };
+}
+
 export type NovaSettingsResult = NovaSuggestion;
 
 export function scoreTradeHealth(
