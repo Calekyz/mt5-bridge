@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
     Loader2, UserPlus, Trash2, RefreshCw, AlertCircle, Key, Copy, Check, Save,
     Users, Shield, Crown, Server, CheckCircle2, XCircle, Search,
-    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X, ExternalLink, MailX
+    Eye, EyeOff, Sparkles, ChevronLeft, ChevronRight, X, ExternalLink, MailX,
+    Scale
 } from 'lucide-react';
 
 interface User {
@@ -356,6 +357,14 @@ export const AdminPanel: React.FC = () => {
                         >
                             <Key size={16} />
                             <span>User MT5 Details</span>
+                            <ExternalLink size={12} className="opacity-70" />
+                        </Link>
+                        <Link
+                            to="/admin/terms-acceptances"
+                            className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-amber-600/20 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <Scale size={16} />
+                            <span>Terms</span>
                             <ExternalLink size={12} className="opacity-70" />
                         </Link>
                         <Link
