@@ -243,11 +243,11 @@ function App() {
                             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full" />
-                                        <img src={LOGO_URL} alt="PipTrader AI Logo" className="relative h-9 w-auto rounded-lg shadow-lg shadow-blue-600/20 ring-1 ring-slate-700/50" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/30 to-rose-500/30 blur-xl rounded-full" />
+                                        <img src={LOGO_URL} alt="PipTrader AI Logo" className="relative h-9 w-auto rounded-lg shadow-lg shadow-red-600/20 ring-1 ring-slate-700/50" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-none">
+                                        <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent leading-none">
                                             PipTrader AI
                                         </span>
                                         <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">
@@ -259,7 +259,7 @@ function App() {
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => { const event = new CustomEvent('trigger-install'); window.dispatchEvent(event); }}
-                                        className="group flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-white transition-all px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-blue-600 border border-slate-700/60 hover:border-blue-500/60 shadow-lg shadow-transparent hover:shadow-blue-600/20"
+                                        className="group flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-400 hover:text-white transition-all px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-red-600 border border-slate-700/60 hover:border-red-500/60 shadow-lg shadow-transparent hover:shadow-red-600/20"
                                         title="Install App"
                                     >
                                         <Download size={14} className="group-hover:scale-110 transition-transform" />

@@ -53,7 +53,7 @@ export function CsvExporter({
             data={csvData}
             headers={csvHeaders}
             filename={filename || defaultFilename}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
         >
             Export to CSV
         </CSVLink>

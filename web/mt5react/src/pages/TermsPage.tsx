@@ -59,7 +59,7 @@ export const TermsPage: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-6 md:p-8">
                     {loading ? (
                         <div className="flex justify-center py-12">
-                            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                            <Loader2 className="w-8 h-8 text-red-400 animate-spin" />
                         </div>
                     ) : error ? (
                         <div className="text-center py-8">
@@ -70,8 +70,8 @@ export const TermsPage: React.FC = () => {
                             {sections.map((section) => (
                                 <div key={section.number}>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="p-1.5 bg-blue-500/15 border border-blue-500/30 rounded-lg">
-                                            <FileText size={12} className="text-blue-400" />
+                                        <div className="p-1.5 bg-red-500/15 border border-red-500/30 rounded-lg">
+                                            <FileText size={12} className="text-red-400" />
                                         </div>
                                         <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
                                             {section.number}. {section.title}

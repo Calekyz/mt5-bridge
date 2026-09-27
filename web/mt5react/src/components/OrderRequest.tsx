@@ -310,11 +310,11 @@ const OrderRequestForm: React.FC = () => {
 
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                    <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                         <Send className="text-white" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-blue-200 bg-clip-text text-transparent">
                             Place Trade Order
                         </h1>
                         <p className="text-slate-400 text-xs mt-0.5">
@@ -399,7 +399,7 @@ const OrderRequestForm: React.FC = () => {
                     {/* ─── SYMBOL & VOLUME CARD ──────────────────────── */}
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-r from-red-500 to-rose-600 rounded-lg">
                                 <BarChart3 className="w-4 h-4 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -425,7 +425,7 @@ const OrderRequestForm: React.FC = () => {
                                             </button>
                                         )}
                                         {loadingSymbols && (
-                                            <span className="text-[10px] text-blue-400 animate-pulse normal-case">
+                                            <span className="text-[10px] text-red-400 animate-pulse normal-case">
                                                 Loading...
                                             </span>
                                         )}
@@ -447,7 +447,7 @@ const OrderRequestForm: React.FC = () => {
                                                 ? 'border-rose-500/60 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
                                                 : formData.symbol && chartSymbol && formData.symbol.toUpperCase() === chartSymbol.toUpperCase()
                                                     ? 'border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30'
-                                                    : 'border-slate-600/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30'
+                                                    : 'border-slate-600/60 focus:border-red-500 focus:ring-2 focus:ring-red-500/30'
                                         }`}
                                     />
                                     {formData.symbol && (
@@ -480,9 +480,9 @@ const OrderRequestForm: React.FC = () => {
                                                     key={s}
                                                     type="button"
                                                     onClick={() => handleSymbolSelect(s)}
-                                                    className="w-full text-left px-4 py-2.5 hover:bg-blue-600/20 text-white text-sm font-mono transition-colors flex items-center gap-2 border-b border-slate-700/30 last:border-0"
+                                                    className="w-full text-left px-4 py-2.5 hover:bg-red-600/20 text-white text-sm font-mono transition-colors flex items-center gap-2 border-b border-slate-700/30 last:border-0"
                                                 >
-                                                    <Search className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                                                    <Search className="w-3 h-3 text-red-400 flex-shrink-0" />
                                                     <span className="flex-1">{s}</span>
                                                     {chartSymbol && s === chartSymbol && (
                                                         <span className="text-[9px] text-emerald-400 font-bold">
@@ -521,7 +521,7 @@ const OrderRequestForm: React.FC = () => {
                                     step="0.01"
                                     min={0.01}
                                     required
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all font-mono"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all font-mono"
                                 />
                             </div>
                         </div>
@@ -532,7 +532,7 @@ const OrderRequestForm: React.FC = () => {
                         <div className="bg-gradient-to-br from-emerald-900/20 via-slate-900/60 to-blue-900/20 backdrop-blur rounded-2xl border border-emerald-500/20 p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg">
+                                    <div className="p-1.5 bg-gradient-to-r from-emerald-500 to-rose-500 rounded-lg">
                                         <Activity className="w-4 h-4 text-white" />
                                     </div>
                                     <h3 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -618,7 +618,7 @@ const OrderRequestForm: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={fetchQuote}
-                                            className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline transition-colors inline-flex items-center gap-1.5"
+                                            className="mt-2 text-xs text-red-400 hover:text-red-300 underline transition-colors inline-flex items-center gap-1.5"
                                         >
                                             <RefreshCw size={11} />
                                             Retry Quote
@@ -638,7 +638,7 @@ const OrderRequestForm: React.FC = () => {
                     {/* ─── DIRECTION & SLIPPAGE CARD ─────────────────── */}
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-r from-rose-500 to-pink-600 rounded-lg">
                                 <TrendingUp className="w-4 h-4 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -694,7 +694,7 @@ const OrderRequestForm: React.FC = () => {
                                     onChange={handleChange}
                                     min={0}
                                     step={1}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all font-mono"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all font-mono"
                                 />
                             </div>
                         </div>
@@ -771,7 +771,7 @@ const OrderRequestForm: React.FC = () => {
                             value={formData.comment ?? ""}
                             onChange={handleChange}
                             maxLength={100}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all"
                         />
                         <p className="text-[10px] text-slate-500 mt-1">
                             {(formData.comment?.length || 0)}/100 characters
@@ -779,9 +779,9 @@ const OrderRequestForm: React.FC = () => {
                     </div>
 
                     {/* ─── ORDER SUMMARY CARD ────────────────────────── */}
-                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/60 to-indigo-900/20 backdrop-blur rounded-2xl border border-blue-500/20 p-5">
+                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/60 to-indigo-900/20 backdrop-blur rounded-2xl border border-red-500/20 p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                                 Order Summary
                             </h3>

@@ -29,7 +29,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-5">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <Rocket className="text-white" size={20} />
                         </div>
                         <div>
@@ -46,8 +46,8 @@ const Guide: React.FC = () => {
                         to keep your computer on.
                     </p>
 
-                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-blue-500/30 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-blue-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-red-500/30 rounded-2xl p-5">
+                        <h3 className="text-sm font-bold text-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
                             <Info size={16} /> How it works
                         </h3>
                         <ul className="space-y-2.5 text-slate-300 text-sm">
@@ -100,7 +100,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <Key className="text-white" size={20} />
                         </div>
                         <div>
@@ -126,15 +126,15 @@ const Guide: React.FC = () => {
                                     </tr>
                                     <tr className="border-b border-slate-700/30">
                                         <td className="py-2.5">Password</td>
-                                        <td className="py-2.5"><span className="text-blue-400 font-semibold">Admin sets it</span></td>
+                                        <td className="py-2.5"><span className="text-red-400 font-semibold">Admin sets it</span></td>
                                     </tr>
                                     <tr className="border-b border-slate-700/30">
                                         <td className="py-2.5">Access Key</td>
-                                        <td className="py-2.5"><span className="text-blue-400 font-semibold">Admin generates it</span></td>
+                                        <td className="py-2.5"><span className="text-red-400 font-semibold">Admin generates it</span></td>
                                     </tr>
                                     <tr className="border-b border-slate-700/30">
                                         <td className="py-2.5">VPS Assignment</td>
-                                        <td className="py-2.5"><span className="text-blue-400 font-semibold">Admin sets it up</span></td>
+                                        <td className="py-2.5"><span className="text-red-400 font-semibold">Admin sets it up</span></td>
                                     </tr>
                                     <tr>
                                         <td className="py-2.5">MT5 Account</td>
@@ -147,36 +147,36 @@ const Guide: React.FC = () => {
 
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl p-5 border border-slate-700/50">
                         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
-                            <ListOrdered size={16} className="text-blue-400" /> First Login Steps
+                            <ListOrdered size={16} className="text-red-400" /> First Login Steps
                         </h3>
                         <ol className="space-y-4 text-slate-300">
                             <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-blue-600/20">1</span>
+                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-red-600/20">1</span>
                                 <div>
                                     <p className="font-semibold text-white">Open the login URL</p>
                                     <p className="text-sm text-slate-400">Any modern browser — Chrome, Firefox, Edge, Safari.</p>
                                 </div>
                             </li>
                             <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-blue-600/20">2</span>
+                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-red-600/20">2</span>
                                 <div>
                                     <p className="font-semibold text-white">Enter your email and password</p>
                                     <p className="text-sm text-slate-400">Click <strong className="text-white">Connect</strong>.</p>
                                 </div>
                             </li>
                             <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-blue-600/20">3</span>
+                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-red-600/20">3</span>
                                 <div>
                                     <p className="font-semibold text-white">Check the dashboard</p>
                                     <p className="text-sm text-slate-400">
-                                        You should see: VPS Address (like <code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded font-mono text-blue-300">http://xxx.xxx.xxx.xxx:8890</code>),
+                                        You should see: VPS Address (like <code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded font-mono text-red-300">http://xxx.xxx.xxx.xxx:8890</code>),
                                         <span className="text-emerald-400 font-semibold"> EA Connected</span>,
                                         and your Balance.
                                     </p>
                                 </div>
                             </li>
                             <li className="flex gap-3">
-                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-blue-600/20">4</span>
+                                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-rose-700 text-white text-xs flex items-center justify-center font-bold shadow-lg shadow-red-600/20">4</span>
                                 <div>
                                     <p className="font-semibold text-white">You're ready!</p>
                                     <p className="text-sm text-slate-400">Now you can start trading.</p>
@@ -205,7 +205,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <LayoutDashboard className="text-white" size={20} />
                         </div>
                         <div>
@@ -259,10 +259,10 @@ const Guide: React.FC = () => {
                             },
                         ].map((section) => {
                             const colorMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-                                blue:    { bg: 'from-blue-900/20 to-slate-900/40',    border: 'border-blue-500/30',    text: 'text-blue-300',    badge: 'from-blue-600 to-indigo-700 shadow-blue-600/20' },
+                                blue:    { bg: 'from-blue-900/20 to-slate-900/40',    border: 'border-red-500/30',    text: 'text-red-300',    badge: 'from-red-600 to-rose-700 shadow-red-600/20' },
                                 emerald: { bg: 'from-emerald-900/20 to-slate-900/40', border: 'border-emerald-500/30', text: 'text-emerald-300', badge: 'from-emerald-600 to-teal-700 shadow-emerald-600/20' },
                                 orange:  { bg: 'from-orange-900/20 to-slate-900/40',  border: 'border-orange-500/30',  text: 'text-orange-300',  badge: 'from-orange-500 to-red-600 shadow-orange-600/20' },
-                                purple:  { bg: 'from-purple-900/20 to-slate-900/40',  border: 'border-purple-500/30',  text: 'text-purple-300',  badge: 'from-purple-600 to-pink-700 shadow-purple-600/20' },
+                                purple:  { bg: 'from-purple-900/20 to-slate-900/40',  border: 'border-rose-500/30',  text: 'text-rose-300',  badge: 'from-rose-600 to-pink-700 shadow-rose-600/20' },
                             };
                             const c = colorMap[section.color];
                             return (
@@ -299,7 +299,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <Activity className="text-white" size={20} />
                         </div>
                         <div>
@@ -317,7 +317,7 @@ const Guide: React.FC = () => {
                     {/* ─── Quick comparison table ─── */}
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl p-5 border border-slate-700/50 overflow-x-auto">
                         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
-                            <ListOrdered size={16} className="text-blue-400" /> Quick comparison
+                            <ListOrdered size={16} className="text-red-400" /> Quick comparison
                         </h3>
                         <table className="w-full text-sm min-w-[640px]">
                             <thead>
@@ -340,14 +340,14 @@ const Guide: React.FC = () => {
                                 <tr className="border-b border-slate-700/30">
                                     <td className="py-2.5 font-semibold text-white">NOVA Edge AI</td>
                                     <td className="py-2.5">Fibonacci swing</td>
-                                    <td className="py-2.5"><span className="text-blue-400">Medium</span> (1–5/day)</td>
+                                    <td className="py-2.5"><span className="text-red-400">Medium</span> (1–5/day)</td>
                                     <td className="py-2.5">Trending</td>
                                     <td className="py-2.5"><span className="text-amber-400 font-semibold">Medium</span></td>
                                 </tr>
                                 <tr className="border-b border-slate-700/30">
                                     <td className="py-2.5 font-semibold text-white">SMC Swing Trader</td>
                                     <td className="py-2.5">Structure swing</td>
-                                    <td className="py-2.5"><span className="text-blue-400">Low</span> (1–3/day)</td>
+                                    <td className="py-2.5"><span className="text-red-400">Low</span> (1–3/day)</td>
                                     <td className="py-2.5">Trending + POI</td>
                                     <td className="py-2.5"><span className="text-amber-400 font-semibold">Medium</span></td>
                                 </tr>
@@ -444,14 +444,14 @@ const Guide: React.FC = () => {
                     {/* ═══════════════════════════════════════════ */}
                     {/*  ALGO 2 — NOVA                              */}
                     {/* ═══════════════════════════════════════════ */}
-                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/50 to-slate-900/60 border border-blue-500/30 rounded-2xl p-5 md:p-6">
+                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/50 to-slate-900/60 border border-red-500/30 rounded-2xl p-5 md:p-6">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/30">
+                            <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/30">
                                 <Waves className="text-white" size={22} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-lg font-extrabold text-white">NOVA Edge AI</h3>
-                                <p className="text-blue-300 text-xs">Fibonacci swing · RSI + ATR · Medium frequency</p>
+                                <p className="text-red-300 text-xs">Fibonacci swing · RSI + ATR · Medium frequency</p>
                             </div>
                             <span className="hidden sm:inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                                 Medium Risk
@@ -460,7 +460,7 @@ const Guide: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-red-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Info size={12} /> What it does
                                 </h4>
                                 <p className="text-sm text-slate-300 leading-relaxed">
@@ -472,20 +472,20 @@ const Guide: React.FC = () => {
                             </div>
 
                             <div>
-                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-red-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Zap size={12} /> How it trades
                                 </h4>
                                 <ul className="space-y-1.5 text-sm text-slate-300">
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Detects trend using higher-timeframe EMA</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Waits for price to pull back into a Fibonacci level</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Confirms with RSI (not overbought for buys, not oversold for sells)</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Sets SL based on ATR, TP based on your Reward/Risk</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-blue-400 mt-1 flex-shrink-0" /><span>Moves to break-even at 1R, trails after 500 points profit</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-red-400 mt-1 flex-shrink-0" /><span>Detects trend using higher-timeframe EMA</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-red-400 mt-1 flex-shrink-0" /><span>Waits for price to pull back into a Fibonacci level</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-red-400 mt-1 flex-shrink-0" /><span>Confirms with RSI (not overbought for buys, not oversold for sells)</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-red-400 mt-1 flex-shrink-0" /><span>Sets SL based on ATR, TP based on your Reward/Risk</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-red-400 mt-1 flex-shrink-0" /><span>Moves to break-even at 1R, trails after 500 points profit</span></li>
                                 </ul>
                             </div>
 
                             <div>
-                                <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-red-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Settings size={12} /> Settings explained
                                 </h4>
                                 <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
@@ -496,14 +496,14 @@ const Guide: React.FC = () => {
                                         { key: 'Max Positions', desc: 'Maximum concurrent trades allowed. Fewer = lower exposure.' },
                                     ].map((s, i) => (
                                         <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
-                                            <span className="text-[11px] font-mono font-bold text-blue-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] font-mono font-bold text-red-300 sm:w-44 flex-shrink-0">{s.key}</span>
                                             <span className="text-[11px] text-slate-400">{s.desc}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900/60 border border-blue-500/30 rounded-xl p-3">
+                            <div className="bg-slate-900/60 border border-red-500/30 rounded-xl p-3">
                                 <div className="flex items-start gap-2">
                                     <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
                                     <p className="text-[11px] text-slate-300">
@@ -519,14 +519,14 @@ const Guide: React.FC = () => {
                     {/* ═══════════════════════════════════════════ */}
                     {/*  ALGO 3 — SMC                               */}
                     {/* ═══════════════════════════════════════════ */}
-                    <div className="bg-gradient-to-br from-purple-900/20 via-slate-900/50 to-slate-900/60 border border-purple-500/30 rounded-2xl p-5 md:p-6">
+                    <div className="bg-gradient-to-br from-purple-900/20 via-slate-900/50 to-slate-900/60 border border-rose-500/30 rounded-2xl p-5 md:p-6">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/30">
+                            <div className="p-3 bg-gradient-to-br from-rose-600 to-pink-700 rounded-xl shadow-lg shadow-rose-600/30">
                                 <Layers className="text-white" size={22} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-lg font-extrabold text-white">SMC Swing Trader</h3>
-                                <p className="text-purple-300 text-xs">HTF structure + Order Blocks + CHoCH · Low frequency</p>
+                                <p className="text-rose-300 text-xs">HTF structure + Order Blocks + CHoCH · Low frequency</p>
                             </div>
                             <span className="hidden sm:inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                                 Medium Risk
@@ -535,7 +535,7 @@ const Guide: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Info size={12} /> What it does
                                 </h4>
                                 <p className="text-sm text-slate-300 leading-relaxed">
@@ -548,20 +548,20 @@ const Guide: React.FC = () => {
                             </div>
 
                             <div>
-                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Zap size={12} /> How it trades
                                 </h4>
                                 <ul className="space-y-1.5 text-sm text-slate-300">
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Reads HTF trend (HH+HL = bullish, LH+LL = bearish)</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Marks valid Order Blocks and Fair Value Gaps</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Waits for price to return to the POI</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Confirms with LTF CHoCH inside the POI</span></li>
-                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-purple-400 mt-1 flex-shrink-0" /><span>Places market or limit order with HTF liquidity target</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-rose-400 mt-1 flex-shrink-0" /><span>Reads HTF trend (HH+HL = bullish, LH+LL = bearish)</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-rose-400 mt-1 flex-shrink-0" /><span>Marks valid Order Blocks and Fair Value Gaps</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-rose-400 mt-1 flex-shrink-0" /><span>Waits for price to return to the POI</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-rose-400 mt-1 flex-shrink-0" /><span>Confirms with LTF CHoCH inside the POI</span></li>
+                                    <li className="flex items-start gap-2"><ChevronRight size={13} className="text-rose-400 mt-1 flex-shrink-0" /><span>Places market or limit order with HTF liquidity target</span></li>
                                 </ul>
                             </div>
 
                             <div>
-                                <h4 className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <h4 className="text-[11px] font-bold text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                     <Settings size={12} /> Settings explained
                                 </h4>
                                 <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl divide-y divide-slate-700/40">
@@ -572,14 +572,14 @@ const Guide: React.FC = () => {
                                         { key: 'Max Positions', desc: 'Concurrent positions allowed. SMC stacks few trades per symbol.' },
                                     ].map((s, i) => (
                                         <div key={i} className="px-3 py-2.5 flex flex-col sm:flex-row gap-1 sm:gap-3">
-                                            <span className="text-[11px] font-mono font-bold text-purple-300 sm:w-44 flex-shrink-0">{s.key}</span>
+                                            <span className="text-[11px] font-mono font-bold text-rose-300 sm:w-44 flex-shrink-0">{s.key}</span>
                                             <span className="text-[11px] text-slate-400">{s.desc}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900/60 border border-purple-500/30 rounded-xl p-3">
+                            <div className="bg-slate-900/60 border border-rose-500/30 rounded-xl p-3">
                                 <div className="flex items-start gap-2">
                                     <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
                                     <p className="text-[11px] text-slate-300">
@@ -718,8 +718,8 @@ const Guide: React.FC = () => {
                     </div>
 
                     {/* ─── Choosing Your Algo ─── */}
-                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-blue-500/30 rounded-2xl p-5">
-                        <h4 className="text-sm font-bold text-blue-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-red-500/30 rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
                             <Info size={16} /> Which algo should I start with?
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-300">
@@ -731,7 +731,7 @@ const Guide: React.FC = () => {
                                 <p className="text-[11px] text-slate-400 mt-1">1 trade/day, low risk, easy to monitor.</p>
                             </div>
                             <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
-                                <div className="text-[10px] uppercase tracking-wider font-bold text-blue-400 mb-1">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-red-400 mb-1">
                                     Swing traders
                                 </div>
                                 <div className="text-white font-bold">NOVA or SMC</div>
@@ -745,7 +745,7 @@ const Guide: React.FC = () => {
                                 <p className="text-[11px] text-slate-400 mt-1">10–50 trades/day, needs watching, higher risk.</p>
                             </div>
                             <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
-                                <div className="text-[10px] uppercase tracking-wider font-bold text-purple-400 mb-1">
+                                <div className="text-[10px] uppercase tracking-wider font-bold text-rose-400 mb-1">
                                     Experienced + funded
                                 </div>
                                 <div className="text-white font-bold">2 algos at once</div>
@@ -801,14 +801,14 @@ const Guide: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-blue-500/30 rounded-2xl p-5">
-                        <h4 className="text-sm font-bold text-blue-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-red-500/30 rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-red-300 mb-3 flex items-center gap-2 uppercase tracking-wider">
                             <Info size={16} /> Important
                         </h4>
                         <ul className="space-y-2 text-sm text-slate-300">
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Stopping one algo does not affect the others</span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Stopping <strong className="text-white">all</strong> algos also ends the Risk Guard session</span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>You must click <strong className="text-white">Start Algo</strong> again after an EA restart</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Stopping one algo does not affect the others</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Stopping <strong className="text-white">all</strong> algos also ends the Risk Guard session</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>You must click <strong className="text-white">Start Algo</strong> again after an EA restart</span></li>
                         </ul>
                     </div>
                 </div>
@@ -839,27 +839,27 @@ const Guide: React.FC = () => {
 
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl p-5 border border-slate-700/50">
                         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
-                            <ListOrdered size={16} className="text-blue-400" /> How to set it up
+                            <ListOrdered size={16} className="text-red-400" /> How to set it up
                         </h3>
                         <ol className="space-y-3 text-sm text-slate-300">
                             <li className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] flex items-center justify-center font-bold mt-0.5">1</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] flex items-center justify-center font-bold mt-0.5">1</span>
                                 <span>Find the <strong className="text-white">Risk Guard</strong> card on the Dashboard</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] flex items-center justify-center font-bold mt-0.5">2</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] flex items-center justify-center font-bold mt-0.5">2</span>
                                 <span>Enter your <strong className="text-rose-400">Stop Loss ($)</strong> — e.g., <code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded font-mono text-rose-300">100</code> means "stop if I lose $100"</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] flex items-center justify-center font-bold mt-0.5">3</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] flex items-center justify-center font-bold mt-0.5">3</span>
                                 <span>Enter your <strong className="text-emerald-400">Take Profit ($)</strong> — e.g., <code className="text-xs bg-slate-800 px-1.5 py-0.5 rounded font-mono text-emerald-300">200</code> means "stop if I make $200"</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] flex items-center justify-center font-bold mt-0.5">4</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] flex items-center justify-center font-bold mt-0.5">4</span>
                                 <span>Both fields are optional</span>
                             </li>
                             <li className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] flex items-center justify-center font-bold mt-0.5">5</span>
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] flex items-center justify-center font-bold mt-0.5">5</span>
                                 <span>Click <strong className="text-white">Start Algo</strong> — Risk Guard activates automatically</span>
                             </li>
                         </ol>
@@ -906,7 +906,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <BarChart3 className="text-white" size={20} />
                         </div>
                         <div>
@@ -934,15 +934,15 @@ const Guide: React.FC = () => {
 
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl p-5 border border-slate-700/50">
                         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-wider">
-                            <LineChart size={16} className="text-blue-400" /> Trade History
+                            <LineChart size={16} className="text-red-400" /> Trade History
                         </h3>
                         <p className="text-sm text-slate-400 mb-3">Go to <strong className="text-white">History</strong>:</p>
                         <ul className="space-y-2 text-sm text-slate-300">
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Set a date range (default: <strong className="text-white">48 hours</strong>)</span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Use quick preset buttons: <strong className="text-white">24h · 48h · 7d · 30d · 90d</strong></span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Click <strong className="text-white">Apply Filter</strong></span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>See summary: Total Trades, Win Rate, Total Profit, Avg. Trade</span></li>
-                            <li className="flex items-start gap-2"><span className="text-blue-400 mt-1">•</span><span>Every closed trade with full details</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Set a date range (default: <strong className="text-white">48 hours</strong>)</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Use quick preset buttons: <strong className="text-white">24h · 48h · 7d · 30d · 90d</strong></span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Click <strong className="text-white">Apply Filter</strong></span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>See summary: Total Trades, Win Rate, Total Profit, Avg. Trade</span></li>
+                            <li className="flex items-start gap-2"><span className="text-red-400 mt-1">•</span><span>Every closed trade with full details</span></li>
                         </ul>
                     </div>
                 </div>
@@ -957,7 +957,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <HelpCircle className="text-white" size={20} />
                         </div>
                         <div>
@@ -982,8 +982,8 @@ const Guide: React.FC = () => {
                             <details key={i} className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden group">
                                 <summary className="cursor-pointer p-4 font-semibold text-white hover:bg-slate-700/30 transition flex items-center justify-between list-none">
                                     <span className="flex items-center gap-3">
-                                        <span className="p-1.5 bg-blue-500/15 border border-blue-500/30 rounded-lg flex-shrink-0">
-                                            <HelpCircle size={14} className="text-blue-400" />
+                                        <span className="p-1.5 bg-red-500/15 border border-red-500/30 rounded-lg flex-shrink-0">
+                                            <HelpCircle size={14} className="text-red-400" />
                                         </span>
                                         {item.q}
                                     </span>
@@ -1128,7 +1128,7 @@ const Guide: React.FC = () => {
             content: (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 pb-4 border-b border-slate-700/50">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <MessageCircle className="text-white" size={20} />
                         </div>
                         <div>
@@ -1137,18 +1137,18 @@ const Guide: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-blue-500/30 rounded-2xl p-6">
-                        <h3 className="text-sm font-bold text-blue-300 mb-4 uppercase tracking-wider">Contact Support</h3>
+                    <div className="bg-gradient-to-br from-blue-900/20 to-slate-900/40 border border-red-500/30 rounded-2xl p-6">
+                        <h3 className="text-sm font-bold text-red-300 mb-4 uppercase tracking-wider">Contact Support</h3>
                         <div className="space-y-3 text-slate-300">
                             <div className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
-                                <div className="p-2 bg-blue-500/15 border border-blue-500/30 rounded-lg flex-shrink-0">
-                                    <MessageCircle size={16} className="text-blue-400" />
+                                <div className="p-2 bg-red-500/15 border border-red-500/30 rounded-lg flex-shrink-0">
+                                    <MessageCircle size={16} className="text-red-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Email</div>
                                     <a
                                         href="mailto:pipnexcustomer@gmail.com"
-                                        className="text-blue-400 hover:text-blue-300 underline text-sm font-mono truncate block"
+                                        className="text-red-400 hover:text-red-300 underline text-sm font-mono truncate block"
                                     >
                                         pipnexcustomer@gmail.com
                                     </a>
@@ -1171,8 +1171,8 @@ const Guide: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
-                                <div className="p-2 bg-purple-500/15 border border-purple-500/30 rounded-lg flex-shrink-0">
-                                    <Zap size={16} className="text-purple-400" />
+                                <div className="p-2 bg-rose-500/15 border border-rose-500/30 rounded-lg flex-shrink-0">
+                                    <Zap size={16} className="text-rose-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Availability</div>
@@ -1186,28 +1186,28 @@ const Guide: React.FC = () => {
                         <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">When contacting support, always include:</h3>
                         <ul className="space-y-2.5 text-sm text-slate-300">
                             <li className="flex items-start gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs flex items-center justify-center font-bold">1</span>
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center justify-center font-bold">1</span>
                                 <span>Your email address</span>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs flex items-center justify-center font-bold">2</span>
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center justify-center font-bold">2</span>
                                 <span>Screenshot of the issue</span>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs flex items-center justify-center font-bold">3</span>
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center justify-center font-bold">3</span>
                                 <span>What you were doing when it happened</span>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs flex items-center justify-center font-bold">4</span>
+                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center justify-center font-bold">4</span>
                                 <span>Any error message shown</span>
                             </li>
                         </ul>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-slate-900/40 border border-blue-500/40 rounded-2xl p-6 md:p-8 text-center relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-slate-900/40 border border-red-500/40 rounded-2xl p-6 md:p-8 text-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15),transparent_60%)] pointer-events-none" />
                         <div className="relative">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-700 shadow-lg shadow-blue-600/30 mb-4">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 shadow-lg shadow-red-600/30 mb-4">
                                 <Rocket className="text-white" size={28} />
                             </div>
                             <h3 className="text-xl md:text-2xl font-extrabold text-white mb-2">You're Ready to Go!</h3>
@@ -1215,7 +1215,7 @@ const Guide: React.FC = () => {
                                 Remember: Start small, set Risk Guard, check daily.
                                 If in doubt — stop the algo and contact support.
                             </p>
-                            <p className="text-blue-300 font-bold mt-4">
+                            <p className="text-red-300 font-bold mt-4">
                                 Welcome to PipTrader AI. Happy trading! 🚀
                             </p>
                         </div>
@@ -1242,11 +1242,11 @@ const Guide: React.FC = () => {
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg shadow-red-600/20">
                             <BookOpen className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
                                 User Guide
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -1271,7 +1271,7 @@ const Guide: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Search the guide..."
-                        className="w-full bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-2xl pl-12 pr-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                        className="w-full bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-2xl pl-12 pr-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all"
                     />
                     {searchTerm && (
                         <button
@@ -1295,7 +1295,7 @@ const Guide: React.FC = () => {
                     <div className={`lg:col-span-1 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
                         <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-3 lg:sticky lg:top-6">
                             <div className="flex items-center gap-2 px-3 py-2 mb-2">
-                                <ListOrdered size={14} className="text-blue-400" />
+                                <ListOrdered size={14} className="text-red-400" />
                                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                                     Contents
                                 </h2>
@@ -1315,19 +1315,19 @@ const Guide: React.FC = () => {
                                             }}
                                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all ${
                                                 isActive
-                                                    ? 'bg-gradient-to-r from-blue-600/30 to-indigo-600/20 text-blue-200 border border-blue-500/40 shadow-lg shadow-blue-600/10'
+                                                    ? 'bg-gradient-to-r from-red-600/30 to-rose-600/20 text-red-200 border border-red-500/40 shadow-lg shadow-red-600/10'
                                                     : 'text-slate-300 hover:bg-slate-700/40 border border-transparent'
                                             }`}
                                         >
                                             <span className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${
                                                 isActive
-                                                    ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/30'
+                                                    ? 'bg-gradient-to-br from-red-600 to-rose-700 text-white shadow-lg shadow-red-600/30'
                                                     : 'bg-slate-800/60 text-slate-500'
                                             }`}>
                                                 {section.icon}
                                             </span>
                                             <span className="flex-1 truncate font-medium">{section.title}</span>
-                                            <span className={`text-[10px] font-mono ${isActive ? 'text-blue-300' : 'text-slate-600'}`}>
+                                            <span className={`text-[10px] font-mono ${isActive ? 'text-red-300' : 'text-slate-600'}`}>
                                                 {String(idx + 1).padStart(2, '0')}
                                             </span>
                                         </button>
@@ -1340,13 +1340,13 @@ const Guide: React.FC = () => {
                                 <div className="mt-3 pt-3 border-t border-slate-700/50 px-3 pb-1">
                                     <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">
                                         <span>Progress</span>
-                                        <span className="text-blue-400 font-mono">
+                                        <span className="text-red-400 font-mono">
                                             {activeIndex + 1} / {sections.length}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-slate-800/60 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                                            className="h-full bg-gradient-to-r from-red-500 to-rose-500 rounded-full transition-all duration-500"
                                             style={{ width: `${((activeIndex + 1) / sections.length) * 100}%` }}
                                         />
                                     </div>
@@ -1369,7 +1369,7 @@ const Guide: React.FC = () => {
                                     <p className="text-slate-400 text-sm mb-4">Try a different keyword.</p>
                                     <button
                                         onClick={() => setSearchTerm('')}
-                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/20"
+                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-red-600/20"
                                     >
                                         <X size={14} />
                                         Clear search
@@ -1390,7 +1390,7 @@ const Guide: React.FC = () => {
                                                         onClick={() => setActiveSection(prevSection.id)}
                                                         className="group flex items-center gap-3 text-sm text-slate-400 hover:text-white transition-all bg-slate-800/40 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600/60 px-4 py-3 rounded-xl"
                                                     >
-                                                        <ChevronRight size={16} className="rotate-180 text-slate-500 group-hover:text-blue-400 transition" />
+                                                        <ChevronRight size={16} className="rotate-180 text-slate-500 group-hover:text-red-400 transition" />
                                                         <div className="text-left">
                                                             <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">
                                                                 Previous
@@ -1410,7 +1410,7 @@ const Guide: React.FC = () => {
                                                             </div>
                                                             <div className="font-semibold">{nextSection.title}</div>
                                                         </div>
-                                                        <ChevronRight size={16} className="text-slate-500 group-hover:text-blue-400 transition" />
+                                                        <ChevronRight size={16} className="text-slate-500 group-hover:text-red-400 transition" />
                                                     </button>
                                                 )}
                                             </>
@@ -1424,7 +1424,7 @@ const Guide: React.FC = () => {
 
                 {/* ─── FOOTER HINT ────────────────────────────────── */}
                 <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2">
-                    <Info size={10} className="text-blue-400" />
+                    <Info size={10} className="text-red-400" />
                     <span>Can't find what you need? Contact support from the Need Help section</span>
                 </div>
             </div>

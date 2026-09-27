@@ -114,7 +114,7 @@ export const AdminUnsubscribes: React.FC = () => {
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-1">
                             Linked to Accounts
                         </div>
-                        <div className="text-2xl font-bold text-blue-400">
+                        <div className="text-2xl font-bold text-red-400">
                             {rows.filter(r => r.user_id).length}
                         </div>
                     </div>
@@ -133,7 +133,7 @@ export const AdminUnsubscribes: React.FC = () => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search by email, reason, or user ID..."
-                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                                 autoComplete="off"
                                 spellCheck={false}
                             />
@@ -164,7 +164,7 @@ export const AdminUnsubscribes: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     {loading ? (
                         <div className="flex justify-center py-12">
-                            <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin" />
                         </div>
                     ) : rows.length === 0 ? (
                         <div className="text-center py-16">
@@ -209,7 +209,7 @@ export const AdminUnsubscribes: React.FC = () => {
                                                         </span>
                                                         <button
                                                             onClick={() => copyToClipboard(row.email)}
-                                                            className="text-slate-500 hover:text-blue-400 transition"
+                                                            className="text-slate-500 hover:text-red-400 transition"
                                                             title="Copy email"
                                                         >
                                                             <Mail size={11} />

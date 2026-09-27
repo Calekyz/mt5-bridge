@@ -311,7 +311,7 @@ export function CandleChart() {
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-emerald-600 to-blue-700 rounded-xl shadow-lg shadow-emerald-600/20">
+                        <div className="p-3 bg-gradient-to-br from-emerald-600 to-rose-700 rounded-xl shadow-lg shadow-emerald-600/20">
                             <BarChart3 className="text-white" size={22} />
                         </div>
                         <div>
@@ -348,12 +348,12 @@ export function CandleChart() {
                                     value={symbol}
                                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                                     placeholder="e.g. XAUUSD"
-                                    className="flex-1 min-w-0 bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono uppercase"
+                                    className="flex-1 min-w-0 bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono uppercase"
                                 />
                                 <select
                                     onChange={(e) => e.target.value && setSymbol(e.target.value)}
                                     value=""
-                                    className="bg-slate-900/60 border border-slate-600/60 rounded-xl px-2 py-2.5 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition cursor-pointer"
+                                    className="bg-slate-900/60 border border-slate-600/60 rounded-xl px-2 py-2.5 text-slate-300 text-xs focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition cursor-pointer"
                                     style={{ colorScheme: 'dark' }}
                                 >
                                     <option value="">Popular</option>
@@ -373,7 +373,7 @@ export function CandleChart() {
                             <select
                                 value={timeframe}
                                 onChange={(e) => setTimeframe(e.target.value)}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition cursor-pointer"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition cursor-pointer"
                                 style={{ colorScheme: 'dark' }}
                             >
                                 {TIMEFRAMES.map((tf) => (
@@ -393,7 +393,7 @@ export function CandleChart() {
                                 value={fromDate}
                                 onChange={(e) => handleDateChange(setFromDate, e.target.value)}
                                 max={toDate}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition [color-scheme:dark]"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition [color-scheme:dark]"
                             />
                         </div>
 
@@ -409,7 +409,7 @@ export function CandleChart() {
                                 onChange={(e) => handleDateChange(setToDate, e.target.value)}
                                 min={fromDate}
                                 max={new Date().toISOString().split('T')[0]}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition [color-scheme:dark]"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition [color-scheme:dark]"
                             />
                         </div>
 
@@ -443,7 +443,7 @@ export function CandleChart() {
                                     onClick={() => applyQuickRange(r.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                                         isActive
-                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/20 scale-105'
+                                            ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg shadow-red-600/20 scale-105'
                                             : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-700/60 border border-slate-700/50'
                                     }`}
                                 >
@@ -458,7 +458,7 @@ export function CandleChart() {
                 {isLoading && (
                     <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 p-20 flex items-center justify-center">
                         <div className="text-center">
-                            <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                            <div className="w-12 h-12 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
                             <p className="text-slate-400 text-sm">Loading chart data...</p>
                         </div>
                     </div>
@@ -478,7 +478,7 @@ export function CandleChart() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                                        <Activity size={10} className="text-blue-400" />
+                                        <Activity size={10} className="text-red-400" />
                                         {seriesData.length} bars
                                     </span>
                                 </div>
@@ -535,7 +535,7 @@ export function CandleChart() {
 
                         {/* Footer hint */}
                         <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2">
-                            <Info size={10} className="text-blue-400" />
+                            <Info size={10} className="text-red-400" />
                             <span>Use the toolbar on the chart to zoom, pan, or download as image</span>
                         </div>
                     </>

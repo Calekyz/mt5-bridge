@@ -224,9 +224,9 @@ export default function WsStreaming() {
             return "text-slate-400 hover:text-white hover:bg-slate-700/40 border border-transparent";
         }
         const colorMap: Record<string, string> = {
-            blue: "bg-blue-500/15 text-blue-400 border-blue-500/40 shadow-lg shadow-blue-500/10",
+            blue: "bg-red-500/15 text-red-400 border-red-500/40 shadow-lg shadow-red-500/10",
             emerald: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-lg shadow-emerald-500/10",
-            purple: "bg-purple-500/15 text-purple-400 border-purple-500/40 shadow-lg shadow-purple-500/10",
+            purple: "bg-rose-500/15 text-rose-400 border-rose-500/40 shadow-lg shadow-rose-500/10",
             amber: "bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-lg shadow-amber-500/10",
         };
         return colorMap[color] || colorMap.blue;
@@ -251,7 +251,7 @@ export default function WsStreaming() {
                             )}
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
                                 WebSocket Streaming
                             </h1>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -287,7 +287,7 @@ export default function WsStreaming() {
                             onClick={() => setAutoScroll(!autoScroll)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition ${
                                 autoScroll
-                                    ? 'bg-blue-500/15 text-blue-400 border-blue-500/40 hover:bg-blue-500/25'
+                                    ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25'
                                     : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-700'
                             }`}
                         >
@@ -319,7 +319,7 @@ export default function WsStreaming() {
                         {activeTab === "prices" && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <TrendingUp size={16} className="text-blue-400" />
+                                    <TrendingUp size={16} className="text-red-400" />
                                     <h3 className="text-white font-bold text-sm uppercase tracking-wider">
                                         Track Live Prices
                                     </h3>
@@ -330,12 +330,12 @@ export default function WsStreaming() {
                                         value={symbolsInput}
                                         onChange={(e) => setSymbolsInput(e.target.value)}
                                         placeholder="XAUUSD, EURUSD, BTCUSD"
-                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
+                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition"
                                         onKeyDown={(e) => e.key === "Enter" && handlePricesSubmit()}
                                     />
                                     <button
                                         onClick={handlePricesSubmit}
-                                        className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95"
+                                        className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-red-600/20 hover:scale-105 active:scale-95"
                                     >
                                         <Send size={14} />
                                         Send
@@ -397,7 +397,7 @@ export default function WsStreaming() {
                         {activeTab === "mbook" && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Layers size={16} className="text-purple-400" />
+                                    <Layers size={16} className="text-rose-400" />
                                     <h3 className="text-white font-bold text-sm uppercase tracking-wider">
                                         Track Market Book
                                     </h3>
@@ -408,12 +408,12 @@ export default function WsStreaming() {
                                         value={mbookInput}
                                         onChange={(e) => setMbookInput(e.target.value)}
                                         placeholder="EURUSD, GBPUSD, USDJPY"
-                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition"
+                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-purple-500/30 transition"
                                         onKeyDown={(e) => e.key === "Enter" && handleMbookSubmit()}
                                     />
                                     <button
                                         onClick={handleMbookSubmit}
-                                        className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-purple-600/20 hover:scale-105 active:scale-95"
+                                        className="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-purple-700 hover:to-purple-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-rose-600/20 hover:scale-105 active:scale-95"
                                     >
                                         <Send size={14} />
                                         Send
@@ -483,7 +483,7 @@ export default function WsStreaming() {
                     {/* Clear All Footer */}
                     <div className="px-5 py-3 bg-slate-950/40 border-t border-slate-700/40 flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 flex items-center gap-1.5">
-                            <Activity size={10} className="text-blue-400" />
+                            <Activity size={10} className="text-red-400" />
                             {filteredMessages.length} messages in buffer
                         </span>
                         <button
@@ -527,7 +527,7 @@ export default function WsStreaming() {
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         placeholder="Filter..."
-                                        className="w-full bg-slate-900/60 border border-slate-700/60 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition"
+                                        className="w-full bg-slate-900/60 border border-slate-700/60 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60 focus:ring-1 focus:ring-red-500/30 transition"
                                     />
                                     {searchTerm && (
                                         <button
@@ -601,7 +601,7 @@ export default function WsStreaming() {
                                                 {timestamp}
                                             </span>
                                             {!isSystem && (
-                                                <span className="bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                                                <span className="bg-red-500/15 text-red-300 border border-red-500/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
                                                     {String(msgType)}
                                                 </span>
                                             )}

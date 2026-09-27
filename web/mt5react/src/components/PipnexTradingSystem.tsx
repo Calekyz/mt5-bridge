@@ -180,7 +180,7 @@ export const PipnexTradingSystem: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                    <div className="w-12 h-12 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-slate-400 text-sm">Loading performance analytics...</p>
                 </div>
             </div>
@@ -195,7 +195,7 @@ export const PipnexTradingSystem: React.FC = () => {
         sublabel?: string;
         accent?: string;
         iconBg?: string;
-    }> = ({ icon, label, value, sublabel, accent = "text-white", iconBg = "from-blue-600 to-indigo-700" }) => (
+    }> = ({ icon, label, value, sublabel, accent = "text-white", iconBg = "from-red-600 to-rose-700" }) => (
         <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
             <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
@@ -219,11 +219,11 @@ export const PipnexTradingSystem: React.FC = () => {
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/20">
+                        <div className="p-3 bg-gradient-to-br from-rose-600 to-pink-700 rounded-xl shadow-lg shadow-rose-600/20">
                             <BarChart3 className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-purple-100 to-pink-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-pink-200 bg-clip-text text-transparent">
                                 Statistics Center
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -254,7 +254,7 @@ export const PipnexTradingSystem: React.FC = () => {
                             icon={<Wallet size={14} className="text-white" />}
                             label="Balance"
                             value={`$${account.balance.toFixed(2)}`}
-                            iconBg="from-blue-600 to-indigo-700"
+                            iconBg="from-red-600 to-rose-700"
                         />
                         <MetricCard
                             icon={<Activity size={14} className="text-white" />}
@@ -290,7 +290,7 @@ export const PipnexTradingSystem: React.FC = () => {
                 {/* ─── OVERALL PERFORMANCE ────────────────────────── */}
                 <div>
                     <div className="flex items-center gap-2 mb-3">
-                        <Award size={16} className="text-purple-400" />
+                        <Award size={16} className="text-rose-400" />
                         <h2 className="text-sm font-bold text-white uppercase tracking-wider">
                             Overall Performance
                         </h2>
@@ -305,7 +305,7 @@ export const PipnexTradingSystem: React.FC = () => {
                             label="Total Trades"
                             value={String(overall.totalTrades)}
                             sublabel={`W ${overall.winningTrades} / L ${overall.losingTrades}`}
-                            iconBg="from-blue-600 to-indigo-700"
+                            iconBg="from-red-600 to-rose-700"
                         />
                         <MetricCard
                             icon={<Award size={14} className="text-white" />}
@@ -313,12 +313,12 @@ export const PipnexTradingSystem: React.FC = () => {
                             value={`${overall.winRate.toFixed(1)}%`}
                             accent={
                                 overall.winRate >= 60 ? "text-emerald-400"
-                                : overall.winRate >= 50 ? "text-blue-400"
+                                : overall.winRate >= 50 ? "text-red-400"
                                 : overall.winRate >= 40 ? "text-amber-400"
                                 : "text-rose-400"
                             }
                             sublabel={overall.winRate >= 50 ? "✅ Profitable" : "📉 Needs work"}
-                            iconBg="from-purple-600 to-pink-700"
+                            iconBg="from-rose-600 to-pink-700"
                         />
                         <MetricCard
                             icon={<TrendingUp size={14} className="text-white" />}
@@ -523,11 +523,11 @@ export const PipnexTradingSystem: React.FC = () => {
                                                     </span>
                                                 </div>
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition">
-                                                        <div className="text-[9px] text-blue-400 uppercase tracking-wider font-bold mb-1">
+                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-red-500/20 hover:border-red-500/40 transition">
+                                                        <div className="text-[9px] text-red-400 uppercase tracking-wider font-bold mb-1">
                                                             Conservative
                                                         </div>
-                                                        <div className="font-mono text-sm text-blue-400 font-bold">
+                                                        <div className="font-mono text-sm text-red-400 font-bold">
                                                             {account ? getRecommendedLot(account.balance, 0.5).toFixed(2) : 'N/A'}
                                                         </div>
                                                         <div className="text-[9px] text-slate-500 mt-0.5">0.5% risk</div>
@@ -550,11 +550,11 @@ export const PipnexTradingSystem: React.FC = () => {
                                                         </div>
                                                         <div className="text-[9px] text-slate-500 mt-0.5">1.0% risk</div>
                                                     </div>
-                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition">
-                                                        <div className="text-[9px] text-purple-400 uppercase tracking-wider font-bold mb-1">
+                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-rose-500/20 hover:border-rose-500/40 transition">
+                                                        <div className="text-[9px] text-rose-400 uppercase tracking-wider font-bold mb-1">
                                                             Aggressive
                                                         </div>
-                                                        <div className="font-mono text-sm text-purple-400 font-bold">
+                                                        <div className="font-mono text-sm text-rose-400 font-bold">
                                                             {account ? getRecommendedLot(account.balance, 2.0).toFixed(2) : 'N/A'}
                                                         </div>
                                                         <div className="text-[9px] text-slate-500 mt-0.5">2.0% risk</div>
@@ -583,7 +583,7 @@ export const PipnexTradingSystem: React.FC = () => {
 
                 {/* ─── INFO FOOTER ────────────────────────────────── */}
                 <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2">
-                    <Info size={10} className="text-blue-400" />
+                    <Info size={10} className="text-red-400" />
                     <span>Performance metrics update in real-time as trades close</span>
                 </div>
             </div>

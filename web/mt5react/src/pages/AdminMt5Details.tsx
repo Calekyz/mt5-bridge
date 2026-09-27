@@ -92,11 +92,11 @@ export const AdminMt5DetailsPage: React.FC = () => {
             <div className="max-w-7xl mx-auto space-y-5">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl shadow-lg shadow-purple-600/20">
+                        <div className="p-3 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-lg shadow-rose-600/20">
                             <Users className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-indigo-200 bg-clip-text text-transparent">
                                 User MT5 Details
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -120,7 +120,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                 {rows.length > 0 && (
                     <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-4">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                                 <Search size={14} className="text-white" />
                             </div>
                             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -141,7 +141,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Type an email, MT5 login, server, or user ID..."
-                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                                 autoComplete="off"
                                 spellCheck={false}
                             />
@@ -197,7 +197,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     {loading ? (
                         <div className="flex justify-center py-12">
-                            <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin" />
                         </div>
                     ) : rows.length === 0 ? (
                         <div className="text-center py-12">
@@ -232,7 +232,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-3 flex-wrap mb-3">
-                                                    <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                                                    <div className="p-2 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                                                         <Key size={14} className="text-white" />
                                                     </div>
                                                     <div>
@@ -252,7 +252,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                                                             MT5 Login
                                                             <button
                                                                 onClick={() => copyToClipboard(row.mt5_login, 'Login')}
-                                                                className="text-slate-500 hover:text-blue-400 transition"
+                                                                className="text-slate-500 hover:text-red-400 transition"
                                                             >
                                                                 <Copy size={11} />
                                                             </button>
@@ -265,13 +265,13 @@ export const AdminMt5DetailsPage: React.FC = () => {
                                                             <div className="flex gap-1">
                                                                 <button
                                                                     onClick={() => setRevealed(prev => ({ ...prev, [row.id]: !isRevealed }))}
-                                                                    className="text-slate-500 hover:text-blue-400 transition"
+                                                                    className="text-slate-500 hover:text-red-400 transition"
                                                                 >
                                                                     {isRevealed ? <EyeOff size={11} /> : <Eye size={11} />}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => copyToClipboard(row.mt5_password, 'Password')}
-                                                                    className="text-slate-500 hover:text-blue-400 transition"
+                                                                    className="text-slate-500 hover:text-red-400 transition"
                                                                 >
                                                                     <Copy size={11} />
                                                                 </button>
@@ -286,7 +286,7 @@ export const AdminMt5DetailsPage: React.FC = () => {
                                                             Server
                                                             <button
                                                                 onClick={() => copyToClipboard(row.mt5_server, 'Server')}
-                                                                className="text-slate-500 hover:text-blue-400 transition"
+                                                                className="text-slate-500 hover:text-red-400 transition"
                                                             >
                                                                 <Copy size={11} />
                                                             </button>

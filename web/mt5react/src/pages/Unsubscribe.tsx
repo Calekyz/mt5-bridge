@@ -99,8 +99,8 @@ export const Unsubscribe: React.FC = () => {
             }}
         >
             {/* Ambient glows */}
-            <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-blue-600/8 rounded-full blur-[140px] pointer-events-none" />
-            <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-purple-600/8 rounded-full blur-[140px] pointer-events-none" />
+            <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-red-600/8 rounded-full blur-[140px] pointer-events-none" />
+            <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-rose-600/8 rounded-full blur-[140px] pointer-events-none" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-10">
                 <div className="w-full max-w-lg">
@@ -112,8 +112,8 @@ export const Unsubscribe: React.FC = () => {
                         {/* ═══════ STATE: ALREADY UNSUBSCRIBED ═══════ */}
                         {status === 'already' && (
                             <div className="text-center py-2">
-                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 border border-blue-500/40 mb-4">
-                                    <MailX size={28} className="text-blue-400" />
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-rose-600/20 border border-red-500/40 mb-4">
+                                    <MailX size={28} className="text-red-400" />
                                 </div>
                                 <h1 className="text-2xl font-extrabold text-white mb-2">
                                     You're already unsubscribed
@@ -157,7 +157,7 @@ export const Unsubscribe: React.FC = () => {
 
                                 <div className="bg-slate-950/60 border border-slate-700/40 rounded-xl p-3.5 text-left mb-5">
                                     <div className="flex items-start gap-2.5">
-                                        <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                                        <Info size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
                                         <p className="text-[11px] text-slate-400 leading-relaxed">
                                             You'll still get critical account emails (like password resets and
                                             security alerts). If you want to re-subscribe later, message us on WhatsApp.
@@ -183,14 +183,14 @@ export const Unsubscribe: React.FC = () => {
                             <>
                                 {/* Icon */}
                                 <div className="flex justify-center mb-4">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/30">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 shadow-xl shadow-red-600/30 ring-1 ring-red-400/30">
                                         <Mail size={28} className="text-white" />
                                     </div>
                                 </div>
 
                                 {/* Heading */}
                                 <div className="text-center mb-6">
-                                    <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                                    <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
                                         Unsubscribe from Emails
                                     </h1>
                                     <p className="text-slate-400 text-xs mt-2 leading-relaxed max-w-sm mx-auto">
@@ -201,7 +201,7 @@ export const Unsubscribe: React.FC = () => {
 
                                 {checking ? (
                                     <div className="flex justify-center py-8">
-                                        <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+                                        <Loader2 className="w-6 h-6 text-red-400 animate-spin" />
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,7 +221,7 @@ export const Unsubscribe: React.FC = () => {
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     placeholder="you@example.com"
                                                     readOnly={!!new URLSearchParams(window.location.search).get('email')}
-                                                    className={`w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition ${
+                                                    className={`w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition ${
                                                         new URLSearchParams(window.location.search).get('email')
                                                             ? 'opacity-70 cursor-not-allowed'
                                                             : ''
@@ -242,7 +242,7 @@ export const Unsubscribe: React.FC = () => {
                                                 placeholder="Help us improve — why are you leaving?"
                                                 rows={3}
                                                 maxLength={500}
-                                                className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition resize-none"
+                                                className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition resize-none"
                                             />
                                             <div className="text-[10px] text-slate-600 mt-1 text-right">
                                                 {reason.length}/500
@@ -261,7 +261,7 @@ export const Unsubscribe: React.FC = () => {
                                         <button
                                             type="submit"
                                             disabled={status === 'submitting'}
-                                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm"
+                                            className="w-full bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-red-600/30 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm"
                                         >
                                             {status === 'submitting' ? (
                                                 <>

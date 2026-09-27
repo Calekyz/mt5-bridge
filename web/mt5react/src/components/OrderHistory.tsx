@@ -283,7 +283,7 @@ const OrderHistory: React.FC = () => {
             <div className={`flex items-center gap-1.5 ${align === "right" ? "justify-end" : ""}`}>
                 <span>{label}</span>
                 {sortKey === key ? (
-                    sortAsc ? <ChevronUp size={14} className="text-blue-400" /> : <ChevronDown size={14} className="text-blue-400" />
+                    sortAsc ? <ChevronUp size={14} className="text-red-400" /> : <ChevronDown size={14} className="text-red-400" />
                 ) : (
                     <ArrowUpDown size={12} className="text-slate-600 opacity-0 group-hover:opacity-100 transition" />
                 )}
@@ -297,7 +297,7 @@ const OrderHistory: React.FC = () => {
             onClick={() => applyPreset(value)}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                 preset === value
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/20 scale-105'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg shadow-red-600/20 scale-105'
                     : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-700/60 border border-slate-700/50'
             }`}
         >
@@ -324,7 +324,7 @@ const OrderHistory: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                    <div className="w-12 h-12 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-slate-400 text-sm">Loading order history...</p>
                 </div>
             </div>
@@ -356,11 +356,11 @@ const OrderHistory: React.FC = () => {
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <BarChart3 className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-blue-200 bg-clip-text text-transparent">
                                 Order History
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -372,7 +372,7 @@ const OrderHistory: React.FC = () => {
                         {lastUpdated && (
                             <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
                                 <span className={`w-1.5 h-1.5 rounded-full ${
-                                    isFetching ? 'bg-blue-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+                                    isFetching ? 'bg-red-400 animate-ping' : 'bg-emerald-400 animate-pulse'
                                 }`} />
                                 {isFetching ? 'Updating…' : `Updated ${lastUpdated.toLocaleTimeString()}`}
                             </div>
@@ -395,7 +395,7 @@ const OrderHistory: React.FC = () => {
                         <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all group">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Trades</span>
-                                <Activity size={16} className="text-blue-400" />
+                                <Activity size={16} className="text-red-400" />
                             </div>
                             <div className="text-2xl font-bold text-white">{stats.total}</div>
                             <div className="mt-2 flex items-center gap-3 text-xs">
@@ -418,7 +418,7 @@ const OrderHistory: React.FC = () => {
                             </div>
                             <div className={`text-2xl font-bold ${
                                 stats.winRate >= 60 ? "text-emerald-400"
-                                : stats.winRate >= 50 ? "text-blue-400"
+                                : stats.winRate >= 50 ? "text-red-400"
                                 : stats.winRate >= 40 ? "text-amber-400"
                                 : "text-rose-400"
                             }`}>
@@ -455,7 +455,7 @@ const OrderHistory: React.FC = () => {
                         <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Avg. Trade</span>
-                                <Target size={16} className="text-purple-400" />
+                                <Target size={16} className="text-rose-400" />
                             </div>
                             <div className={`text-2xl font-bold ${
                                 stats.avgProfit >= 0 ? "text-emerald-400" : "text-rose-400"
@@ -493,7 +493,7 @@ const OrderHistory: React.FC = () => {
                                 type="date"
                                 value={fromDate}
                                 onChange={(e) => { setFromDate(e.target.value); setPreset("custom"); }}
-                                className="bg-slate-800/80 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition [color-scheme:dark]"
+                                className="bg-slate-800/80 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60 transition [color-scheme:dark]"
                             />
                         </div>
                         <div>
@@ -505,13 +505,13 @@ const OrderHistory: React.FC = () => {
                                 type="date"
                                 value={toDate}
                                 onChange={(e) => { setToDate(e.target.value); setPreset("custom"); }}
-                                className="bg-slate-800/80 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition [color-scheme:dark]"
+                                className="bg-slate-800/80 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60 transition [color-scheme:dark]"
                             />
                         </div>
                         <button
                             onClick={handleDateFilter}
                             disabled={!fromDate || !toDate}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/20"
+                            className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-red-600/20"
                         >
                             Apply Filter
                         </button>
@@ -637,7 +637,7 @@ const OrderHistory: React.FC = () => {
                         {/* Footer */}
                         <div className="px-5 py-3 bg-slate-900/40 border-t border-slate-700/40 flex flex-col sm:flex-row sm:justify-between gap-2 text-xs text-slate-500">
                             <span className="flex items-center gap-2">
-                                <Zap size={12} className="text-blue-400" />
+                                <Zap size={12} className="text-red-400" />
                                 Showing <span className="text-white font-semibold">{sortedOrders.length}</span> order{sortedOrders.length !== 1 ? "s" : ""}
                             </span>
                             <span className="flex items-center gap-2">
@@ -657,7 +657,7 @@ const OrderHistory: React.FC = () => {
                 <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-2 flex-wrap">
                     <span className="inline-flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                            isFetching ? 'bg-blue-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+                            isFetching ? 'bg-red-400 animate-ping' : 'bg-emerald-400 animate-pulse'
                         }`} />
                         {isFetching ? 'Updating…' : `Live · refreshes every ${POLL_INTERVAL_MS / 1000}s`}
                     </span>

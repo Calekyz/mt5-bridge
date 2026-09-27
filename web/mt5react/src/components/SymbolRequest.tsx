@@ -329,8 +329,8 @@ const SymbolRequest: React.FC = () => {
             return 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800/80 border border-slate-700/50';
         }
         const map: Record<string, string> = {
-            blue:   'bg-gradient-to-r from-blue-600 to-indigo-700 text-white border border-blue-400/40 shadow-lg shadow-blue-600/30',
-            violet: 'bg-gradient-to-r from-violet-600 to-purple-700 text-white border border-violet-400/40 shadow-lg shadow-violet-600/30',
+            blue:   'bg-gradient-to-r from-red-600 to-rose-700 text-white border border-red-400/40 shadow-lg shadow-red-600/30',
+            violet: 'bg-gradient-to-r from-violet-600 to-red-700 text-white border border-violet-400/40 shadow-lg shadow-violet-600/30',
             amber:  'bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 shadow-lg shadow-amber-600/30',
             slate:  'bg-gradient-to-r from-slate-600 to-slate-700 text-white border border-slate-500/40 shadow-lg shadow-slate-600/30',
         };
@@ -343,11 +343,11 @@ const SymbolRequest: React.FC = () => {
 
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-violet-600 to-purple-700 rounded-xl shadow-lg shadow-purple-600/20">
+                    <div className="p-3 bg-gradient-to-br from-violet-600 to-red-700 rounded-xl shadow-lg shadow-rose-600/20">
                         <Plus className="text-white" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-violet-100 to-purple-200 bg-clip-text text-transparent">
+                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-violet-100 to-rose-200 bg-clip-text text-transparent">
                             Request a Symbol
                         </h1>
                         <p className="text-slate-400 text-xs mt-0.5">
@@ -429,7 +429,7 @@ const SymbolRequest: React.FC = () => {
                                     {activeTab === 'custom' ? 'Symbol Name *' : `Search ${currentTab.label} Symbols *`}
                                 </span>
                                 {loadingSymbols && (
-                                    <span className="text-[10px] text-blue-400 animate-pulse normal-case">
+                                    <span className="text-[10px] text-red-400 animate-pulse normal-case">
                                         Checking availability...
                                     </span>
                                 )}
@@ -645,7 +645,7 @@ const SymbolRequest: React.FC = () => {
                 {/* ─── WHAT HAPPENS NEXT ──────────────────────────── */}
                 <div className="bg-slate-900/40 border border-slate-700/40 rounded-2xl p-5 space-y-3">
                     <div className="flex items-center gap-2">
-                        <Shield size={14} className="text-blue-400" />
+                        <Shield size={14} className="text-red-400" />
                         <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                             What happens next
                         </h3>

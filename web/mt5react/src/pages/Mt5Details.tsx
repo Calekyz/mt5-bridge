@@ -330,11 +330,11 @@ export const Mt5DetailsPage: React.FC = () => {
 
                 {/* Header */}
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                    <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                         <Key className="text-white" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
                             My MT5 Account
                         </h1>
                         <p className="text-slate-400 text-xs mt-0.5">
@@ -565,7 +565,7 @@ export const Mt5DetailsPage: React.FC = () => {
                         {details && !editing && (
                             <button
                                 onClick={() => setEditing(true)}
-                                className="flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg border border-blue-500/30 transition"
+                                className="flex items-center gap-1.5 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/30 transition"
                             >
                                 <Pencil size={12} />
                                 Edit
@@ -576,7 +576,7 @@ export const Mt5DetailsPage: React.FC = () => {
                     <div className="p-5">
                         {loading ? (
                             <div className="flex justify-center py-8">
-                                <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                                <div className="w-8 h-8 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin" />
                             </div>
                         ) : editing ? (
                             <div className="space-y-4">
@@ -589,7 +589,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                         value={form.label}
                                         onChange={(e) => setForm(prev => ({ ...prev, label: e.target.value }))}
                                         placeholder="e.g. Main, FTMO, Live"
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
                                     />
                                 </div>
 
@@ -645,7 +645,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                         onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                                         placeholder="Anything the admin should know (e.g. prop firm rules, lot caps)"
                                         rows={3}
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm resize-none focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
                                     />
                                 </div>
 
@@ -704,7 +704,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                             MT5 Password
                                             <button
                                                 onClick={() => setShowPassword(s => !s)}
-                                                className="text-slate-500 hover:text-blue-400 transition"
+                                                className="text-slate-500 hover:text-red-400 transition"
                                             >
                                                 {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
                                             </button>
@@ -726,7 +726,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                 )}
 
                                 <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3 flex items-start gap-2">
-                                    <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                                    <Info size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
                                     <p className="text-[11px] text-slate-400 leading-relaxed">
                                         To <strong className="text-slate-300">remove</strong> your MT5 details, contact support.
                                         Users cannot delete accounts directly — this protects you from accidental loss and prevents account sharing.
@@ -743,7 +743,7 @@ export const Mt5DetailsPage: React.FC = () => {
                         <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${
                                 vpsAddress
-                                    ? 'bg-gradient-to-br from-purple-600 to-indigo-700'
+                                    ? 'bg-gradient-to-br from-rose-600 to-rose-700'
                                     : 'bg-slate-700/60'
                             }`}>
                                 <BarChart3 size={18} className="text-white" />
@@ -779,7 +779,7 @@ export const Mt5DetailsPage: React.FC = () => {
                             </div>
                         ) : symbolsLoading && symbols.length === 0 ? (
                             <div className="flex justify-center py-6">
-                                <div className="w-6 h-6 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                                <div className="w-6 h-6 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin" />
                             </div>
                         ) : symbolsError ? (
                             <div className="bg-rose-900/20 border border-rose-500/30 rounded-xl p-3 flex items-start gap-2">

@@ -161,8 +161,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 .tagline-twinkle { animation: taglineTwinkle 2.4s ease-in-out infinite; }
             `}</style>
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
-            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-8">
                 <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
@@ -171,26 +171,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     <div className="hidden lg:flex flex-col space-y-5">
                         <div className="flex items-center gap-4">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 to-purple-500/40 blur-xl rounded-2xl" />
-                                <div className="relative p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-2xl shadow-blue-600/30 ring-1 ring-blue-400/30">
+                                <div className="absolute inset-0 bg-gradient-to-br from-red-500/40 to-rose-500/40 blur-xl rounded-2xl" />
+                                <div className="relative p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl shadow-2xl shadow-red-600/30 ring-1 ring-red-400/30">
                                     <img src={LOGO_URL} alt="PipTrader AI" className="h-12 w-12 object-contain" />
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">PipTrader AI</h1>
+                                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">PipTrader AI</h1>
                                 <p className="text-slate-400 text-[10px] mt-1 tracking-[0.25em] uppercase font-bold">Automated Trading Platform</p>
                             </div>
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-white leading-tight mb-3">
-                                Trade <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">24/7</span> with<br />AI-powered algorithms
+                                Trade <span className="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">24/7</span> with<br />AI-powered algorithms
                             </h2>
                             <p className="text-slate-400 text-sm leading-relaxed">Cloud-based MT5 trading bots that run on our dedicated servers — no computer needed.</p>
                         </div>
                         {[
                             { icon: <Shield size={16} className="text-emerald-400" />, bg: 'from-emerald-500/20 to-teal-600/20', border: 'border-emerald-500/30', title: 'Risk Guard Protection', desc: 'Auto stop-loss and take-profit closes all positions when targets are hit' },
-                            { icon: <Zap size={16} className="text-blue-400" />, bg: 'from-blue-500/20 to-indigo-600/20', border: 'border-blue-500/30', title: 'Instant Execution', desc: 'Trades placed in milliseconds on your dedicated VPS' },
-                            { icon: <TrendingUp size={16} className="text-purple-400" />, bg: 'from-purple-500/20 to-pink-600/20', border: 'border-purple-500/30', title: 'Live Performance Tracking', desc: 'Real-time balance, equity, orders, and trade history' },
+                            { icon: <Zap size={16} className="text-red-400" />, bg: 'from-red-500/20 to-rose-600/20', border: 'border-red-500/30', title: 'Instant Execution', desc: 'Trades placed in milliseconds on your dedicated VPS' },
+                            { icon: <TrendingUp size={16} className="text-rose-400" />, bg: 'from-rose-500/20 to-pink-600/20', border: 'border-rose-500/30', title: 'Live Performance Tracking', desc: 'Real-time balance, equity, orders, and trade history' },
                             { icon: <Crown size={16} className="text-amber-400" />, bg: 'from-amber-500/20 to-orange-600/20', border: 'border-amber-500/30', title: 'Lifetime Access', badge: `One-time · ${BOT_PRICE}`, desc: `Pay once ${BOT_PRICE}, trade forever.` },
                         ].map((f, i) => (
                             <div key={i} className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
@@ -204,12 +204,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </div>
                         ))}
-                        <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 rounded-2xl p-4 border border-blue-400/40 shadow-lg shadow-blue-600/25 transition-all">
+                        <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 rounded-2xl p-4 border border-red-400/40 shadow-lg shadow-red-600/25 transition-all">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-xl"><Building2 size={20} className="text-white" /></div>
                                 <div>
                                     <div className="text-white font-bold text-sm flex items-center gap-1.5">Open Broker Account <span className="text-[9px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded border border-amber-300/40 uppercase font-bold">Recommended</span></div>
-                                    <div className="text-blue-100 text-[11px]">Sign up with our partner broker · MT5 supported</div>
+                                    <div className="text-red-100 text-[11px]">Sign up with our partner broker · MT5 supported</div>
                                 </div>
                             </div>
                             <ExternalLink size={18} className="text-white flex-shrink-0" />
@@ -232,11 +232,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
                             <div className="lg:hidden text-center mb-6">
                                 <div className="flex justify-center mb-3">
-                                    <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/30">
+                                    <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl shadow-xl shadow-red-600/30 ring-1 ring-red-400/30">
                                         <img src={LOGO_URL} alt="PipTrader AI Logo" className="h-12 w-12 object-contain" />
                                     </div>
                                 </div>
-                                <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">PipTrader AI</h1>
+                                <h1 className="text-2xl font-extrabold bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">PipTrader AI</h1>
                                 <p className="text-slate-500 text-xs mt-1">Automated MT5 Trading Platform</p>
                             </div>
                             <div className="flex justify-center mb-4">
@@ -249,7 +249,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             <div className="relative h-[110px] mb-5 flex items-center justify-center">
                                 <div className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${taglineHidden && taglineMode === 'welcome' ? 'opacity-0 -translate-y-6 scale-95' : taglineMode === 'welcome' ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95 pointer-events-none'}`} style={{ transitionDuration: '800ms' }}>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
-                                        {mode === 'login' ? (<><Sparkles size={12} className="text-blue-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Welcome Back</span></>) : (<><Star size={12} className="text-amber-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Create Account</span></>)}
+                                        {mode === 'login' ? (<><Sparkles size={12} className="text-red-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Welcome Back</span></>) : (<><Star size={12} className="text-amber-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Create Account</span></>)}
                                     </div>
                                     <h2 className="text-xl font-bold text-white">{mode === 'login' ? 'Sign in to your dashboard' : 'Create your account'}</h2>
                                     <p className="text-slate-400 text-xs mt-1">{mode === 'login' ? 'Enter your credentials to continue' : 'Sign up to get started with trading'}</p>
@@ -262,7 +262,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                     <h2 className="text-xl font-black text-white mt-3 leading-tight">Unlock <span className="tagline-price-glow bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">Lifetime Access</span></h2>
                                     <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
-                                        <span className="text-emerald-400 font-bold">4 Algos</span><span className="text-slate-600">·</span><span className="text-blue-400 font-bold">Risk Guard</span><span className="text-slate-600">·</span><span className="text-purple-400 font-bold">Quantum AI</span><span className="text-slate-600">·</span><span className="text-amber-300 font-bold">{BOT_PRICE}</span>
+                                        <span className="text-emerald-400 font-bold">4 Algos</span><span className="text-slate-600">·</span><span className="text-red-400 font-bold">Risk Guard</span><span className="text-slate-600">·</span><span className="text-rose-400 font-bold">Quantum AI</span><span className="text-slate-600">·</span><span className="text-amber-300 font-bold">{BOT_PRICE}</span>
                                     </p>
                                     <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition">Get started today <ArrowRight size={11} className="tagline-arrow" /></a>
                                 </div>
@@ -283,14 +283,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
                                     <div className="relative">
                                         <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition" required />
+                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition" required />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
                                     <div className="relative">
                                         <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                                        <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-12 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition" required />
+                                        <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-12 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition" required />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition">
                                             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                         </button>
@@ -328,12 +328,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 )}
 
-                                <button type="submit" disabled={loading || isLoading || !termsAccepted} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <button type="submit" disabled={loading || isLoading || !termsAccepted} className="w-full bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-red-600/30 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                     {loading || isLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{mode === 'login' ? 'Signing in...' : 'Creating account...'}</>) : (<>{mode === 'login' ? 'Sign In' : 'Create Account'}<ArrowRight size={16} /></>)}
                                 </button>
 
                                 <div className="text-center text-xs text-slate-400 pt-2">
-                                    {mode === 'login' ? (<>Don't have an account?{' '}<button type="button" onClick={toggleMode} className="text-blue-400 hover:text-blue-300 underline transition font-bold">Sign Up</button></>) : (<>Already have an account?{' '}<button type="button" onClick={toggleMode} className="text-blue-400 hover:text-blue-300 underline transition font-bold">Sign In</button></>)}
+                                    {mode === 'login' ? (<>Don't have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign Up</button></>) : (<>Already have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign In</button></>)}
                                 </div>
                             </form>
 
@@ -344,15 +344,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
 
                             <div className="space-y-2.5">
-                                <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="lg:hidden group flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600/20 to-indigo-700/20 rounded-xl p-3 border border-blue-500/40 transition-all">
+                                <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="lg:hidden group flex items-center justify-between gap-3 bg-gradient-to-r from-red-600/20 to-rose-700/20 rounded-xl p-3 border border-red-500/40 transition-all">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 bg-blue-500/20 rounded-lg border border-blue-500/30"><Building2 size={14} className="text-blue-400" /></div>
+                                        <div className="p-1.5 bg-red-500/20 rounded-lg border border-red-500/30"><Building2 size={14} className="text-red-400" /></div>
                                         <div>
-                                            <div className="text-blue-300 font-bold text-[11px]">Open Broker Account</div>
+                                            <div className="text-red-300 font-bold text-[11px]">Open Broker Account</div>
                                             <div className="text-slate-500 text-[10px]">Partner broker · MT5 supported</div>
                                         </div>
                                     </div>
-                                    <ExternalLink size={14} className="text-blue-400" />
+                                    <ExternalLink size={14} className="text-red-400" />
                                 </a>
                                 <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 rounded-xl p-3 border border-emerald-500/40 transition-all">
                                     <div className="flex items-center gap-2.5">
@@ -403,8 +403,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             {showTelegramPopup && (
                 <div className="fixed bottom-5 right-5 z-[200]">
                     <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-blue-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
-                        <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-blue-600/40 border border-sky-300/40 max-w-[280px]">
+                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-rose-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
+                        <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-rose-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-red-600/40 border border-sky-300/40 max-w-[280px]">
                             <div className="p-2 bg-white/20 rounded-xl border border-white/30 flex-shrink-0"><Send size={18} className="text-white" /></div>
                             <div className="min-w-0">
                                 <div className="text-white font-bold text-xs leading-tight">Join our Telegram</div>

@@ -117,7 +117,7 @@ export const AdminTermsAcceptances: React.FC = () => {
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-1">
                             Current Version
                         </div>
-                        <div className="text-2xl font-bold text-blue-400">
+                        <div className="text-2xl font-bold text-red-400">
                             {rows[0]?.terms_version || '1.0'}
                         </div>
                     </div>
@@ -135,7 +135,7 @@ export const AdminTermsAcceptances: React.FC = () => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search by email, user ID, IP, or version..."
-                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                                 autoComplete="off"
                                 spellCheck={false}
                             />
@@ -165,7 +165,7 @@ export const AdminTermsAcceptances: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     {loading ? (
                         <div className="flex justify-center py-12">
-                            <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-8 h-8 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin" />
                         </div>
                     ) : rows.length === 0 ? (
                         <div className="text-center py-16">
@@ -206,7 +206,7 @@ export const AdminTermsAcceptances: React.FC = () => {
                                                     </div>
                                                     <div className="text-slate-500 text-[10px] mt-0.5 flex flex-wrap items-center gap-2">
                                                         <span className="inline-flex items-center gap-1">
-                                                            <UserCheck size={9} className="text-blue-400" />
+                                                            <UserCheck size={9} className="text-red-400" />
                                                             User #{row.user_id}
                                                         </span>
                                                         <span className="inline-flex items-center gap-1">

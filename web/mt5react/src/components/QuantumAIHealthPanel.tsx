@@ -44,14 +44,14 @@ export const QuantumAIHealthPanel: React.FC<QuantumAIHealthPanelProps> = ({
     const ac = healthColorMap[avgColor];
 
     return (
-        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-purple-500/30 overflow-hidden">
+        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-rose-500/30 overflow-hidden">
             {/* ─── HEADER (always visible) ─────────────────────── */}
             <button
                 onClick={() => setExpanded(!expanded)}
                 className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/40 transition"
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-600 to-pink-700 shadow-lg shadow-purple-600/30">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-600 to-pink-700 shadow-lg shadow-rose-600/30">
                         <Brain size={14} className="text-white" />
                     </div>
                     <div className="text-left">

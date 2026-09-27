@@ -110,7 +110,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
 
     const healthColorMap = {
         emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', dot: 'bg-emerald-400' },
-        blue:    { text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/40',    dot: 'bg-blue-400' },
+        blue:    { text: 'text-red-400',    bg: 'bg-red-500/15',    border: 'border-red-500/40',    dot: 'bg-red-400' },
         amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/40',   dot: 'bg-amber-400' },
         rose:    { text: 'text-rose-400',    bg: 'bg-rose-500/15',    border: 'border-rose-500/40',    dot: 'bg-rose-400' },
         orange:  { text: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/40',  dot: 'bg-orange-400' },

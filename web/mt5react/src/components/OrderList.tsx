@@ -374,7 +374,7 @@ export const OrdersList: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                    <div className="w-12 h-12 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-slate-400 text-sm">Loading positions...</p>
                 </div>
             </div>
@@ -446,7 +446,7 @@ export const OrdersList: React.FC = () => {
                                 : isSL
                                     ? 'bg-gradient-to-r from-rose-900/40 to-red-900/20 border-rose-500/50'
                                     : isTP
-                                        ? 'bg-gradient-to-r from-blue-900/40 to-teal-900/20 border-blue-500/50'
+                                        ? 'bg-gradient-to-r from-blue-900/40 to-teal-900/20 border-red-500/50'
                                         : 'bg-gradient-to-r from-amber-900/40 to-yellow-900/20 border-amber-500/50'
                     }`}>
                         <div className={`p-2 rounded-xl border flex-shrink-0 ${
@@ -457,7 +457,7 @@ export const OrdersList: React.FC = () => {
                                     : isSL
                                         ? 'bg-rose-500/20 border-rose-500/30'
                                         : isTP
-                                            ? 'bg-blue-500/20 border-blue-500/30'
+                                            ? 'bg-red-500/20 border-red-500/30'
                                             : 'bg-amber-500/20 border-amber-500/30'
                         }`}>
                             {closingAll ? (
@@ -467,7 +467,7 @@ export const OrdersList: React.FC = () => {
                             ) : isSL ? (
                                 <TrendingDown size={20} className="text-rose-400" />
                             ) : isTP ? (
-                                <TrendingUp size={20} className="text-blue-400" />
+                                <TrendingUp size={20} className="text-red-400" />
                             ) : (
                                 <Square size={20} className="text-amber-400" />
                             )}
@@ -481,7 +481,7 @@ export const OrdersList: React.FC = () => {
                                         : isSL
                                             ? 'text-rose-200'
                                             : isTP
-                                                ? 'text-blue-200'
+                                                ? 'text-red-200'
                                                 : 'text-amber-200'
                             }`}>
                                 {closingAll
@@ -498,7 +498,7 @@ export const OrdersList: React.FC = () => {
                                         : isSL
                                             ? 'text-rose-300/80'
                                             : isTP
-                                                ? 'text-blue-300/80'
+                                                ? 'text-red-300/80'
                                                 : 'text-amber-300/80'
                             }`}>
                                 {closingAll ? (
@@ -589,7 +589,7 @@ export const OrdersList: React.FC = () => {
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Volume</span>
-                            <Target size={16} className="text-purple-400" />
+                            <Target size={16} className="text-rose-400" />
                         </div>
                         <div className="text-2xl font-bold text-white">{stats.totalVolume.toFixed(2)}</div>
                         <div className="mt-2 text-xs text-slate-500">Total lots open</div>

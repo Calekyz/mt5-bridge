@@ -62,9 +62,9 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onAccepted, onDeclined }
                     </div>
                 </div>
                 <div className="px-6 py-5 max-h-[60vh] overflow-y-auto space-y-4">
-                    <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
-                        <Shield size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-[12px] text-blue-200 leading-relaxed">
+                    <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+                        <Shield size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-[12px] text-red-200 leading-relaxed">
                             Before you can use PipTrader AI, you must read and accept our Terms & Conditions.
                             Your acceptance is recorded with a timestamp, IP address, and a cryptographic hash
                             for dispute-resolution purposes.
@@ -82,15 +82,15 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onAccepted, onDeclined }
                     {!showFull ? (
                         <button type="button" onClick={() => setShowFull(true)} className="w-full flex items-center justify-between bg-slate-900/60 hover:bg-slate-800/60 border border-slate-700/60 rounded-xl px-4 py-3 transition group">
                             <div className="flex items-center gap-2">
-                                <FileText size={14} className="text-blue-400" />
+                                <FileText size={14} className="text-red-400" />
                                 <span className="text-xs font-bold text-slate-300 group-hover:text-white transition">Read the full Terms & Conditions</span>
                             </div>
-                            <ExternalLink size={14} className="text-slate-500 group-hover:text-blue-400 transition" />
+                            <ExternalLink size={14} className="text-slate-500 group-hover:text-red-400 transition" />
                         </button>
                     ) : (
                         <div className="bg-slate-950/60 border border-slate-700/40 rounded-xl p-4 max-h-[300px] overflow-y-auto">
                             <p className="text-[11px] text-slate-400 leading-relaxed">
-                                Full text available at <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">/terms</a>. By ticking the box below you agree to all 14 sections including Risk Disclosure and Limitation of Liability.
+                                Full text available at <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-red-400 underline">/terms</a>. By ticking the box below you agree to all 14 sections including Risk Disclosure and Limitation of Liability.
                             </p>
                         </div>
                     )}

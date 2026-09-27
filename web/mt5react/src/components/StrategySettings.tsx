@@ -207,7 +207,7 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
                                     {setting.label}
                                 </label>
                                 {!isDefault && (
-                                    <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                    <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/30">
                                         changed
                                     </span>
                                 )}
@@ -220,7 +220,7 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
                                     max={setting.max}
                                     value={settings[setting.key] ?? ''}
                                     onChange={(e) => handleChange(setting.key, parseFloat(e.target.value) || 0)}
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all pr-12"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all pr-12"
                                 />
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-mono">
                                     {setting.step && setting.step < 1 ? '±' + setting.step : ''}
@@ -244,7 +244,7 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
                     Changes apply instantly to your EA
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <Shield size={10} className="text-blue-400" />
+                    <Shield size={10} className="text-red-400" />
                     {def.settings.length} parameters
                 </span>
             </div>

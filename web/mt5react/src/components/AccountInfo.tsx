@@ -67,7 +67,7 @@ const AccountInfo: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                    <div className="w-12 h-12 border-4 border-red-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-slate-400 text-sm">Loading account info...</p>
                 </div>
             </div>
@@ -128,11 +128,11 @@ const AccountInfo: React.FC = () => {
                 {/* ─── HEADER ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <User className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-blue-200 bg-clip-text text-transparent">
                                 Account Information
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -165,7 +165,7 @@ const AccountInfo: React.FC = () => {
                         {/* Balance */}
                         <div>
                             <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                                <Wallet size={14} className="text-blue-400" />
+                                <Wallet size={14} className="text-red-400" />
                                 Account Balance
                             </div>
                             <div className="text-4xl md:text-5xl font-black text-white font-mono tracking-tight">
@@ -215,7 +215,7 @@ const AccountInfo: React.FC = () => {
                 {/* ─── ACCOUNT DETAILS GRID ───────────────────────── */}
                 <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-700/40 flex items-center gap-2">
-                        <Shield size={14} className="text-blue-400" />
+                        <Shield size={14} className="text-red-400" />
                         <h2 className="text-sm font-bold text-white uppercase tracking-wider">
                             Account Details
                         </h2>
@@ -262,7 +262,7 @@ const AccountInfo: React.FC = () => {
                             }
                             accent={
                                 account.trade_mode === 2 ? "text-rose-400"
-                                : account.trade_mode === 0 ? "text-blue-400"
+                                : account.trade_mode === 0 ? "text-red-400"
                                 : "text-slate-300"
                             }
                         />
@@ -298,14 +298,14 @@ const AccountInfo: React.FC = () => {
                     </div>
 
                     {/* Server Status */}
-                    <div className="rounded-2xl p-4 border bg-gradient-to-br from-blue-900/30 to-slate-900/60 border-blue-500/30">
+                    <div className="rounded-2xl p-4 border bg-gradient-to-br from-blue-900/30 to-slate-900/60 border-red-500/30">
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
                                 Connection
                             </span>
-                            <Globe size={16} className="text-blue-400" />
+                            <Globe size={16} className="text-red-400" />
                         </div>
-                        <div className="text-xl font-bold text-blue-400">
+                        <div className="text-xl font-bold text-red-400">
                             {account.server ? "Connected" : "Unknown"}
                         </div>
                         <div className="text-xs text-slate-500 mt-1 truncate">
@@ -314,14 +314,14 @@ const AccountInfo: React.FC = () => {
                     </div>
 
                     {/* Platform */}
-                    <div className="rounded-2xl p-4 border bg-gradient-to-br from-purple-900/30 to-slate-900/60 border-purple-500/30">
+                    <div className="rounded-2xl p-4 border bg-gradient-to-br from-purple-900/30 to-slate-900/60 border-rose-500/30">
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
                                 Platform
                             </span>
-                            <Server size={16} className="text-purple-400" />
+                            <Server size={16} className="text-rose-400" />
                         </div>
-                        <div className="text-xl font-bold text-purple-400">
+                        <div className="text-xl font-bold text-rose-400">
                             MetaTrader 5
                         </div>
                         <div className="text-xs text-slate-500 mt-1">

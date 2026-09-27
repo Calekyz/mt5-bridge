@@ -23,6 +23,8 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
+const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
+
 const PREFIX: Record<StrategyType, string> = {
     pipnex: 'PipNex_',
     nova:   'Nova_',
@@ -112,6 +114,9 @@ export const Dashboard: React.FC = () => {
     const [autoCloseEnabled, setAutoCloseEnabled] = useState(() => getStoredState('autoCloseEnabled', false));
     const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
+    // ─── Welcome banner animation state ─────────────────────
+    const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+
     const dismissedTriggers = useRef<Set<number>>(new Set());
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -125,6 +130,13 @@ export const Dashboard: React.FC = () => {
     useEffect(() => { saveStoredSettings('smcSettings', smcSettings); }, [smcSettings]);
     useEffect(() => { saveStoredSettings('punexSettings', punexSettings); }, [punexSettings]);
     useEffect(() => { setStoredState('autoCloseEnabled', autoCloseEnabled); }, [autoCloseEnabled]);
+
+    // ─── Welcome banner on mount ────────────────────────────
+    useEffect(() => {
+        const t = setTimeout(() => setShowWelcomeBanner(true), 200);
+        const hide = setTimeout(() => setShowWelcomeBanner(false), 6000);
+        return () => { clearTimeout(t); clearTimeout(hide); };
+    }, []);
 
     useEffect(() => {
         const hasSeenGuide = localStorage.getItem('hasSeenWelcomeGuide');
@@ -547,13 +559,13 @@ export const Dashboard: React.FC = () => {
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6 flex items-center justify-center">
                 <div className="w-full max-w-lg">
                     <div className="relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
-                        <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
+                        <div className="absolute -top-20 -right-20 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
                         <div className="relative p-6 sm:p-8">
                             <div className="flex justify-center mb-4">
                                 <div className="relative">
-                                    <div className="absolute inset-0 bg-amber-500/40 blur-xl rounded-full" />
-                                    <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-2xl shadow-amber-600/40 ring-1 ring-amber-300/40">
+                                    <div className="absolute inset-0 bg-red-500/40 blur-xl rounded-full" />
+                                    <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 shadow-2xl shadow-red-600/40 ring-1 ring-red-300/40">
                                         <AlertCircle size={36} className="text-white" />
                                     </div>
                                 </div>
@@ -563,27 +575,27 @@ export const Dashboard: React.FC = () => {
                                 Your account is registered but your trading setup hasn't been activated yet. Complete the steps below to unlock full access.
                             </p>
 
-                            <div className="relative bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-slate-900/40 border-2 border-amber-500/40 rounded-2xl p-5 mb-5 overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent -translate-x-full animate-shimmer" />
+                            <div className="relative bg-gradient-to-br from-red-500/10 via-rose-500/5 to-slate-900/40 border-2 border-red-500/40 rounded-2xl p-5 mb-5 overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/10 to-transparent -translate-x-full animate-shimmer" />
                                 <div className="relative flex items-center justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <Crown size={14} className="text-amber-400" />
-                                            <span className="text-[10px] text-amber-300 uppercase tracking-widest font-bold">Lifetime Access</span>
+                                            <Crown size={14} className="text-red-400" />
+                                            <span className="text-[10px] text-red-300 uppercase tracking-widest font-bold">Lifetime Access</span>
                                         </div>
                                         <div className="flex items-baseline gap-2">
-                                            <span className="text-4xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                                            <span className="text-4xl font-black bg-gradient-to-r from-red-200 via-rose-300 to-orange-300 bg-clip-text text-transparent">
                                                 {BOT_PRICE}
                                             </span>
                                             <span className="text-xs text-slate-400 line-through">$400</span>
                                         </div>
                                         <p className="text-[11px] text-slate-400 mt-1">One-time payment · No monthly fees · Trade forever</p>
                                     </div>
-                                    <div className="flex-shrink-0 p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg shadow-amber-600/30 ring-1 ring-amber-300/40">
+                                    <div className="flex-shrink-0 p-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg shadow-red-600/30 ring-1 ring-red-300/40">
                                         <DollarSign size={26} className="text-white" />
                                     </div>
                                 </div>
-                                <div className="relative mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-2 gap-2">
+                                <div className="relative mt-4 pt-4 border-t border-red-500/20 grid grid-cols-2 gap-2">
                                     {['PipNex Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Punex Asian Session'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-300">
                                             <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />
@@ -619,9 +631,9 @@ export const Dashboard: React.FC = () => {
                                 </button>
                             </div>
 
-                            <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 flex items-start gap-2">
-                                <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-[11px] text-blue-200 leading-relaxed">
+                            <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 flex items-start gap-2">
+                                <Info size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-red-200 leading-relaxed">
                                     After completing payment, our team will configure your VPS and assign your MetaTrader 5 account. This usually takes less than 15 minutes.
                                 </p>
                             </div>
@@ -653,9 +665,59 @@ export const Dashboard: React.FC = () => {
                     0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), 0 0 40px rgba(239, 68, 68, 0.15); }
                     50%      { box-shadow: 0 0 30px rgba(239, 68, 68, 0.65), 0 0 60px rgba(239, 68, 68, 0.30); }
                 }
+                @keyframes welcomeFloat {
+                    0%   { opacity: 0; transform: translateY(20px) scale(0.9); }
+                    15%  { opacity: 1; transform: translateY(0) scale(1); }
+                    85%  { opacity: 1; transform: translateY(0) scale(1); }
+                    100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+                }
+                @keyframes welcomeRing {
+                    0%   { transform: scale(1);   opacity: 0.6; }
+                    100% { transform: scale(2);   opacity: 0;   }
+                }
+                @keyframes welcomeShimmer {
+                    0%   { background-position:   0% 50%; }
+                    50%  { background-position: 100% 50%; }
+                    100% { background-position:   0% 50%; }
+                }
+                .welcome-banner { animation: welcomeFloat 6s ease-in-out forwards; }
+                .welcome-ring   { animation: welcomeRing 2.2s ease-out infinite; }
+                .welcome-title  {
+                    background-size: 200% 100%;
+                    animation: welcomeShimmer 3s ease-in-out infinite;
+                }
             `}</style>
 
             <div className="max-w-7xl mx-auto space-y-5">
+
+                {/* ═══════════════════════════════════════════════════════ */}
+                {/*  WELCOME LOGO ANIMATION BANNER                         */}
+                {/* ═══════════════════════════════════════════════════════ */}
+                {showWelcomeBanner && (
+                    <div className="welcome-banner relative flex flex-col items-center justify-center py-6">
+                        {/* Ambient glow behind */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-40 h-40 bg-red-500/20 rounded-full blur-[60px]" />
+                        </div>
+
+                        {/* Logo with pulsing rings */}
+                        <div className="relative w-24 h-24 flex items-center justify-center mb-4">
+                            <div className="absolute inset-0 rounded-full border-2 border-red-500/40 welcome-ring" />
+                            <div className="absolute inset-0 rounded-full border-2 border-rose-500/30 welcome-ring" style={{ animationDelay: '0.8s' }} />
+                            <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-red-600/30 to-rose-700/30 backdrop-blur-sm border border-red-500/50 shadow-2xl shadow-red-600/40 flex items-center justify-center">
+                                <img src={LOGO_URL} alt="PipTrader AI" className="w-14 h-14 object-contain" />
+                            </div>
+                        </div>
+
+                        {/* Welcome text */}
+                        <h2 className="welcome-title text-3xl md:text-4xl font-black bg-gradient-to-r from-red-300 via-rose-300 to-orange-300 bg-clip-text text-transparent tracking-tight text-center">
+                            Welcome Back
+                        </h2>
+                        <p className="mt-2 text-sm text-slate-400 font-medium">
+                            Your algos are ready · Let's trade
+                        </p>
+                    </div>
+                )}
 
                 {triggerAlert && (
                     <div className={`rounded-2xl p-4 border flex items-center gap-3 backdrop-blur ${
@@ -691,11 +753,11 @@ export const Dashboard: React.FC = () => {
 
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-600/20">
+                        <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
                             <BarChart3 className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
                                 Trading Dashboard
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">Live account · EA control · Risk management</p>
@@ -737,7 +799,7 @@ export const Dashboard: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {accessKey && (
                         <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border border-slate-700/50 flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex-shrink-0">
+                            <div className="p-2 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg flex-shrink-0">
                                 <Key size={14} className="text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -747,23 +809,23 @@ export const Dashboard: React.FC = () => {
                         </div>
                     )}
                     <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border flex items-center gap-3 ${
-                        vpsAddress ? 'border-slate-700/50' : 'border-amber-500/40'
+                        vpsAddress ? 'border-slate-700/50' : 'border-red-500/40'
                     }`}>
                         <div className={`p-2 rounded-lg flex-shrink-0 ${
                             vpsAddress
                                 ? 'bg-gradient-to-br from-emerald-600 to-teal-700'
-                                : 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                : 'bg-gradient-to-br from-red-500 to-rose-600'
                         }`}>
                             <Server size={14} className="text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">VPS Address</div>
                             <div className="flex items-center gap-2">
-                                <code className={`font-mono text-xs truncate ${vpsAddress ? 'text-white' : 'text-amber-400'}`}>
+                                <code className={`font-mono text-xs truncate ${vpsAddress ? 'text-white' : 'text-red-400'}`}>
                                     {vpsAddress || 'Pending assignment...'}
                                 </code>
                                 <button onClick={() => refreshUserInfo(true)} disabled={refreshingUser}
-                                    className="text-slate-500 hover:text-blue-400 transition disabled:opacity-50 flex-shrink-0"
+                                    className="text-slate-500 hover:text-red-400 transition disabled:opacity-50 flex-shrink-0"
                                     title="Refresh VPS info">
                                     <RefreshCw size={12} className={refreshingUser ? 'animate-spin' : ''} />
                                 </button>
@@ -775,7 +837,7 @@ export const Dashboard: React.FC = () => {
                 {loading ? (
                     <div className="flex justify-center py-12">
                         <div className="text-center">
-                            <div className="w-10 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
+                            <div className="w-10 h-12 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin mx-auto mb-3" />
                             <p className="text-slate-400 text-xs">Loading account data...</p>
                         </div>
                     </div>
@@ -1008,7 +1070,7 @@ export const Dashboard: React.FC = () => {
                             <XIcon size={20} />
                         </button>
                         <div className="flex justify-center mb-4">
-                            <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-600/30">
+                            <div className="p-4 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl shadow-lg shadow-red-600/30">
                                 <BookOpen className="text-white" size={32} />
                             </div>
                         </div>
@@ -1025,8 +1087,8 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
-                                <div className="p-1.5 bg-blue-500/20 rounded-lg flex-shrink-0 border border-blue-500/30">
-                                    <Play size={14} className="text-blue-400" />
+                                <div className="p-1.5 bg-red-500/20 rounded-lg flex-shrink-0 border border-red-500/30">
+                                    <Play size={14} className="text-red-400" />
                                 </div>
                                 <div>
                                     <div className="text-xs font-bold text-white mb-0.5">Click Start Algo</div>
@@ -1034,8 +1096,8 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
-                                <div className="p-1.5 bg-purple-500/20 rounded-lg flex-shrink-0 border border-purple-500/30">
-                                    <Activity size={14} className="text-purple-400" />
+                                <div className="p-1.5 bg-rose-500/20 rounded-lg flex-shrink-0 border border-rose-500/30">
+                                    <Activity size={14} className="text-rose-400" />
                                 </div>
                                 <div>
                                     <div className="text-xs font-bold text-white mb-0.5">Track performance</div>
@@ -1043,13 +1105,13 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 mb-6 flex items-start gap-2">
-                            <Info size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-[11px] text-blue-200">Need more help? Check out the full User Guide anytime from the top bar.</p>
+                        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-6 flex items-start gap-2">
+                            <Info size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-red-200">Need more help? Check out the full User Guide anytime from the top bar.</p>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button onClick={goToGuide}
-                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/20">
+                                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-red-600/20">
                                 <BookOpen size={18} />Read the Guide
                             </button>
                             <button onClick={dismissWelcomeGuide}
@@ -1180,7 +1242,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
 
             <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                    <Zap size={12} className="text-blue-400" />
+                    <Zap size={12} className="text-red-400" />
                     <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Parameters</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1231,7 +1293,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{setting.label}</label>
                                     {isChanged && (
-                                        <span className="text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30 font-bold">
+                                        <span className="text-[9px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/30 font-bold">
                                             changed
                                         </span>
                                     )}
@@ -1240,7 +1302,7 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                                     onChange={(e) => onInputChange(type, setting.key, e.target.value)}
                                     onBlur={() => onInputBlur(type, setting.key)}
                                     disabled={disabled}
-                                    className="w-full bg-slate-950/60 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition disabled:opacity-50"
+                                    className="w-full bg-slate-950/60 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition disabled:opacity-50"
                                     placeholder={String(setting.default)}
                                 />
                             </div>

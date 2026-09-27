@@ -324,7 +324,7 @@ export const AdminPanel: React.FC = () => {
         return (
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
+                    <div className="w-12 h-12 border-4 border-rose-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-slate-400 text-sm">Loading admin data...</p>
                 </div>
             </div>
@@ -338,11 +338,11 @@ export const AdminPanel: React.FC = () => {
                 {/* HEADER */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg shadow-purple-600/20">
+                        <div className="p-3 bg-gradient-to-br from-rose-600 to-pink-700 rounded-xl shadow-lg shadow-rose-600/20">
                             <Crown className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-purple-100 to-pink-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-pink-200 bg-clip-text text-transparent">
                                 Admin Panel
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
@@ -353,7 +353,7 @@ export const AdminPanel: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                         <Link
                             to="/admin/mt5-details"
-                            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
+                            className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98]"
                         >
                             <Key size={16} />
                             <span>User MT5 Details</span>
@@ -391,7 +391,7 @@ export const AdminPanel: React.FC = () => {
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Total Users</span>
-                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                                 <Users size={14} className="text-white" />
                             </div>
                         </div>
@@ -411,7 +411,7 @@ export const AdminPanel: React.FC = () => {
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">Total Keys</span>
-                            <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-br from-rose-600 to-pink-700 rounded-lg">
                                 <Key size={14} className="text-white" />
                             </div>
                         </div>
@@ -448,7 +448,7 @@ export const AdminPanel: React.FC = () => {
                 {/* SEARCH BAR */}
                 <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl border border-slate-700/50 p-4 sm:p-5">
                     <div className="flex items-center gap-2 mb-3">
-                        <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                        <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                             <Search size={14} className="text-white" />
                         </div>
                         <h2 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -466,7 +466,7 @@ export const AdminPanel: React.FC = () => {
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
                             placeholder="Type an email, ID, VPS address or role (admin/user)..."
-                            className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                            className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                             autoComplete="off"
                             spellCheck={false}
                         />
@@ -511,7 +511,7 @@ export const AdminPanel: React.FC = () => {
                 {/* ADD NEW CLIENT */}
                 <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
-                        <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                        <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                             <UserPlus size={16} className="text-white" />
                         </div>
                         <h2 className="text-sm font-bold text-white uppercase tracking-wider">Add New Client</h2>
@@ -527,7 +527,7 @@ export const AdminPanel: React.FC = () => {
                                     value={clientEmail}
                                     onChange={(e) => setClientEmail(e.target.value)}
                                     placeholder="client@example.com"
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition"
                                     required
                                 />
                             </div>
@@ -539,7 +539,7 @@ export const AdminPanel: React.FC = () => {
                                         value={clientPassword}
                                         onChange={(e) => setClientPassword(e.target.value)}
                                         placeholder="Set a secure password"
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 pr-10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 pr-10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                                         required
                                     />
                                     <button
@@ -564,7 +564,7 @@ export const AdminPanel: React.FC = () => {
                                 value={clientVps}
                                 onChange={(e) => setClientVps(e.target.value)}
                                 placeholder="http://51.75.104.231:8890"
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition font-mono"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
                             />
                         </div>
 
@@ -612,7 +612,7 @@ export const AdminPanel: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={addingClient}
-                                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-red-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {addingClient ? (
                                     <>
@@ -689,7 +689,7 @@ export const AdminPanel: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg">
+                            <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                                 <Users size={14} className="text-white" />
                             </div>
                             <h2 className="text-sm font-bold text-white uppercase tracking-wider">All Users</h2>
@@ -699,7 +699,7 @@ export const AdminPanel: React.FC = () => {
                                     : `${filteredUsers.length} / ${users.length}`}
                             </span>
                             {userSearch && (
-                                <span className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                                <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                                     <Search size={9} />
                                     Filtered
                                     <button onClick={() => setUserSearch('')} className="hover:text-white">
@@ -716,7 +716,7 @@ export const AdminPanel: React.FC = () => {
                             <select
                                 value={userPageSize}
                                 onChange={(e) => setUserPageSize(Number(e.target.value))}
-                                className="bg-slate-900/60 border border-slate-700/60 rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition cursor-pointer"
+                                className="bg-slate-900/60 border border-slate-700/60 rounded-lg px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-red-500/60 focus:ring-1 focus:ring-red-500/30 transition cursor-pointer"
                                 style={{ colorScheme: 'dark' }}
                             >
                                 {PAGE_SIZE_OPTIONS.map((s) => (
@@ -772,7 +772,7 @@ export const AdminPanel: React.FC = () => {
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                                                     isAdminRow
-                                                        ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                                                        ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                                                         : "bg-slate-500/15 text-slate-400 border border-slate-500/30"
                                                 }`}>
                                                     {isAdminRow ? <Crown size={10} /> : <Shield size={10} />}
@@ -792,13 +792,13 @@ export const AdminPanel: React.FC = () => {
                                                         className={`flex-1 bg-slate-900/60 border rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
                                                             isPending
                                                                 ? 'border-amber-500/40 text-amber-400 placeholder-amber-500/60 focus:border-amber-500 focus:ring-amber-500/30'
-                                                                : 'border-slate-600/60 focus:border-blue-500 focus:ring-blue-500/30'
+                                                                : 'border-slate-600/60 focus:border-red-500 focus:ring-red-500/30'
                                                         }`}
                                                     />
                                                     <button
                                                         onClick={() => handleVpsSave(user.id)}
                                                         disabled={savingVps[user.id]}
-                                                        className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+                                                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
                                                         title="Save VPS address"
                                                     >
                                                         {savingVps[user.id] ? (
@@ -943,7 +943,7 @@ export const AdminPanel: React.FC = () => {
                     <div className="px-5 py-4 border-b border-slate-700/40">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <div className="p-1.5 bg-gradient-to-br from-purple-600 to-pink-700 rounded-lg">
+                                <div className="p-1.5 bg-gradient-to-br from-rose-600 to-pink-700 rounded-lg">
                                     <Key size={14} className="text-white" />
                                 </div>
                                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">Access Keys</h2>
@@ -960,7 +960,7 @@ export const AdminPanel: React.FC = () => {
                                         value={keySearch}
                                         onChange={(e) => setKeySearch(e.target.value)}
                                         placeholder="Search keys..."
-                                        className="w-44 bg-slate-900/60 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition"
+                                        className="w-44 bg-slate-900/60 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500/60 focus:ring-1 focus:ring-purple-500/30 transition"
                                     />
                                 </div>
 
@@ -978,7 +978,7 @@ export const AdminPanel: React.FC = () => {
                                 <button
                                     onClick={generateKeys}
                                     disabled={generating}
-                                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-lg shadow-purple-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                                    className="flex items-center gap-1.5 bg-gradient-to-r from-rose-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-lg shadow-rose-600/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                                 >
                                     {generating ? (
                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
