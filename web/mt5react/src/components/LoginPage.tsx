@@ -38,7 +38,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const [localError, setLocalError] = useState<string | null>(null);
     const [signupMessage, setSignupMessage] = useState<string | null>(null);
 
-    const [signupTermsAccepted, setSignupTermsAccepted] = useState(false);
+    // ─── T&C acceptance (applies to BOTH login & signup) ────
+    const [termsAccepted, setTermsAccepted] = useState(false);
+
+    // ─── Telegram popup ─────────────────────────────────────
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
     const [showDisclaimer, setShowDisclaimer] = useState(false);
     const [taglineMode, setTaglineMode] = useState<'welcome' | 'advert'>('welcome');
@@ -82,8 +85,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setLocalError(null);
         setSignupMessage(null);
 
-        if (mode === 'signup' && !signupTermsAccepted) {
-            setLocalError('You must accept the Terms & Conditions to create an account');
+        // Require T&C acceptance for BOTH login and signup
+        if (!termsAccepted) {
+            setLocalError('You must accept the Terms & Conditions to continue');
             return;
         }
 
@@ -101,15 +105,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 throw new Error(data.error || (mode === 'login' ? 'Login failed' : 'Registration failed'));
             }
             const data = await res.json();
+
             if (mode === 'signup') {
                 setSignupMessage(data.message || 'Account created. Please contact admin for an access key to log in.');
                 setLoading(false);
                 return;
             }
+
+            // Login success
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             if (data.user.access_key) localStorage.setItem('accessKey', data.user.access_key);
             if (data.user.mt5) localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
+
+            // Record T&C acceptance on the backend (idempotent — safe to call even if already accepted)
+            try {
+                await fetch(`${API_URL}/terms/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${data.token}`,
+                    },
+                    body: JSON.stringify({ accepted: true }),
+                });
+            } catch {
+                // Don't block login if this fails — App.tsx will re-check and show the modal
+            }
+
             onLogin({ token: data.token, user: data.user });
         } catch (err: any) {
             setLocalError(err.message);
@@ -122,6 +144,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setMode(mode === 'login' ? 'signup' : 'login');
         setLocalError(null);
         setSignupMessage(null);
+        // Keep termsAccepted state — user shouldn't need to re-check when switching modes
     };
 
     return (
@@ -140,8 +163,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
             <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-8">
                 <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
+
+                    {/* LEFT PANEL */}
                     <div className="hidden lg:flex flex-col space-y-5">
                         <div className="flex items-center gap-4">
                             <div className="relative">
@@ -200,6 +226,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                         </a>
                     </div>
 
+                    {/* RIGHT PANEL */}
                     <div className="w-full max-w-md mx-auto lg:mx-0">
                         <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 overflow-hidden">
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
@@ -270,20 +297,29 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
 
-                                {mode === 'signup' && (
-                                    <label className="flex items-start gap-3 cursor-pointer group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 transition">
-                                        <div className="flex-shrink-0 mt-0.5">
-                                            <input type="checkbox" checked={signupTermsAccepted} onChange={(e) => { setSignupTermsAccepted(e.target.checked); setLocalError(null); }} className="sr-only" />
-                                            <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${signupTermsAccepted ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 shadow-lg shadow-emerald-500/40' : 'bg-slate-950 border-slate-600 group-hover:border-emerald-400'}`}>
-                                                {signupTermsAccepted && <CheckCircle2 size={13} className="text-white" />}
-                                            </div>
+                                {/* ═══ T&C CHECKBOX — BELOW PASSWORD, BOTH MODES ═══ */}
+                                <label className="flex items-start gap-3 cursor-pointer group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 transition">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={termsAccepted}
+                                            onChange={(e) => { setTermsAccepted(e.target.checked); setLocalError(null); }}
+                                            className="sr-only"
+                                        />
+                                        <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                                            termsAccepted
+                                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 shadow-lg shadow-emerald-500/40'
+                                                : 'bg-slate-950 border-slate-600 group-hover:border-emerald-400'
+                                        }`}>
+                                            {termsAccepted && <CheckCircle2 size={13} className="text-white" />}
                                         </div>
-                                        <div className="text-[11px] text-slate-300 leading-relaxed select-none">
-                                            I am at least <strong className="text-white">18 years old</strong>, I have read and accept the{' '}
-                                            <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-amber-400 hover:text-amber-300 underline font-bold">Terms & Conditions</a>{' '}and the <strong className="text-white">risk disclosure</strong>.
-                                        </div>
-                                    </label>
-                                )}
+                                    </div>
+                                    <div className="text-[11px] text-slate-300 leading-relaxed select-none">
+                                        I am at least <strong className="text-white">18 years old</strong>, I have read and accept the{' '}
+                                        <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-amber-400 hover:text-amber-300 underline font-bold">Terms & Conditions</a>{' '}
+                                        and the <strong className="text-white">risk disclosure</strong>.
+                                    </div>
+                                </label>
 
                                 {(localError || error) && (
                                     <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3">
@@ -292,7 +328,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 )}
 
-                                <button type="submit" disabled={loading || isLoading || (mode === 'signup' && !signupTermsAccepted)} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                                <button type="submit" disabled={loading || isLoading || !termsAccepted} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                     {loading || isLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{mode === 'login' ? 'Signing in...' : 'Creating account...'}</>) : (<>{mode === 'login' ? 'Sign In' : 'Create Account'}<ArrowRight size={16} /></>)}
                                 </button>
 
