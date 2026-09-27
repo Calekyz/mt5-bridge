@@ -119,7 +119,7 @@ router.get('/admin/terms-acceptances', authMiddleware, adminAuth, async (req: Au
                     t.accepted_at, t.ip_address, t.user_agent, t.content_hash,
                     u.email AS user_account_email
              FROM user_terms_acceptance t
-             LEFT JOIN users u ON u.id = t.user_id
+             LEFT JOIN "User" u ON u.id = t.user_id
              ORDER BY t.accepted_at DESC`
         );
         res.json({ acceptances: result.rows });
@@ -138,7 +138,7 @@ router.get('/admin/terms-acceptances/:id/pdf', authMiddleware, adminAuth, async 
         const result = await query(
             `SELECT t.*, u.email AS user_account_email
              FROM user_terms_acceptance t
-             LEFT JOIN users u ON u.id = t.user_id
+             LEFT JOIN "User" u ON u.id = t.user_id
              WHERE t.id = $1`,
             [id]
         );
