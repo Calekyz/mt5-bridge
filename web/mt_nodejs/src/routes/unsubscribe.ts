@@ -14,7 +14,7 @@ const router = Router();
 router.get('/unsubscribe/check', async (req, res) => {
     try {
         const email = String(req.query.email || '').trim().toLowerCase();
-        if (!email) return res.status(400).json({ error: 'Email required' });
+        if (!email) res.status(400).json({ error: 'Email required' }); return;
 
         const result = await query(
             `SELECT id, email, unsubscribed_at
@@ -25,7 +25,7 @@ router.get('/unsubscribe/check', async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.json({ unsubscribed: false, email });
+            res.json({ unsubscribed: false, email }); return;
         }
 
         res.json({
@@ -46,11 +46,11 @@ router.post('/unsubscribe', async (req, res) => {
         const email = String(req.body?.email || '').trim().toLowerCase();
         const reason = req.body?.reason ? String(req.body.reason).slice(0, 500) : null;
 
-        if (!email) return res.status(400).json({ error: 'Email is required' });
+        if (!email) res.status(400).json({ error: 'Email is required' }); return;
 
         // Basic email shape guard
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return res.status(400).json({ error: 'Invalid email address' });
+            res.status(400).json({ error: 'Invalid email address' }); return;
         }
 
         // Try to link to an existing user (optional)
@@ -118,7 +118,7 @@ router.delete('/admin/unsubscribes/:id', authMiddleware, adminAuth, async (req: 
             [id]
         );
         if (existing.rows.length === 0) {
-            return res.status(404).json({ error: 'Not found' });
+            res.status(404).json({ error: 'Not found' }); return;
         }
 
         await query(`DELETE FROM email_unsubscribes WHERE id = $1`, [id]);
