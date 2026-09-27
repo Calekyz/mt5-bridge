@@ -64,13 +64,19 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onAccepted, onDeclined }
                 <div className="px-6 py-5 max-h-[60vh] overflow-y-auto space-y-4">
                     <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
                         <Shield size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-[12px] text-blue-200 leading-relaxed">Before you can use PipTrader AI, you must read and accept our Terms & Conditions. This is a legal agreement that protects both you and the platform. Your acceptance is recorded with a timestamp, IP address, and a cryptographic hash for dispute-resolution purposes.</p>
+                        <p className="text-[12px] text-blue-200 leading-relaxed">
+                            Before you can use PipTrader AI, you must read and accept our Terms & Conditions.
+                            Your acceptance is recorded with a timestamp, IP address, and a cryptographic hash
+                            for dispute-resolution purposes.
+                        </p>
                     </div>
                     <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
                         <AlertTriangle size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                             <div className="text-[11px] font-bold text-amber-200 uppercase tracking-wider mb-1">Key point — Trading risk</div>
-                            <p className="text-[11px] text-amber-200/80 leading-relaxed">Trading Forex and CFDs carries a <strong className="text-amber-100">high risk of losing your capital</strong>. Algorithms may malfunction. Past performance does not guarantee future results. You accept full responsibility for all trading decisions.</p>
+                            <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                                Trading Forex and CFDs carries a <strong className="text-amber-100">high risk of losing your capital</strong>. Algorithms may malfunction. Past performance does not guarantee future results.
+                            </p>
                         </div>
                     </div>
                     {!showFull ? (
@@ -83,7 +89,9 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onAccepted, onDeclined }
                         </button>
                     ) : (
                         <div className="bg-slate-950/60 border border-slate-700/40 rounded-xl p-4 max-h-[300px] overflow-y-auto">
-                            <p className="text-[11px] text-slate-400 leading-relaxed">Full text available at <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">/terms</a>. By ticking the box below you agree to all 14 sections including Risk Disclosure and Limitation of Liability.</p>
+                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                Full text available at <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">/terms</a>. By ticking the box below you agree to all 14 sections including Risk Disclosure and Limitation of Liability.
+                            </p>
                         </div>
                     )}
                 </div>
@@ -95,7 +103,9 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onAccepted, onDeclined }
                                 {checked && <CheckCircle2 size={16} className="text-white" />}
                             </div>
                         </div>
-                        <span className="text-xs text-slate-300 leading-relaxed select-none">I confirm that I am at least <strong className="text-white">18 years old</strong>, that I have <strong className="text-white">read and understood</strong> the Terms & Conditions in full, and that I <strong className="text-white">accept all risks</strong> associated with automated trading.</span>
+                        <span className="text-xs text-slate-300 leading-relaxed select-none">
+                            I confirm that I am at least <strong className="text-white">18 years old</strong>, that I have <strong className="text-white">read and understood</strong> the Terms & Conditions in full, and that I <strong className="text-white">accept all risks</strong> associated with automated trading.
+                        </span>
                     </label>
                     {error && (
                         <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-lg p-2.5">
