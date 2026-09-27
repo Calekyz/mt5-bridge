@@ -30,13 +30,11 @@ import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 function getToken(): string | null {
     return localStorage.getItem('token');
 }
-
 function clearToken() {
     localStorage.removeItem('token');
 }
@@ -57,10 +55,7 @@ function App() {
 
     useEffect(() => {
         const token = getToken();
-        if (!token) {
-            setAuthChecked(true);
-            return;
-        }
+        if (!token) { setAuthChecked(true); return; }
         verifyToken(token);
     }, []);
 
@@ -68,10 +63,7 @@ function App() {
         if (!isAuthenticated) return;
         const interval = setInterval(() => {
             const token = getToken();
-            if (!token) {
-                handleLogout();
-                return;
-            }
+            if (!token) { handleLogout(); return; }
             verifyToken(token);
         }, 10000);
         return () => clearInterval(interval);
@@ -95,9 +87,7 @@ function App() {
             clearToken();
             setIsAuthenticated(false);
             setUser(null);
-        } finally {
-            setAuthChecked(true);
-        }
+        } finally { setAuthChecked(true); }
     };
 
     useEffect(() => {
@@ -106,18 +96,13 @@ function App() {
             setTermsAccepted(null);
             return;
         }
-
         (async () => {
             try {
                 const token = getToken();
                 const res = await fetch(`${API_URL}/terms/status`, {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
-                if (!res.ok) {
-                    setTermsAccepted(true);
-                    setTermsChecked(true);
-                    return;
-                }
+                if (!res.ok) { setTermsAccepted(true); setTermsChecked(true); return; }
                 const data = await res.json();
                 setTermsAccepted(!!data.accepted);
                 setTermsChecked(true);
@@ -161,7 +146,6 @@ function App() {
 
     if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-
         if (path === '/unsubscribe') {
             return (
                 <>
@@ -170,7 +154,6 @@ function App() {
                 </>
             );
         }
-
         if (path === '/terms') {
             return (
                 <>
@@ -181,22 +164,14 @@ function App() {
         }
     }
 
-    if (!authChecked || showLoader) {
-        return <Loader />;
-    }
-
-    if (isAuthenticated && !termsChecked) {
-        return <Loader />;
-    }
+    if (!authChecked || showLoader) return <Loader />;
+    if (isAuthenticated && !termsChecked) return <Loader />;
 
     if (isAuthenticated && termsAccepted === false) {
         return (
             <>
                 <div className="min-h-screen bg-slate-950" />
-                <TermsModal
-                    onAccepted={handleTermsAccepted}
-                    onDeclined={handleLogout}
-                />
+                <TermsModal onAccepted={handleTermsAccepted} onDeclined={handleLogout} />
                 <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
             </>
         );
@@ -214,9 +189,7 @@ function App() {
         { path: "/ws", label: "WS", icon: Zap },
         { path: "/guide", label: "Guide", icon: BookOpen },
     ];
-    if (isAdmin) {
-        sideItems.push({ path: "/admin", label: "Admin", icon: Users });
-    }
+    if (isAdmin) sideItems.push({ path: "/admin", label: "Admin", icon: Users });
 
     const middleIndex = Math.floor(sideItems.length / 2);
     const navItems: any[] = [...sideItems];
@@ -231,53 +204,82 @@ function App() {
                     .scrollbar-hide::-webkit-scrollbar { display: none; }
                     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-                    @keyframes navGlowPulse {
-                        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
-                        50%      { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+                    /* ── Animated gradient panel ── */
+                    @keyframes panelGradientFlow {
+                        0%   { background-position:   0% 50%; }
+                        50%  { background-position: 100% 50%; }
+                        100% { background-position:   0% 50%; }
+                    }
+                    @keyframes panelShimmer {
+                        0%   { transform: translateX(-100%); }
+                        100% { transform: translateX(200%); }
+                    }
+
+                    /* ── Button hover/active effects ── */
+                    @keyframes navGlowPulseGreen {
+                        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+                        50%      { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
                     }
                     @keyframes navIndicatorSlide {
                         from { transform: scaleX(0); opacity: 0; }
                         to   { transform: scaleX(1); opacity: 1; }
                     }
-                    @keyframes navShimmerSweep {
-                        0%   { transform: translateX(-100%); }
-                        100% { transform: translateX(200%); }
-                    }
                     @keyframes navFloatBob {
                         0%, 100% { transform: translateY(0); }
                         50%      { transform: translateY(-3px); }
                     }
-                    @keyframes navHaloPulse {
-                        0%, 100% { opacity: 0.6; transform: scale(1); }
-                        50%      { opacity: 0.95; transform: scale(1.08); }
+                    @keyframes navHaloPulseGold {
+                        0%, 100% { opacity: 0.55; transform: scale(1); }
+                        50%      { opacity: 0.95; transform: scale(1.10); }
                     }
                     @keyframes homeRingSpin {
                         from { transform: rotate(0deg); }
                         to   { transform: rotate(360deg); }
                     }
+                    @keyframes homeShimmer {
+                        0%   { transform: translateX(-100%); }
+                        100% { transform: translateX(200%); }
+                    }
 
+                    /* ── Nav item base transitions ── */
                     .nav-item { transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
                     .nav-item .nav-icon { transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
                     .nav-item:hover .nav-icon { transform: scale(1.12) translateY(-1px); }
                     .nav-item:active .nav-icon { transform: scale(0.92); }
 
-                    .nav-item-active {
-                        animation: navGlowPulse 2.4s ease-in-out infinite;
+                    .nav-item-active-green {
+                        animation: navGlowPulseGreen 2.4s ease-in-out infinite;
                     }
-
                     .nav-indicator {
                         transform-origin: center;
                         animation: navIndicatorSlide 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     }
 
-                    .nav-shimmer {
-                        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
-                        animation: navShimmerSweep 3.5s ease-in-out infinite;
+                    .nav-home-float { animation: navFloatBob 4s ease-in-out infinite; }
+                    .nav-home-halo  { animation: navHaloPulseGold 3s ease-in-out infinite; }
+                    .nav-home-ring  { animation: homeRingSpin 12s linear infinite; }
+                    .nav-home-shimmer { animation: homeShimmer 3.5s ease-in-out infinite; }
+
+                    /* ── Animated gradient panel class ── */
+                    .nav-panel-gradient {
+                        background: linear-gradient(120deg,
+                            rgba(251, 191, 36, 0.12) 0%,
+                            rgba(16, 185, 129, 0.14) 25%,
+                            rgba(239, 68, 68, 0.10) 50%,
+                            rgba(16, 185, 129, 0.14) 75%,
+                            rgba(251, 191, 36, 0.12) 100%);
+                        background-size: 400% 100%;
+                        animation: panelGradientFlow 14s ease-in-out infinite;
                     }
 
-                    .nav-home-float { animation: navFloatBob 4s ease-in-out infinite; }
-                    .nav-home-halo  { animation: navHaloPulse 3s ease-in-out infinite; }
-                    .nav-home-ring  { animation: homeRingSpin 12s linear infinite; }
+                    /* ── Bigger buttons on phones ── */
+                    @media (max-width: 640px) {
+                        .nav-btn-base { width: 62px !important; height: 62px !important; }
+                        .nav-btn-home { width: 74px !important; height: 74px !important; }
+                        .nav-btn-label { font-size: 10px !important; }
+                        .nav-btn-icon { width: 22px !important; height: 22px !important; }
+                        .nav-btn-home-icon { width: 30px !important; height: 30px !important; }
+                    }
                 `}</style>
 
                 {isAuthenticated ? (
@@ -294,9 +296,7 @@ function App() {
                                         <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent leading-none">
                                             PipTrader AI
                                         </span>
-                                        <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">
-                                            v2.0
-                                        </span>
+                                        <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-widest mt-0.5">v2.0</span>
                                     </div>
                                 </div>
 
@@ -342,14 +342,22 @@ function App() {
                         </main>
 
                         {/* ═══════════════════════════════════════════════ */}
-                        {/*  BOTTOM NAV — PREMIUM REDESIGN                 */}
+                        {/*  BOTTOM NAV — GREEN BUTTONS + ANIMATED PANEL   */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-slate-700/50">
-                            {/* Red glow line at top */}
-                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-px bg-red-400/80 blur-sm" />
+                        <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t border-slate-700/50 overflow-hidden">
+                            {/* ── Animated gradient background ── */}
+                            <div className="nav-panel-gradient absolute inset-0 pointer-events-none" />
+                            {/* ── Dark overlay for legibility ── */}
+                            <div className="absolute inset-0 bg-slate-950/85 pointer-events-none" />
+                            {/* ── Top glow line ── */}
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-amber-400/60 via-emerald-400/60 to-red-400/60" />
+                            {/* ── Subtle moving shimmer ── */}
+                            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                                     style={{ animation: 'panelShimmer 6s ease-in-out infinite' }} />
+                            </div>
 
-                            <div className="max-w-4xl mx-auto px-3 py-3">
+                            <div className="relative max-w-4xl mx-auto px-3 py-3">
                                 <div className="flex justify-around items-end overflow-x-auto scrollbar-hide gap-1">
 
                                     {navItems.map((item) => {
@@ -362,63 +370,60 @@ function App() {
                                                 to={item.path}
                                                 className={({ isActive }) => {
                                                     if (isHome) {
-                                                        return `nav-item nav-home-float group relative flex flex-col items-center justify-center mx-2
+                                                        return `nav-item nav-home-float nav-btn-home group relative flex flex-col items-center justify-center mx-2
                                                             w-[68px] h-[68px] -mt-10 rounded-[22px]
-                                                            bg-gradient-to-br from-red-500 via-rose-600 to-red-700
+                                                            bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600
                                                             text-white
-                                                            shadow-2xl shadow-red-600/50
+                                                            shadow-2xl shadow-amber-600/60
                                                             ring-4 ring-slate-950
-                                                            border border-red-300/40
+                                                            border border-amber-200/50
                                                             hover:scale-[1.08] active:scale-95
-                                                            ${isActive ? 'ring-red-400/40 scale-105' : ''}`;
+                                                            ${isActive ? 'ring-amber-400/40 scale-105' : ''}`;
                                                     }
-                                                    return `nav-item group relative flex flex-col items-center justify-center
+                                                    return `nav-item nav-btn-base group relative flex flex-col items-center justify-center
                                                         w-[58px] h-[58px] rounded-2xl mx-1
                                                         ${isActive
-                                                            ? 'nav-item-active bg-gradient-to-br from-red-500/20 via-rose-500/15 to-red-500/20 text-white border border-red-500/40'
-                                                            : 'text-slate-500 hover:text-white hover:bg-slate-800/70 border border-transparent'
+                                                            ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50'
+                                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
                                                         }`;
                                                 }}
                                             >
                                                 {({ isActive }) => (
                                                     <>
-                                                        {/* HOME BUTTON — special decorations */}
+                                                        {/* HOME decorations */}
                                                         {isHome && (
                                                             <>
-                                                                {/* Rotating shimmer ring */}
-                                                                <span className="nav-home-ring absolute inset-[-3px] rounded-[25px] border border-dashed border-red-300/40 pointer-events-none" />
-                                                                {/* Pulsing halo */}
-                                                                <span className="nav-home-halo absolute inset-[-6px] rounded-[28px] bg-red-500/25 blur-lg pointer-events-none" />
-                                                                {/* Light sweep */}
+                                                                <span className="nav-home-ring absolute inset-[-3px] rounded-[25px] border border-dashed border-amber-200/50 pointer-events-none" />
+                                                                <span className="nav-home-halo absolute inset-[-6px] rounded-[28px] bg-amber-400/30 blur-lg pointer-events-none" />
                                                                 <span className="absolute inset-0 rounded-[22px] overflow-hidden pointer-events-none">
-                                                                    <span className="nav-shimmer absolute inset-y-0 left-0 w-1/2" />
+                                                                    <span className="nav-home-shimmer absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent" />
                                                                 </span>
                                                             </>
                                                         )}
 
-                                                        {/* Active indicator bar (not for Home) */}
+                                                        {/* Active indicator bar (green glow) */}
                                                         {isActive && !isHome && (
-                                                            <span className="nav-indicator absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-gradient-to-r from-red-400 via-rose-400 to-red-400 shadow-lg shadow-red-500/70" />
+                                                            <span className="nav-indicator absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-300 shadow-lg shadow-emerald-500/70" />
                                                         )}
 
-                                                        {/* Icon container with glow on active */}
-                                                        <span className={`nav-icon relative flex items-center justify-center ${isHome ? 'drop-shadow-lg' : ''}`}>
+                                                        {/* Icon */}
+                                                        <span className={`nav-icon nav-btn-icon relative flex items-center justify-center ${isHome ? 'drop-shadow-lg' : ''}`}>
                                                             {isActive && !isHome && (
-                                                                <span className="absolute inset-[-6px] rounded-full bg-red-500/25 blur-md pointer-events-none" />
+                                                                <span className="absolute inset-[-6px] rounded-full bg-emerald-500/30 blur-md pointer-events-none" />
                                                             )}
                                                             <Icon
                                                                 size={isHome ? 26 : 20}
                                                                 strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2}
-                                                                className="relative"
+                                                                className={`relative nav-btn-icon ${isHome ? 'nav-btn-home-icon' : ''}`}
                                                             />
                                                         </span>
 
                                                         {/* Label */}
-                                                        <span className={`relative text-[9px] font-bold mt-1 tracking-wider ${
+                                                        <span className={`relative nav-btn-label text-[9px] font-bold mt-1 tracking-wider ${
                                                             isHome
                                                                 ? 'text-white text-[10px] uppercase'
                                                                 : isActive
-                                                                    ? 'text-red-200'
+                                                                    ? 'text-emerald-200'
                                                                     : 'text-slate-500 group-hover:text-slate-300'
                                                         }`}>
                                                             {item.label}
