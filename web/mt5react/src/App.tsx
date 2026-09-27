@@ -47,7 +47,6 @@ function App() {
     const [showLoader, setShowLoader] = useState(true);
     const [user, setUser] = useState<any>(null);
 
-    // ─── Terms acceptance state ─────────────────────────────
     const [termsChecked, setTermsChecked] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
 
@@ -101,7 +100,6 @@ function App() {
         }
     };
 
-    // ─── Check Terms status whenever authenticated ───────────
     useEffect(() => {
         if (!isAuthenticated) {
             setTermsChecked(false);
@@ -116,7 +114,6 @@ function App() {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
                 if (!res.ok) {
-                    // Fail-safe: don't block if endpoint is broken
                     setTermsAccepted(true);
                     setTermsChecked(true);
                     return;
@@ -125,7 +122,6 @@ function App() {
                 setTermsAccepted(!!data.accepted);
                 setTermsChecked(true);
             } catch {
-                // Network error — don't block user
                 setTermsAccepted(true);
                 setTermsChecked(true);
             }
@@ -163,11 +159,9 @@ function App() {
 
     const isAdmin = user?.email === 'caleborenge8@gmail.com';
 
-    // ─── PUBLIC ROUTES (bypass auth + loader) ────────────────
     if (typeof window !== 'undefined') {
         const path = window.location.pathname;
 
-        // Public /unsubscribe
         if (path === '/unsubscribe') {
             return (
                 <>
@@ -177,7 +171,6 @@ function App() {
             );
         }
 
-        // Public /terms — viewable by anyone
         if (path === '/terms') {
             return (
                 <>
@@ -192,13 +185,10 @@ function App() {
         return <Loader />;
     }
 
-    // ─── TERMS GATE — after auth, before app ────────────────
-    // If user is authenticated but terms status hasn't been checked yet, wait.
     if (isAuthenticated && !termsChecked) {
         return <Loader />;
     }
 
-    // If accepted === false, show blocking modal (nothing else visible).
     if (isAuthenticated && termsAccepted === false) {
         return (
             <>
@@ -212,7 +202,6 @@ function App() {
         );
     }
 
-    // ─── NAV ITEMS ──────────────────────────────────────────
     const sideItems = [
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
@@ -236,6 +225,61 @@ function App() {
     return (
         <Router>
             <div className="text-white min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+
+                {/* ═══════════════ GLOBAL ANIMATIONS ═══════════════ */}
+                <style>{`
+                    .scrollbar-hide::-webkit-scrollbar { display: none; }
+                    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+                    @keyframes navGlowPulse {
+                        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+                        50%      { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+                    }
+                    @keyframes navIndicatorSlide {
+                        from { transform: scaleX(0); opacity: 0; }
+                        to   { transform: scaleX(1); opacity: 1; }
+                    }
+                    @keyframes navShimmerSweep {
+                        0%   { transform: translateX(-100%); }
+                        100% { transform: translateX(200%); }
+                    }
+                    @keyframes navFloatBob {
+                        0%, 100% { transform: translateY(0); }
+                        50%      { transform: translateY(-3px); }
+                    }
+                    @keyframes navHaloPulse {
+                        0%, 100% { opacity: 0.6; transform: scale(1); }
+                        50%      { opacity: 0.95; transform: scale(1.08); }
+                    }
+                    @keyframes homeRingSpin {
+                        from { transform: rotate(0deg); }
+                        to   { transform: rotate(360deg); }
+                    }
+
+                    .nav-item { transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+                    .nav-item .nav-icon { transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+                    .nav-item:hover .nav-icon { transform: scale(1.12) translateY(-1px); }
+                    .nav-item:active .nav-icon { transform: scale(0.92); }
+
+                    .nav-item-active {
+                        animation: navGlowPulse 2.4s ease-in-out infinite;
+                    }
+
+                    .nav-indicator {
+                        transform-origin: center;
+                        animation: navIndicatorSlide 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    }
+
+                    .nav-shimmer {
+                        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+                        animation: navShimmerSweep 3.5s ease-in-out infinite;
+                    }
+
+                    .nav-home-float { animation: navFloatBob 4s ease-in-out infinite; }
+                    .nav-home-halo  { animation: navHaloPulse 3s ease-in-out infinite; }
+                    .nav-home-ring  { animation: homeRingSpin 12s linear infinite; }
+                `}</style>
+
                 {isAuthenticated ? (
                     <>
                         {/* HEADER */}
@@ -297,49 +341,85 @@ function App() {
                             </Routes>
                         </main>
 
-                        {/* BOTTOM NAV */}
+                        {/* ═══════════════════════════════════════════════ */}
+                        {/*  BOTTOM NAV — PREMIUM REDESIGN                 */}
+                        {/* ═══════════════════════════════════════════════ */}
                         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-slate-700/50">
-                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
-                            <div className="max-w-4xl mx-auto px-2 py-2.5">
-                                <div className="flex justify-around items-end overflow-x-auto scrollbar-hide">
+                            {/* Red glow line at top */}
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-px bg-red-400/80 blur-sm" />
+
+                            <div className="max-w-4xl mx-auto px-3 py-3">
+                                <div className="flex justify-around items-end overflow-x-auto scrollbar-hide gap-1">
+
                                     {navItems.map((item) => {
                                         const Icon = item.icon;
                                         const isHome = item.isHome;
+
                                         return (
                                             <NavLink
                                                 key={item.path}
                                                 to={item.path}
                                                 className={({ isActive }) => {
                                                     if (isHome) {
-                                                        return `relative flex flex-col items-center justify-center mx-1
-                                                            w-16 h-16 -mt-9 rounded-2xl
-                                                            bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600
-                                                            text-white shadow-2xl shadow-orange-500/50
+                                                        return `nav-item nav-home-float group relative flex flex-col items-center justify-center mx-2
+                                                            w-[68px] h-[68px] -mt-10 rounded-[22px]
+                                                            bg-gradient-to-br from-red-500 via-rose-600 to-red-700
+                                                            text-white
+                                                            shadow-2xl shadow-red-600/50
                                                             ring-4 ring-slate-950
-                                                            border border-amber-300/40
-                                                            transition-all duration-300
-                                                            hover:scale-105 active:scale-95
-                                                            ${isActive ? 'ring-orange-400/30 scale-105' : ''}`;
+                                                            border border-red-300/40
+                                                            hover:scale-[1.08] active:scale-95
+                                                            ${isActive ? 'ring-red-400/40 scale-105' : ''}`;
                                                     }
-                                                    return `relative flex flex-col items-center justify-center
-                                                        w-14 h-14 rounded-xl mx-0.5
-                                                        transition-all duration-300
+                                                    return `nav-item group relative flex flex-col items-center justify-center
+                                                        w-[58px] h-[58px] rounded-2xl mx-1
                                                         ${isActive
-                                                            ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white shadow-lg shadow-emerald-600/40 scale-105'
-                                                            : 'text-slate-500 hover:text-white hover:bg-slate-800/60'
+                                                            ? 'nav-item-active bg-gradient-to-br from-red-500/20 via-rose-500/15 to-red-500/20 text-white border border-red-500/40'
+                                                            : 'text-slate-500 hover:text-white hover:bg-slate-800/70 border border-transparent'
                                                         }`;
                                                 }}
                                             >
                                                 {({ isActive }) => (
                                                     <>
-                                                        {isActive && !isHome && (
-                                                            <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-300 rounded-full shadow-lg shadow-emerald-400/60" />
+                                                        {/* HOME BUTTON — special decorations */}
+                                                        {isHome && (
+                                                            <>
+                                                                {/* Rotating shimmer ring */}
+                                                                <span className="nav-home-ring absolute inset-[-3px] rounded-[25px] border border-dashed border-red-300/40 pointer-events-none" />
+                                                                {/* Pulsing halo */}
+                                                                <span className="nav-home-halo absolute inset-[-6px] rounded-[28px] bg-red-500/25 blur-lg pointer-events-none" />
+                                                                {/* Light sweep */}
+                                                                <span className="absolute inset-0 rounded-[22px] overflow-hidden pointer-events-none">
+                                                                    <span className="nav-shimmer absolute inset-y-0 left-0 w-1/2" />
+                                                                </span>
+                                                            </>
                                                         )}
-                                                        <Icon size={isHome ? 26 : 20} strokeWidth={isHome ? 2.5 : isActive ? 2.4 : 2} className={isHome ? 'drop-shadow-lg' : ''} />
-                                                        <span className={`text-[9px] font-bold mt-1 tracking-wide ${
-                                                            isHome ? 'text-white text-[10px] uppercase'
-                                                                : isActive ? 'text-white'
-                                                                : 'text-slate-500'
+
+                                                        {/* Active indicator bar (not for Home) */}
+                                                        {isActive && !isHome && (
+                                                            <span className="nav-indicator absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-gradient-to-r from-red-400 via-rose-400 to-red-400 shadow-lg shadow-red-500/70" />
+                                                        )}
+
+                                                        {/* Icon container with glow on active */}
+                                                        <span className={`nav-icon relative flex items-center justify-center ${isHome ? 'drop-shadow-lg' : ''}`}>
+                                                            {isActive && !isHome && (
+                                                                <span className="absolute inset-[-6px] rounded-full bg-red-500/25 blur-md pointer-events-none" />
+                                                            )}
+                                                            <Icon
+                                                                size={isHome ? 26 : 20}
+                                                                strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2}
+                                                                className="relative"
+                                                            />
+                                                        </span>
+
+                                                        {/* Label */}
+                                                        <span className={`relative text-[9px] font-bold mt-1 tracking-wider ${
+                                                            isHome
+                                                                ? 'text-white text-[10px] uppercase'
+                                                                : isActive
+                                                                    ? 'text-red-200'
+                                                                    : 'text-slate-500 group-hover:text-slate-300'
                                                         }`}>
                                                             {item.label}
                                                         </span>
@@ -359,11 +439,6 @@ function App() {
                     <LoginPage onLogin={handleLogin} />
                 )}
             </div>
-
-            <style>{`
-                .scrollbar-hide::-webkit-scrollbar { display: none; }
-                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-            `}</style>
         </Router>
     );
 }
