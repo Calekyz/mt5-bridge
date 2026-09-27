@@ -16,10 +16,10 @@ import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova' | 'smc' | 'punex';
 
-const BOT_PRICE = '$150';
+const BOT_PRICE = '$255';
 const WHATSAPP_NUMBER = '254116081230';
 const WHATSAPP_MESSAGE = encodeURIComponent(
-    'Hello! I want to get lifetime access to PipTrader AI for $150. Can you help me configure my account?'
+    'Hello! I want to get lifetime access to PipTrader AI for $255. Can you help me configure my account?'
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 

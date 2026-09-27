@@ -25,6 +25,9 @@ import Mt5DetailsPage from "./pages/Mt5Details";
 import AdminMt5DetailsPage from "./pages/AdminMt5Details";
 import Unsubscribe from "./pages/Unsubscribe";
 import AdminUnsubscribes from "./pages/AdminUnsubscribes";
+import { TermsModal } from "./components/TermsModal";
+import TermsPage from "./pages/TermsPage";
+import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 
@@ -43,6 +46,10 @@ function App() {
     const [authChecked, setAuthChecked] = useState(false);
     const [showLoader, setShowLoader] = useState(true);
     const [user, setUser] = useState<any>(null);
+
+    // ─── Terms acceptance state ─────────────────────────────
+    const [termsChecked, setTermsChecked] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setShowLoader(false), 4000);
@@ -94,6 +101,37 @@ function App() {
         }
     };
 
+    // ─── Check Terms status whenever authenticated ───────────
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setTermsChecked(false);
+            setTermsAccepted(null);
+            return;
+        }
+
+        (async () => {
+            try {
+                const token = getToken();
+                const res = await fetch(`${API_URL}/terms/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                if (!res.ok) {
+                    // Fail-safe: don't block if endpoint is broken
+                    setTermsAccepted(true);
+                    setTermsChecked(true);
+                    return;
+                }
+                const data = await res.json();
+                setTermsAccepted(!!data.accepted);
+                setTermsChecked(true);
+            } catch {
+                // Network error — don't block user
+                setTermsAccepted(true);
+                setTermsChecked(true);
+            }
+        })();
+    }, [isAuthenticated]);
+
     const handleLogin = (data: { token: string; user: any }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -104,6 +142,8 @@ function App() {
         }
         setUser(data.user);
         setIsAuthenticated(true);
+        setTermsChecked(false);
+        setTermsAccepted(null);
     };
 
     const handleLogout = () => {
@@ -112,11 +152,67 @@ function App() {
         localStorage.removeItem('user');
         setUser(null);
         setIsAuthenticated(false);
+        setTermsChecked(false);
+        setTermsAccepted(null);
+    };
+
+    const handleTermsAccepted = () => {
+        setTermsAccepted(true);
+        setTermsChecked(true);
     };
 
     const isAdmin = user?.email === 'caleborenge8@gmail.com';
 
-    // ─── Build nav items with HOME in the middle ────────────────
+    // ─── PUBLIC ROUTES (bypass auth + loader) ────────────────
+    if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+
+        // Public /unsubscribe
+        if (path === '/unsubscribe') {
+            return (
+                <>
+                    <Unsubscribe />
+                    <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
+                </>
+            );
+        }
+
+        // Public /terms — viewable by anyone
+        if (path === '/terms') {
+            return (
+                <>
+                    <TermsPage />
+                    <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
+                </>
+            );
+        }
+    }
+
+    if (!authChecked || showLoader) {
+        return <Loader />;
+    }
+
+    // ─── TERMS GATE — after auth, before app ────────────────
+    // If user is authenticated but terms status hasn't been checked yet, wait.
+    if (isAuthenticated && !termsChecked) {
+        return <Loader />;
+    }
+
+    // If accepted === false, show blocking modal (nothing else visible).
+    if (isAuthenticated && termsAccepted === false) {
+        return (
+            <>
+                <div className="min-h-screen bg-slate-950" />
+                <TermsModal
+                    onAccepted={handleTermsAccepted}
+                    onDeclined={handleLogout}
+                />
+                <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
+            </>
+        );
+    }
+
+    // ─── NAV ITEMS ──────────────────────────────────────────
     const sideItems = [
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
@@ -133,55 +229,22 @@ function App() {
         sideItems.push({ path: "/admin", label: "Admin", icon: Users });
     }
 
-    // Insert Home in the middle of the array
     const middleIndex = Math.floor(sideItems.length / 2);
     const navItems: any[] = [...sideItems];
     navItems.splice(middleIndex, 0, { path: "/", label: "Home", icon: Home, isHome: true });
-
-    // ═══════════════════════════════════════════════════════════
-    //  PUBLIC ROUTE: /unsubscribe
-    //  Bypasses auth + loader entirely — opened from email links
-    // ═══════════════════════════════════════════════════════════
-    if (typeof window !== 'undefined' && window.location.pathname === '/unsubscribe') {
-        return (
-            <>
-                <Unsubscribe />
-                <ToastContainer
-                    position="top-right"
-                    autoClose={3000}
-                    hideProgressBar={false}
-                    newestOnTop
-                    closeOnClick
-                    pauseOnHover
-                    draggable
-                    theme="dark"
-                />
-            </>
-        );
-    }
-
-    if (!authChecked || showLoader) {
-        return <Loader />;
-    }
 
     return (
         <Router>
             <div className="text-white min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
                 {isAuthenticated ? (
                     <>
-                        {/* ─── HEADER ─────────────────────────────────── */}
+                        {/* HEADER */}
                         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-700/50">
                             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-
-                                {/* Logo + Brand */}
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full" />
-                                        <img
-                                            src={LOGO_URL}
-                                            alt="PipTrader AI Logo"
-                                            className="relative h-9 w-auto rounded-lg shadow-lg shadow-blue-600/20 ring-1 ring-slate-700/50"
-                                        />
+                                        <img src={LOGO_URL} alt="PipTrader AI Logo" className="relative h-9 w-auto rounded-lg shadow-lg shadow-blue-600/20 ring-1 ring-slate-700/50" />
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-none">
@@ -193,13 +256,9 @@ function App() {
                                     </div>
                                 </div>
 
-                                {/* Right actions */}
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => {
-                                            const event = new CustomEvent('trigger-install');
-                                            window.dispatchEvent(event);
-                                        }}
+                                        onClick={() => { const event = new CustomEvent('trigger-install'); window.dispatchEvent(event); }}
                                         className="group flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-white transition-all px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-blue-600 border border-slate-700/60 hover:border-blue-500/60 shadow-lg shadow-transparent hover:shadow-blue-600/20"
                                         title="Install App"
                                     >
@@ -217,7 +276,7 @@ function App() {
                             </div>
                         </header>
 
-                        {/* ─── MAIN CONTENT ───────────────────────────── */}
+                        {/* MAIN */}
                         <main className="flex-1 mt-16 mb-28 overflow-y-auto">
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
@@ -231,31 +290,21 @@ function App() {
                                 <Route path="/chart" element={<CandleChart />} />
                                 <Route path="/ws" element={<WsStreaming />} />
                                 <Route path="/strategies" element={<PipnexTradingSystem />} />
-                                <Route
-                                    path="/admin"
-                                    element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />}
-                                />
-                                <Route
-                                    path="/admin/mt5-details"
-                                    element={isAdmin ? <AdminMt5DetailsPage /> : <Navigate to="/" replace />}
-                                />
-                                <Route
-                                    path="/admin/unsubscribes"
-                                    element={isAdmin ? <AdminUnsubscribes /> : <Navigate to="/" replace />}
-                                />
+                                <Route path="/admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />} />
+                                <Route path="/admin/mt5-details" element={isAdmin ? <AdminMt5DetailsPage /> : <Navigate to="/" replace />} />
+                                <Route path="/admin/unsubscribes" element={isAdmin ? <AdminUnsubscribes /> : <Navigate to="/" replace />} />
+                                <Route path="/admin/terms-acceptances" element={isAdmin ? <AdminTermsAcceptances /> : <Navigate to="/" replace />} />
                             </Routes>
                         </main>
 
-                        {/* ─── BOTTOM NAV ─────────────────────────────── */}
+                        {/* BOTTOM NAV */}
                         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-xl border-t border-slate-700/50">
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
-
                             <div className="max-w-4xl mx-auto px-2 py-2.5">
                                 <div className="flex justify-around items-end overflow-x-auto scrollbar-hide">
                                     {navItems.map((item) => {
                                         const Icon = item.icon;
                                         const isHome = item.isHome;
-
                                         return (
                                             <NavLink
                                                 key={item.path}
@@ -272,7 +321,6 @@ function App() {
                                                             hover:scale-105 active:scale-95
                                                             ${isActive ? 'ring-orange-400/30 scale-105' : ''}`;
                                                     }
-
                                                     return `relative flex flex-col items-center justify-center
                                                         w-14 h-14 rounded-xl mx-0.5
                                                         transition-all duration-300
@@ -287,18 +335,11 @@ function App() {
                                                         {isActive && !isHome && (
                                                             <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-300 rounded-full shadow-lg shadow-emerald-400/60" />
                                                         )}
-
-                                                        <Icon
-                                                            size={isHome ? 26 : 20}
-                                                            strokeWidth={isHome ? 2.5 : isActive ? 2.4 : 2}
-                                                            className={isHome ? 'drop-shadow-lg' : ''}
-                                                        />
+                                                        <Icon size={isHome ? 26 : 20} strokeWidth={isHome ? 2.5 : isActive ? 2.4 : 2} className={isHome ? 'drop-shadow-lg' : ''} />
                                                         <span className={`text-[9px] font-bold mt-1 tracking-wide ${
-                                                            isHome
-                                                                ? 'text-white text-[10px] uppercase'
-                                                                : isActive
-                                                                    ? 'text-white'
-                                                                    : 'text-slate-500'
+                                                            isHome ? 'text-white text-[10px] uppercase'
+                                                                : isActive ? 'text-white'
+                                                                : 'text-slate-500'
                                                         }`}>
                                                             {item.label}
                                                         </span>
@@ -311,19 +352,7 @@ function App() {
                             </div>
                         </nav>
 
-                        {/* ─── TOASTS ─────────────────────────────────── */}
-                        <ToastContainer
-                            style={{ width: "400px", height: "100px" }}
-                            position="top-right"
-                            autoClose={3000}
-                            hideProgressBar={false}
-                            newestOnTop
-                            closeOnClick
-                            pauseOnHover
-                            draggable
-                            theme="dark"
-                        />
-
+                        <ToastContainer style={{ width: "400px", height: "100px" }} position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
                         <InstallPrompt />
                     </>
                 ) : (
@@ -331,7 +360,6 @@ function App() {
                 )}
             </div>
 
-            {/* Global scrollbar-hide utility */}
             <style>{`
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

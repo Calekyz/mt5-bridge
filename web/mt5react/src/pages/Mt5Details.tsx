@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 
 const WHATSAPP_NUMBER = '254116081230';
 const WHATSAPP_MESSAGE = encodeURIComponent(
-    'Hello! I want lifetime premium access to PipTrader AI for $150. Please tell me how to get started.'
+    'Hello! I want lifetime premium access to PipTrader AI for $255. Please tell me how to get started.'
 );
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
@@ -17,7 +17,7 @@ const WHATSAPP_SUPPORT_MESSAGE = encodeURIComponent(
 );
 const WHATSAPP_SUPPORT_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_SUPPORT_MESSAGE}`;
 
-const PREMIUM_PRICE = '$150';
+const PREMIUM_PRICE = '$255';
 const PREMIUM_ORIGINAL = '$400';
 
 interface Mt5Details {
@@ -448,7 +448,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                             <Crown size={13} className="text-amber-100 drop-shadow" />
                                         </span>
                                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-50 whitespace-nowrap">
-                                            PipTrader&nbsp;AI&nbsp;·&nbsp;$150
+                                            PipTrader&nbsp;AI&nbsp;·&nbsp;$255
                                         </span>
                                         <Star size={10} className="text-yellow-100 premium-twinkle" />
                                     </div>

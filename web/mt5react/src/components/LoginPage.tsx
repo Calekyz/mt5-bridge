@@ -24,7 +24,7 @@ const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}
 const BROKER_LINK = 'https://ma.valetax.com/p/2083506';
 const TELEGRAM_LINK = 'https://t.me/calekyz';
 
-const BOT_PRICE = '$150';
+const BOT_PRICE = '$255';
 
 const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
 const BG_URL = 'https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png';
@@ -38,13 +38,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     const [localError, setLocalError] = useState<string | null>(null);
     const [signupMessage, setSignupMessage] = useState<string | null>(null);
 
-    // ─── Telegram popup state (persisted dismissal) ─────────
+    // ─── Signup T&C acceptance ──────────────────────────────
+    const [signupTermsAccepted, setSignupTermsAccepted] = useState(false);
+
+    // ─── Telegram popup state ───────────────────────────────
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
 
     // ─── Risk disclaimer dropdown ────────────────────────────
     const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-    // ─── Rotating tagline (welcome ↔ advert) ─────────────────
+    // ─── Rotating tagline ────────────────────────────────────
     const [taglineMode, setTaglineMode] = useState<'welcome' | 'advert'>('welcome');
     const [taglineHidden, setTaglineHidden] = useState(false);
 
@@ -56,11 +59,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         }
     }, []);
 
-    // ─── Tagline rotation (DOUBLED timings) ─────────────────
     useEffect(() => {
-        const SLIDE_MS = 800;       // slide transition (was 400)
-        const WELCOME_MS = 6000;    // welcome stays 6s (was 3s)
-        const ADVERT_MS = 9000;     // advert stays 9s (was 4.5s)
+        const SLIDE_MS = 800;
+        const WELCOME_MS = 6000;
+        const ADVERT_MS = 9000;
 
         let t1: ReturnType<typeof setTimeout>;
         let t2: ReturnType<typeof setTimeout>;
@@ -96,9 +98,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setLocalError(null);
         setSignupMessage(null);
+
+        // Require T&C acceptance on signup
+        if (mode === 'signup' && !signupTermsAccepted) {
+            setLocalError('You must accept the Terms & Conditions to create an account');
+            return;
+        }
+
+        setLoading(true);
 
         try {
             const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
@@ -195,31 +204,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 }
             `}</style>
 
-            {/* ─── Dark overlay ───────────────────────────────── */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
 
-            {/* ─── Ambient glows ─────────────────────────────── */}
             <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-8">
                 <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
 
-                    {/* ═══════════════════════════════════════════════════ */}
-                    {/* LEFT PANEL — Branding & Value Props                 */}
-                    {/* ═══════════════════════════════════════════════════ */}
+                    {/* LEFT PANEL */}
                     <div className="hidden lg:flex flex-col space-y-5">
-
-                        {/* Logo + Title */}
                         <div className="flex items-center gap-4">
                             <div className="relative">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 to-purple-500/40 blur-xl rounded-2xl" />
                                 <div className="relative p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-2xl shadow-blue-600/30 ring-1 ring-blue-400/30">
-                                    <img
-                                        src={LOGO_URL}
-                                        alt="PipTrader AI"
-                                        className="h-12 w-12 object-contain"
-                                    />
+                                    <img src={LOGO_URL} alt="PipTrader AI" className="h-12 w-12 object-contain" />
                                 </div>
                             </div>
                             <div>
@@ -232,7 +231,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                         </div>
 
-                        {/* Headline */}
                         <div>
                             <h2 className="text-3xl font-bold text-white leading-tight mb-3">
                                 Trade <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">24/7</span> with
@@ -245,7 +243,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </p>
                         </div>
 
-                        {/* Feature List */}
                         <div className="space-y-2.5">
                             {[
                                 {
@@ -300,7 +297,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             ))}
                         </div>
 
-                        {/* ─── Broker Signup CTA ───────────────────── */}
                         <a
                             href={BROKER_LINK}
                             target="_blank"
@@ -324,13 +320,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
                             </div>
-                            <ExternalLink
-                                size={18}
-                                className="relative text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform flex-shrink-0"
-                            />
+                            <ExternalLink size={18} className="relative text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform flex-shrink-0" />
                         </a>
 
-                        {/* ─── WhatsApp CTA ─────────────────────────── */}
                         <a
                             href={WHATSAPP_LINK}
                             target="_blank"
@@ -354,30 +346,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
                             </div>
-                            <ArrowRight
-                                size={18}
-                                className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0"
-                            />
+                            <ArrowRight size={18} className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />
                         </a>
                     </div>
 
-                    {/* ═══════════════════════════════════════════════════ */}
-                    {/* RIGHT PANEL — Login/Signup Card                     */}
-                    {/* ═══════════════════════════════════════════════════ */}
+                    {/* RIGHT PANEL */}
                     <div className="w-full max-w-md mx-auto lg:mx-0">
                         <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 transition-all duration-300 hover:shadow-blue-500/10 overflow-hidden">
-
                             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
-                            {/* ─── Mobile-only Logo ──────────────────── */}
                             <div className="lg:hidden text-center mb-6">
                                 <div className="flex justify-center mb-3">
                                     <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/30">
-                                        <img
-                                            src={LOGO_URL}
-                                            alt="PipTrader AI Logo"
-                                            className="h-12 w-12 object-contain"
-                                        />
+                                        <img src={LOGO_URL} alt="PipTrader AI Logo" className="h-12 w-12 object-contain" />
                                     </div>
                                 </div>
                                 <h1 className="text-2xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -388,7 +369,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </p>
                             </div>
 
-                            {/* ─── Price badge ──────────────────────── */}
                             <div className="flex justify-center mb-4">
                                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/40 shadow-lg shadow-amber-500/10">
                                     <DollarSign size={12} className="text-amber-400" />
@@ -399,13 +379,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </div>
 
-                            {/* ═══════════════════════════════════════════════ */}
-                            {/*  ROTATING TAGLINE — Welcome ↔ Advert            */}
-                            {/*  Timings: welcome 6s · slide 0.8s · advert 9s   */}
-                            {/* ═══════════════════════════════════════════════ */}
+                            {/* Rotating tagline */}
                             <div className="relative h-[110px] mb-5 flex items-center justify-center">
-
-                                {/* ── STATE 1: Welcome text ── */}
                                 <div
                                     className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${
                                         taglineHidden && taglineMode === 'welcome'
@@ -443,7 +418,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </p>
                                 </div>
 
-                                {/* ── STATE 2: Advert ── */}
                                 <div
                                     className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${
                                         taglineHidden && taglineMode === 'advert'
@@ -454,7 +428,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     }`}
                                     style={{ transitionDuration: '800ms' }}
                                 >
-                                    {/* Pulsing "limited offer" badge */}
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-400/50 shadow-lg shadow-amber-500/20 relative overflow-hidden"
                                          style={{
                                              background: 'linear-gradient(90deg, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.25) 100%)',
@@ -482,7 +455,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </h2>
 
                                     <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
-                                        <span className="text-emerald-400 font-bold">3 Algos</span>
+                                        <span className="text-emerald-400 font-bold">4 Algos</span>
                                         <span className="text-slate-600">·</span>
                                         <span className="text-blue-400 font-bold">Risk Guard</span>
                                         <span className="text-slate-600">·</span>
@@ -503,7 +476,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </div>
 
-                            {/* ─── Broker Hint (signup only) ──────────── */}
                             {mode === 'signup' && !signupMessage && (
                                 <div className="mb-5 p-3.5 bg-gradient-to-br from-blue-900/30 to-indigo-900/20 border border-blue-500/30 rounded-xl">
                                     <div className="flex items-start gap-3">
@@ -531,7 +503,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             )}
 
-                            {/* ─── Signup Success Message ─────────────── */}
                             {signupMessage && (
                                 <div className="mb-5 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl flex items-start gap-3">
                                     <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30">
@@ -548,17 +519,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             )}
 
-                            {/* ─── Form ──────────────────────────────── */}
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                         Email Address
                                     </label>
                                     <div className="relative">
-                                        <Mail
-                                            size={16}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
-                                        />
+                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                                         <input
                                             type="email"
                                             value={email}
@@ -575,10 +542,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         Password
                                     </label>
                                     <div className="relative">
-                                        <Lock
-                                            size={16}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
-                                        />
+                                        <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             value={password}
@@ -597,6 +561,40 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                 </div>
 
+                                {/* Signup T&C checkbox */}
+                                {mode === 'signup' && (
+                                    <label className="flex items-start gap-3 cursor-pointer group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 transition">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={signupTermsAccepted}
+                                                onChange={(e) => { setSignupTermsAccepted(e.target.checked); setLocalError(null); }}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                                                signupTermsAccepted
+                                                    ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 shadow-lg shadow-emerald-500/40'
+                                                    : 'bg-slate-950 border-slate-600 group-hover:border-emerald-400'
+                                            }`}>
+                                                {signupTermsAccepted && <CheckCircle2 size={13} className="text-white" />}
+                                            </div>
+                                        </div>
+                                        <div className="text-[11px] text-slate-300 leading-relaxed select-none">
+                                            I am at least <strong className="text-white">18 years old</strong>, I have read and accept the{' '}
+                                            <a
+                                                href="/terms"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="text-amber-400 hover:text-amber-300 underline font-bold"
+                                            >
+                                                Terms & Conditions
+                                            </a>
+                                            {' '}and the <strong className="text-white">risk disclosure</strong>.
+                                        </div>
+                                    </label>
+                                )}
+
                                 {(localError || error) && (
                                     <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3">
                                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
@@ -606,7 +604,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
                                 <button
                                     type="submit"
-                                    disabled={loading || isLoading}
+                                    disabled={loading || isLoading || (mode === 'signup' && !signupTermsAccepted)}
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                                 >
                                     {loading || isLoading ? (
@@ -649,7 +647,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             </form>
 
-                            {/* ─── Divider ────────────────────────────── */}
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-slate-700/50" />
                                 <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
@@ -658,7 +655,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 <div className="flex-1 h-px bg-slate-700/50" />
                             </div>
 
-                            {/* ─── Mobile / Small Stack: Broker + WhatsApp ── */}
                             <div className="space-y-2.5">
                                 <a
                                     href={BROKER_LINK}
@@ -679,10 +675,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                             </div>
                                         </div>
                                     </div>
-                                    <ExternalLink
-                                        size={14}
-                                        className="text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
-                                    />
+                                    <ExternalLink size={14} className="text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                 </a>
 
                                 <a
@@ -708,17 +701,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-extrabold">
                                             {BOT_PRICE}
                                         </span>
-                                        <ArrowRight
-                                            size={14}
-                                            className="text-emerald-400 group-hover:translate-x-1 transition-transform"
-                                        />
+                                        <ArrowRight size={14} className="text-emerald-400 group-hover:translate-x-1 transition-transform" />
                                     </div>
                                 </a>
                             </div>
 
-                            {/* ═══════════════════════════════════════════════ */}
-                            {/*  RISK DISCLAIMER — collapsible dropdown        */}
-                            {/* ═══════════════════════════════════════════════ */}
+                            {/* Risk disclaimer */}
                             <div className="mt-5 border border-slate-700/40 rounded-xl overflow-hidden bg-slate-950/40">
                                 <button
                                     type="button"
@@ -731,11 +719,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                             Risk Disclaimer
                                         </span>
                                     </div>
-                                    {showDisclaimer ? (
-                                        <ChevronUp size={14} className="text-slate-500" />
-                                    ) : (
-                                        <ChevronDown size={14} className="text-slate-500" />
-                                    )}
+                                    {showDisclaimer ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                                 </button>
                                 {showDisclaimer && (
                                     <div className="px-3.5 pb-3 pt-1 border-t border-slate-700/40">
@@ -757,9 +741,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 )}
                             </div>
 
-                            {/* ═══════════════════════════════════════════════ */}
-                            {/*  COMPANY FOOTER                                 */}
-                            {/* ═══════════════════════════════════════════════ */}
                             <div className="mt-5 pt-4 border-t border-slate-700/30">
                                 <div className="flex items-center justify-center gap-2 mb-2">
                                     <div className="p-1 bg-emerald-500/15 rounded-md border border-emerald-500/30">
@@ -786,20 +767,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 </div>
             </div>
 
-            {/* ═════════════════════════════════════════════════════ */}
-            {/*  FLOATING TELEGRAM POPUP (dismissible)                */}
-            {/* ═════════════════════════════════════════════════════ */}
             {showTelegramPopup && (
                 <div className="fixed bottom-5 right-5 z-[200] animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-blue-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
 
                         <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-blue-600/40 border border-sky-300/40 max-w-[280px]">
-
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm border border-white/30 flex-shrink-0">
                                 <Send size={18} className="text-white" />
                             </div>
-
                             <div className="min-w-0">
                                 <div className="text-white font-bold text-xs leading-tight">
                                     Join our Telegram
@@ -808,7 +784,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     t.me/calekyz
                                 </div>
                             </div>
-
                             <a
                                 href={TELEGRAM_LINK}
                                 target="_blank"
@@ -818,7 +793,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             >
                                 <ArrowRight size={14} />
                             </a>
-
                             <button
                                 onClick={dismissTelegramPopup}
                                 className="absolute top-1 right-1 p-1 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition"
