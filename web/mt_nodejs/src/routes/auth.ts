@@ -43,12 +43,12 @@ router.post('/auth/register', async (req, res) => {
         return res.status(400).json({ error: 'Email and password required' });
     }
     try {
-        const existing = await query('SELECT id FROM "User" WHERE email = $1', [email]);
+        const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
         if (existing.rows.length > 0) {
             return res.status(409).json({ error: 'Email already exists' });
         }
         const hashed = await bcrypt.hash(password, 10);
-        await query('INSERT INTO "User" (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
+        await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
         res.status(201).json({ message: 'Account created. Admin will assign a VPS.' });
     } catch (err) {
         console.error('Register error:', err);
@@ -66,12 +66,12 @@ router.post('/auth/login', async (req, res) => {
     // ─── Admin bypass ──────────────────────────
     if (email === 'caleborenge8@gmail.com' && password === '@Aminlove254') {
         try {
-            let userResult = await query('SELECT * FROM "User" WHERE email = $1', [email]);
+            let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
             let user = userResult.rows[0];
             if (!user) {
                 const hashed = await bcrypt.hash(password, 10);
-                await query('INSERT INTO "User" (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'admin']);
-                userResult = await query('SELECT * FROM "User" WHERE email = $1', [email]);
+                await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'admin']);
+                userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
                 user = userResult.rows[0];
             }
 
@@ -107,7 +107,7 @@ router.post('/auth/login', async (req, res) => {
 
     // ─── Normal login ──────────────────────────
     try {
-        const userResult = await query('SELECT * FROM "User" WHERE email = $1', [email]);
+        const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
         const user = userResult.rows[0];
         if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
@@ -152,7 +152,7 @@ router.get('/auth/verify', async (req, res) => {
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
-        const result = await query('SELECT id, email, role FROM "User" WHERE id = $1', [decoded.id]);
+        const result = await query('SELECT id, email, role FROM users WHERE id = $1', [decoded.id]);
         const user = result.rows[0];
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json({ user, valid: true });
@@ -167,7 +167,7 @@ router.get('/auth/verify', async (req, res) => {
 router.get('/auth/me', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const userId = req.user!.id;
-        const userResult = await query('SELECT id, email, role FROM "User" WHERE id = $1', [userId]);
+        const userResult = await query('SELECT id, email, role FROM users WHERE id = $1', [userId]);
         const user = userResult.rows[0];
         if (!user) {
             return res.status(404).json({ error: 'User not found' });

@@ -19,7 +19,7 @@ router.get('/users', adminKeyMiddleware, async (req: Request, res: Response, nex
         const result = await query(`
             SELECT u.id, u.email, u.role, u.created_at,
                    a.vps_address
-            FROM "User" u
+            FROM users u
             LEFT JOIN user_mt5_accounts a ON a.user_id = u.id
             ORDER BY u.id
         `);
@@ -37,7 +37,7 @@ router.post('/users', adminKeyMiddleware, async (req: Request, res: Response, ne
     }
     try {
         const hashed = await bcrypt.hash(password, 10);
-        await query('INSERT INTO "User" (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
+        await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
         res.status(201).json({ message: 'User created' });
     } catch (error) {
         next(error);
@@ -51,7 +51,7 @@ router.delete('/users/:id', adminKeyMiddleware, async (req: Request, res: Respon
         return res.status(400).json({ error: 'Invalid user ID' });
     }
     try {
-        await query('DELETE FROM "User" WHERE id = $1', [userId]);
+        await query('DELETE FROM users WHERE id = $1', [userId]);
         res.json({ message: 'User deleted' });
     } catch (error) {
         next(error);
@@ -65,8 +65,8 @@ router.get('/keys', adminKeyMiddleware, async (req: Request, res: Response, next
             SELECT k.id, k.key_code, k.created_at, u.email AS used_by_email,
                    creator.email AS created_by_email
             FROM access_keys k
-            LEFT JOIN "User" u ON k.used_by = u.id
-            LEFT JOIN "User" creator ON k.created_by = creator.id
+            LEFT JOIN users u ON k.used_by = u.id
+            LEFT JOIN users creator ON k.created_by = creator.id
             ORDER BY k.id
         `);
         res.json(result.rows);
@@ -114,10 +114,10 @@ router.post('/client', adminKeyMiddleware, async (req: Request, res: Response, n
     try {
         // Create user
         const hashed = await bcrypt.hash(password, 10);
-        await query('INSERT INTO "User" (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
+        await query('INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)', [email, hashed, 'user']);
 
         // Get user ID
-        const userResult = await query('SELECT id FROM "User" WHERE email = $1', [email]);
+        const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
         const userId = userResult.rows[0].id;
 
         // Insert VPS address (with label = email to satisfy NOT NULL)
@@ -155,7 +155,7 @@ router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Respon
     }
     try {
         const trimmedEmail = email.trim();
-        const userCheck = await query('SELECT id FROM "User" WHERE email = $1', [trimmedEmail]);
+        const userCheck = await query('SELECT id FROM users WHERE email = $1', [trimmedEmail]);
         if (userCheck.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }

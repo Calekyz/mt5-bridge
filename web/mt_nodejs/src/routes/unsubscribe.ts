@@ -57,7 +57,7 @@ router.post('/unsubscribe', async (req, res) => {
         let userId: number | null = null;
         try {
             const userRow = await query(
-                `SELECT id FROM "User" WHERE lower(email) = $1 LIMIT 1`,
+                `SELECT id FROM users WHERE lower(email) = $1 LIMIT 1`,
                 [email]
             );
             if (userRow.rows.length > 0) userId = userRow.rows[0].id;
@@ -97,7 +97,7 @@ router.get('/admin/unsubscribes', authMiddleware, adminAuth, async (req: AuthReq
             `SELECT u.id, u.email, u.reason, u.unsubscribed_at, u.user_id,
                     us.email AS user_account_email
              FROM email_unsubscribes u
-             LEFT JOIN "User" us ON us.id = u.user_id
+             LEFT JOIN users us ON us.id = u.user_id
              ORDER BY u.unsubscribed_at DESC`
         );
         res.json({ unsubscribes: result.rows });
