@@ -11,7 +11,8 @@ import eaRoutes from './routes/eaRoutes';
 import riskRoutes, { monitorRiskSessions } from './routes/risk';
 import mt5DetailsRoutes from './routes/mt5Details';
 import unsubscribeRoutes from './routes/unsubscribe';
-import termsRoutes from './routes/terms';   // ← NEW
+import termsRoutes from './routes/terms';
+import paymentRoutes from './payments/routes';   // ← NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -39,7 +40,15 @@ app.use('/v1', eaRoutes);
 app.use('/v1', riskRoutes);
 app.use('/v1', mt5DetailsRoutes);
 app.use('/v1', unsubscribeRoutes);
-app.use('/v1', termsRoutes);   // ← NEW: T&C acceptance + PDF generation
+app.use('/v1', termsRoutes);
+
+// ─── Payments (feature-flagged) ───
+if (process.env.PAYMENTS_ENABLED === 'true') {
+    app.use('/v1/payments', paymentRoutes);
+    console.log('💳 Payments enabled at /v1/payments');
+} else {
+    console.log('💤 Payments disabled (set PAYMENTS_ENABLED=true to enable)');
+}
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
