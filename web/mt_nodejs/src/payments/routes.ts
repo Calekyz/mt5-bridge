@@ -285,7 +285,7 @@ router.post('/manual/submit', async (req: Request, res: Response) => {
 // GET /v1/payments/status/:paymentId — poll current status
 // ═══════════════════════════════════════════════════════════════════
 router.get('/status/:paymentId', async (req: Request, res: Response) => {
-  const rec = await getPaymentRecord(req.params.paymentId);
+  const rec = await getPaymentRecord(String(req.params.paymentId));
   if (!rec) return res.status(404).json({ success: false, error: 'Payment not found' });
   res.json({ success: true, payment: rec });
 });
@@ -294,7 +294,7 @@ router.get('/status/:paymentId', async (req: Request, res: Response) => {
 // GET /v1/payments/user/:userEmail — payment history for a user
 // ═══════════════════════════════════════════════════════════════════
 router.get('/user/:userEmail', async (req: Request, res: Response) => {
-  const list = await getPaymentsByUser(req.params.userEmail);
+  const list = await getPaymentsByUser(String(req.params.userEmail));
   res.json({ success: true, payments: list });
 });
 
@@ -306,7 +306,7 @@ router.get('/user/:email/pending', async (req: Request, res: Response) => {
     `SELECT * FROM pipnex_payments
      WHERE user_email = $1 AND status IN ('PENDING','PROCESSING')
      ORDER BY created_at DESC LIMIT 1`,
-    [req.params.email]
+    [String(req.params.email)]
   );
   res.json({ success: true, pending: rows[0] || null });
 });
