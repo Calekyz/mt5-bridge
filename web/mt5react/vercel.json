@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/v1/(.*)", "destination": "https://YOUR-RENDER-BACKEND.onrender.com/v1/$1" },
+    { "source": "/v1/(.*)", "destination": "https://mt5-nodejs.onrender.com/v1/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
