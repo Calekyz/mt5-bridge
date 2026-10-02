@@ -347,9 +347,7 @@ export const Mt5DetailsPage: React.FC = () => {
                 {/*  PREMIUM ACCESS BANNER — animated, premium feel   */}
                 {/* ═══════════════════════════════════════════════════ */}
                 <a
-                    href={WHATSAPP_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/subscribe"
                     className="premium-banner-bg group relative block rounded-3xl border border-amber-400/30 shadow-2xl shadow-amber-500/10 overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:border-amber-300/60 hover:shadow-amber-500/30 active:scale-[0.995]"
                 >
                     {/* Rotating conic glow (background) */}

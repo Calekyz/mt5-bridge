@@ -606,7 +606,7 @@ export const Dashboard: React.FC = () => {
                             </div>
 
                             <div className="space-y-2.5 mb-5">
-                                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"
+                                <a href="/subscribe"
                                    className="group relative flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-xl p-3.5 border border-emerald-400/40 shadow-lg shadow-emerald-600/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     <div className="relative flex items-center gap-3">
@@ -618,7 +618,7 @@ export const Dashboard: React.FC = () => {
                                                 Get Lifetime Access
                                                 <span className="text-[10px] bg-white/25 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">{BOT_PRICE}</span>
                                             </div>
-                                            <div className="text-emerald-100 text-[11px]">Chat on WhatsApp · fastest setup</div>
+                                            <div className="text-emerald-100 text-[11px]">Choose your plan · instant activation</div>
                                         </div>
                                     </div>
                                     <ArrowRight size={16} className="relative text-white group-hover:translate-x-1 transition-transform flex-shrink-0" />

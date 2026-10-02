@@ -44,6 +44,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
     // ─── Payment modal ────────────────────────────────────
     const [showPayment, setShowPayment] = useState(false);
     const [paymentEmail, setPaymentEmail] = useState('');
+    const [showPlanPicker, setShowPlanPicker] = useState(false);
+    const [paymentProduct, setPaymentProduct] = useState<'lifetime' | 'yearly'>('lifetime');
     const openPayment = () => {
         const email = window.prompt('Enter your email to continue with payment:');
         if (email && email.includes('@')) {
@@ -118,9 +120,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             const data = await res.json();
 
             if (mode === 'signup') {
-                setSignupMessage('Account created! Continue to payment.');
+                setSignupMessage('Account created successfully! Choose your plan below.');
                 setPaymentEmail((email || '').trim().toLowerCase());
-                setShowPayment(true);
+                setShowPlanPicker(true);
                 setLoading(false);
                 return;
             }
@@ -291,7 +293,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             )}
 
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* ═══ Plan Picker (after signup) ═══ */}
+                            {showPlanPicker && (
+                                <div className="mb-6 p-4 rounded-2xl bg-slate-900/60 border border-amber-500/30 shadow-2xl shadow-amber-500/10">
+                                    <div className="text-center mb-4">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wider mb-2">
+                                            <CheckCircle2 size={11} /> Account Created
+                                        </div>
+                                        <h3 className="text-white text-base font-bold">Choose Your Plan</h3>
+                                        <p className="text-slate-400 text-[11px] mt-1">Pick a plan to unlock your full dashboard</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setPaymentProduct('lifetime'); setShowPayment(true); }}
+                                            className="p-3 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 to-orange-600/5 hover:border-amber-400 transition-all text-left"
+                                        >
+                                            <div className="text-amber-400 text-[9px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1"><Crown size={10} /> Best Value</div>
+                                            <div className="text-white font-bold text-sm">Lifetime</div>
+                                            <div className="text-2xl font-extrabold text-white leading-tight">$255</div>
+                                            <div className="text-slate-400 text-[10px]">one-time</div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setPaymentProduct('yearly'); setShowPayment(true); }}
+                                            className="p-3 rounded-xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 to-teal-600/5 hover:border-emerald-400 transition-all text-left"
+                                        >
+                                            <div className="text-emerald-400 text-[9px] font-bold uppercase tracking-wider mb-1">Plan</div>
+                                            <div className="text-white font-bold text-sm">Yearly</div>
+                                            <div className="text-2xl font-extrabold text-white leading-tight">$160</div>
+                                            <div className="text-slate-400 text-[10px]">/ year</div>
+                                        </button>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPlanPicker(false)}
+                                        className="mt-3 w-full text-center text-[11px] text-slate-500 hover:text-slate-300 transition py-1"
+                                    >
+                                        Skip for now
+                                    </button>
+                                </div>
+                            )}
+
+                            {!showPlanPicker && (<form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
                                     <div className="relative">
@@ -348,7 +392,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 <div className="text-center text-xs text-slate-400 pt-2">
                                     {mode === 'login' ? (<>Don't have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign Up</button></>) : (<>Already have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign In</button></>)}
                                 </div>
-                            </form>
+                            </form>)}
 
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-slate-700/50" />
@@ -435,7 +479,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 <DynamicPaymentModal
                     isOpen={showPayment}
                     onClose={() => setShowPayment(false)}
-                    productId="lifetime"
+                    productId={paymentProduct}
                     user={paymentEmail ? { email: paymentEmail } : null}
                     onPaymentSuccess={() => {
                         setShowPayment(false);
