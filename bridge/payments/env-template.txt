@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════
+# PAYMENT SYSTEM — Environment Variables
+# Add these to your new project's .env AND to Render's env vars
+# ═══════════════════════════════════════════════════════════════
+
+# ── Payment Gateway (PayHero / Daraja) ──
+PAYHERO_BASIC_AUTH=
+PAYHERO_USERNAME=
+PAYHERO_PASSWORD=
+PAYHERO_CHANNEL_ID=
+
+# ── Safaricom M-Pesa (Daraja) ──
+MPESA_CONSUMER_KEY=
+MPESA_CONSUMER_SECRET=
+MPESA_SHORTCODE=
+MPESA_PASSKEY=
+MPESA_CALLBACK_URL=https://app.piptraderai.com/api/payments/mpesa/callback
+
+# ── Currency ──
+USD_TO_KES_RATE=129
+
+# ── Binance USDT (if enabling crypto payments) ──
+BINANCE_USDT_WALLET=
+
+# ── Admin (for approve/reject/ban) ──
+ADMIN_PASSWORD=
+
+# ── Database (new Neon project) ──
+DATABASE_URL=postgresql://...
