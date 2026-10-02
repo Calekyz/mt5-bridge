@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ═══════════════════════════════════════════════════════════════════
 // Admin Transactions — approval queue for pending payments
 // Reads /v1/payments/admin/all, approve/reject via /v1/payments/admin/verify

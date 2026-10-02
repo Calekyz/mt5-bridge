@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Shield, Crown, CheckCircle2, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../types';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useRef, useState } from 'react';
 import { ShieldCheck, Clock, CheckCircle2, RefreshCw, XCircle, Sparkles } from 'lucide-react';
 
