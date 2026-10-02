@@ -181,7 +181,7 @@ export async function fetchPaymentConfig(): Promise<PaymentConfig> {
   const timeoutId = setTimeout(() => controller.abort(), 1200);
 
   try {
-    const res = await fetch('/api/payments/config', { signal: controller.signal });
+    const res = await fetch('/v1/payments/config', { signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await res.json();
     if (data.success && data.config) {
@@ -213,7 +213,7 @@ export async function fetchProductsCatalogue(): Promise<ProductPlanInfo[]> {
   const timeoutId = setTimeout(() => controller.abort(), 1200);
 
   try {
-    const res = await fetch('/api/payments/products', { signal: controller.signal });
+    const res = await fetch('/v1/payments/products', { signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await res.json();
     if (data.success && Array.isArray(data.products) && data.products.length > 0) {
@@ -246,7 +246,7 @@ export async function initiateMpesaStkPush(params: {
   error?: string;
 }> {
   try {
-    const res = await fetch('/api/payments/mpesa/stk-push', {
+    const res = await fetch('/v1/payments/mpesa/stk-push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -275,7 +275,7 @@ export async function submitManualPayment(params: {
   error?: string;
 }> {
   try {
-    const res = await fetch('/api/payments/manual/submit', {
+    const res = await fetch('/v1/payments/manual/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -297,8 +297,8 @@ export async function pollPaymentStatus(paymentId: string, forceComplete = false
 }> {
   try {
     const url = forceComplete 
-      ? `/api/payments/status/${paymentId}?forceComplete=true`
-      : `/api/payments/status/${paymentId}`;
+      ? `/v1/payments/status/${paymentId}?forceComplete=true`
+      : `/v1/payments/status/${paymentId}`;
     const res = await fetch(url);
     const data = await res.json();
     return data;
@@ -315,7 +315,7 @@ export async function verifyMpesaStkPush(paymentId: string, receiptCode?: string
   error?: string;
 }> {
   try {
-    const res = await fetch(`/api/payments/verify-stk/${paymentId}`, {
+    const res = await fetch(`/v1/payments/verify-stk/${paymentId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ receiptCode })
@@ -332,7 +332,7 @@ export async function simulateCompletePayment(paymentId: string, receiptNumber?:
   message?: string;
 }> {
   try {
-    const res = await fetch('/api/payments/simulate-complete', {
+    const res = await fetch('/v1/payments/simulate-complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paymentId, receiptNumber })
@@ -345,7 +345,7 @@ export async function simulateCompletePayment(paymentId: string, receiptNumber?:
 
 export async function fetchUserPaymentHistory(userEmail: string): Promise<PaymentRecordDTO[]> {
   try {
-    const res = await fetch(`/api/payments/user/${encodeURIComponent(userEmail)}`);
+    const res = await fetch(`/v1/payments/user/${encodeURIComponent(userEmail)}`);
     const data = await res.json();
     if (data.success && Array.isArray(data.payments)) {
       return data.payments;
@@ -358,7 +358,7 @@ export async function fetchUserPaymentHistory(userEmail: string): Promise<Paymen
 
 export async function fetchAdminPayments(): Promise<PaymentRecordDTO[]> {
   try {
-    const res = await fetch('/api/payments/admin/all');
+    const res = await fetch('/v1/payments/admin/all');
     const data = await res.json();
     if (data.success && Array.isArray(data.payments)) {
       return data.payments;
@@ -371,7 +371,7 @@ export async function fetchAdminPayments(): Promise<PaymentRecordDTO[]> {
 
 export async function adminVerifyPayment(paymentId: string, action: 'approve' | 'reject', notes?: string) {
   try {
-    const res = await fetch('/api/payments/admin/verify', {
+    const res = await fetch('/v1/payments/admin/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paymentId, action, notes })
