@@ -321,41 +321,98 @@ export async function initiateMpesaStkPushGateway(params: {
   const baseUrl = getPayWaveXpressBaseUrl();
 
   if (!apiKey || !email) {
-    return { success: false, message: 'PayWave credentials not configured' };
+    return { success: false, message: 'PayWave credentials not configured (PAYWAVE_API_KEY, PAYWAVE_EMAIL)' };
   }
 
   const { normalized, isValid } = normalizeMpesaPhone(params.phoneNumber);
   if (!isValid) return { success: false, message: 'Invalid phone number' };
 
   try {
-    const payload = {
-      phone: normalized,
-      amount: params.amount,
+    // PayWave Xpress request format (from their docs):
+    // POST /v1/stkpush
+    // Body: { api_key, email, amount, msisdn, reference, account_number? }
+    const payload: Record<string, any> = {
+      api_key: apiKey,
+      email,
+      amount: Math.round(params.amount),   // KES integer
+      msisdn: normalized,                  // 254XXXXXXXXX
       reference: params.accountReference,
-      description: params.transactionDesc,
-      callback_url: params.callbackUrl,
     };
 
-    const res = await axios.post(`${baseUrl}/v1/stk/push`, payload, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
-        'X-User-Email': email,
-      },
+    const res = await axios.post(`${baseUrl}/v1/stkpush`, payload, {
+      headers: { 'Content-Type': 'application/json' },
       timeout: 30000,
     });
 
     const data = res.data || {};
+    const resultCode = String(data.ResultCode ?? data.resultCode ?? '');
+
+    // Success codes: "0" (docs example) or missing ResultCode with a request id
+    const isSuccess = resultCode === '0' || data.success === true ||
+                      !!(data.transaction_request_id || data.TransactionRequestID || data.CheckoutRequestID);
+
+    if (!isSuccess) {
+      return {
+        success: false,
+        message: data.errorMessage || data.message || `PayWave error code ${resultCode}`,
+        raw: data,
+      };
+    }
+
+    // Extract request/transaction ids — field names vary
+    const requestId = data.transaction_request_id
+                   || data.TransactionRequestID
+                   || data.CheckoutRequestID
+                   || data.checkout_request_id
+                   || data.request_id;
+
+    const merchantId = data.merchant_request_id
+                    || data.MerchantRequestID
+                    || undefined;
+
     return {
-      success: !!data.success || !!data.CheckoutRequestID,
-      checkoutRequestId: data.CheckoutRequestID || data.checkout_request_id,
-      merchantRequestId: data.MerchantRequestID || data.merchant_request_id,
-      message: data.message || 'STK push sent',
+      success: true,
+      checkoutRequestId: requestId,
+      merchantRequestId: merchantId,
+      message: data.CustomerMessage || data.message || 'STK push sent. Enter your M-Pesa PIN.',
       raw: data,
     };
   } catch (err: any) {
-    const msg = err?.response?.data?.message || err?.message || 'STK push failed';
-    return { success: false, message: msg };
+    const raw = err?.response?.data?.errorMessage
+             || err?.response?.data?.message
+             || err?.message
+             || 'STK push failed';
+    const msg = raw.includes('ENOTFOUND')
+      ? `Cannot reach PayWave at ${baseUrl}. Check PAYWAVE_BASE_URL in env.`
+      : raw;
+    return { success: false, message: msg, raw: err?.response?.data };
+  }
+}
+
+// ─── PayWave transaction status check ───
+export async function queryPayWaveTransactionStatus(transactionRequestId: string): Promise<{
+  success: boolean;
+  status?: string;
+  raw?: any;
+  message?: string;
+}> {
+  const apiKey = getPayWaveXpressApiKey();
+  const email = getPayWaveXpressEmail();
+  const baseUrl = getPayWaveXpressBaseUrl();
+
+  if (!apiKey || !email) return { success: false, message: 'PayWave credentials not configured' };
+
+  try {
+    const res = await axios.post(`${baseUrl}/v1/tstatus`, {
+      api_key: apiKey,
+      email,
+      transaction_request_id: transactionRequestId,
+    }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+
+    const data = res.data || {};
+    return { success: true, status: data.status || data.Status || data.transaction_status, raw: data };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Status check failed', raw: err?.response?.data };
   }
 }
 
