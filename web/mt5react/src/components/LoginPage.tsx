@@ -6,6 +6,7 @@ import {
     ExternalLink, Building2, Send, X, DollarSign,
     ChevronDown, ChevronUp, Scale, FileText,
 } from 'lucide-react';
+import { DynamicPaymentModal } from '../payments/DynamicPaymentModal';
 
 interface LoginPageProps {
     onLogin: (data: { token: string; user: any }) => void;
@@ -40,6 +41,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
 
     // ─── T&C acceptance (applies to BOTH login & signup) ────
     const [termsAccepted, setTermsAccepted] = useState(false);
+    // ─── Payment modal ────────────────────────────────────
+    const [showPayment, setShowPayment] = useState(false);
+    const [paymentEmail, setPaymentEmail] = useState('');
+    const openPayment = () => {
+        const email = window.prompt('Enter your email to continue with payment:');
+        if (email && email.includes('@')) {
+            setPaymentEmail(email.trim().toLowerCase());
+            setShowPayment(true);
+        }
+    };
 
     // ─── Telegram popup ─────────────────────────────────────
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
@@ -214,7 +225,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             </div>
                             <ExternalLink size={18} className="text-white flex-shrink-0" />
                         </a>
-                        <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/25 transition-all">
+                        <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/25 transition-all">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-xl"><MessageCircle size={20} className="text-white" /></div>
                                 <div>
@@ -264,7 +275,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
                                         <span className="text-emerald-400 font-bold">4 Algos</span><span className="text-slate-600">·</span><span className="text-red-400 font-bold">Risk Guard</span><span className="text-slate-600">·</span><span className="text-rose-400 font-bold">Quantum AI</span><span className="text-slate-600">·</span><span className="text-amber-300 font-bold">{BOT_PRICE}</span>
                                     </p>
-                                    <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition">Get started today <ArrowRight size={11} className="tagline-arrow" /></a>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition">Get started today <ArrowRight size={11} className="tagline-arrow" /></a>
                                 </div>
                             </div>
 
@@ -354,7 +365,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                     </div>
                                     <ExternalLink size={14} className="text-red-400" />
                                 </a>
-                                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 rounded-xl p-3 border border-emerald-500/40 transition-all">
+                                <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 rounded-xl p-3 border border-emerald-500/40 transition-all">
                                     <div className="flex items-center gap-2.5">
                                         <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30"><MessageCircle size={14} className="text-emerald-400" /></div>
                                         <div>
@@ -415,6 +426,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* ═══ Payment Modal ═══ */}
+            {showPayment && (
+                <DynamicPaymentModal
+                    isOpen={showPayment}
+                    onClose={() => setShowPayment(false)}
+                    productId="lifetime"
+                    user={paymentEmail ? { email: paymentEmail } : null}
+                    onPaymentSuccess={() => {
+                        setShowPayment(false);
+                        setSignupMessage('Payment submitted! Your account will be activated shortly.');
+                    }}
+                />
             )}
         </div>
     );
