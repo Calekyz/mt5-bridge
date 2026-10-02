@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Sparkles, Shield, Crown, CheckCircle2, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../types';
 import { DynamicPaymentModal } from './DynamicPaymentModal';
-import { fetchProductsCatalogue, ProductPlanInfo } from '../lib/paymentService';
+import { fetchProductsCatalogue, ProductPlanInfo } from './paymentService';
 
 export type PlanTierType = 'Starter' | 'Pro' | 'Elite';
 

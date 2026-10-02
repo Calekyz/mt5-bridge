@@ -21,7 +21,7 @@ interface Props {
 export const PendingPaymentBanner: React.FC<Props> = ({ userEmail, onOpenSubscription }) => {
   const [pending, setPending] = useState<PendingPayment[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [tick, setTick] = useState(0);
+  // const [tick, setTick] = useState(0); (unused)
 
   const load = async (showSpinner = false) => {
     if (!userEmail) return;
