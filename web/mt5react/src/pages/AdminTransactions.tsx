@@ -3,7 +3,7 @@
 // Reads /v1/payments/admin/all, approve/reject via /v1/payments/admin/verify
 // ═══════════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   RefreshCw, CheckCircle2, XCircle, Clock, Search,
   DollarSign, Smartphone, Wallet, AlertCircle, Loader2
