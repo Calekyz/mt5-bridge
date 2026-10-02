@@ -1,1 +1,7 @@
 node_modules/
+
+# Secrets
+web/mt_nodejs/.env
+web/mt5react/.env
+.env
+*.env.local

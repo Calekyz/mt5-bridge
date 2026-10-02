@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import dataRoute from './routes/dataRoute';
@@ -12,7 +13,8 @@ import riskRoutes, { monitorRiskSessions } from './routes/risk';
 import mt5DetailsRoutes from './routes/mt5Details';
 import unsubscribeRoutes from './routes/unsubscribe';
 import termsRoutes from './routes/terms';
-import paymentRoutes from './payments/routes';   // ← NEW
+import paymentRoutes from './payments/routes';
+import { autoMigratePayments } from './payments/autoMigrate';   // ← NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -70,6 +72,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 const PORT = process.env.PORT || 8891;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    await autoMigratePayments();
     await restoreStrategyStates();
     console.log('✅ Strategy states restored');
 
