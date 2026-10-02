@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus, Key
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus, Key, DollarSign
 } from "lucide-react";
 
 // ---- Components ----
@@ -28,6 +28,8 @@ import AdminUnsubscribes from "./pages/AdminUnsubscribes";
 import { TermsModal } from "./components/TermsModal";
 import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
+import AdminTransactions from './pages/AdminTransactions';
+import { PendingPaymentBanner } from './payments/PendingPaymentBanner';
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -190,6 +192,7 @@ function App() {
         { path: "/guide", label: "Guide", icon: BookOpen },
     ];
     if (isAdmin) sideItems.push({ path: "/admin", label: "Admin", icon: Users });
+    if (isAdmin) sideItems.push({ path: "/admin/transactions", label: "Payments", icon: DollarSign });
 
     const middleIndex = Math.floor(sideItems.length / 2);
     const navItems: any[] = [...sideItems];
@@ -322,6 +325,7 @@ function App() {
 
                         {/* MAIN */}
                         <main className="flex-1 mt-16 mb-28 overflow-y-auto">
+                            <PendingPaymentBanner userEmail={user?.email} />
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/guide" element={<Guide />} />
@@ -338,6 +342,7 @@ function App() {
                                 <Route path="/admin/mt5-details" element={isAdmin ? <AdminMt5DetailsPage /> : <Navigate to="/" replace />} />
                                 <Route path="/admin/unsubscribes" element={isAdmin ? <AdminUnsubscribes /> : <Navigate to="/" replace />} />
                                 <Route path="/admin/terms-acceptances" element={isAdmin ? <AdminTermsAcceptances /> : <Navigate to="/" replace />} />
+                                <Route path="/admin/transactions" element={isAdmin ? <AdminTransactions /> : <Navigate to="/" replace />} />
                             </Routes>
                         </main>
 
