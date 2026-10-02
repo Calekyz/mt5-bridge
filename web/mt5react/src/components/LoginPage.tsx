@@ -441,6 +441,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     }}
                 />
             )}
+
+            {/* ═══ Support link (for users who paid but need help) ═══ */}
+            <div className="text-center mt-6 pb-4">
+                <a
+                    href={WHATSAPP_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-emerald-400 transition"
+                >
+                    <MessageCircle size={12} />
+                    Already paid? Need help? Chat with support on WhatsApp
+                </a>
+            </div>
         </div>
     );
 };
