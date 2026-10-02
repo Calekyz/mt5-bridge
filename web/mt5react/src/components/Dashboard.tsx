@@ -8,7 +8,7 @@ import type { PipnexSuggestion, NovaSuggestion, SmcSuggestion, PunexSuggestion }
 import {
     AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
-    BookOpen, X as XIcon, Zap, Activity,
+    BookOpen, X as XIcon, Zap, Activity, ChevronDown,
     Info, Clock, BarChart3, Sparkles, Crown, MessageCircle,
     ArrowRight, DollarSign, CheckCircle2
 } from 'lucide-react';
@@ -98,6 +98,8 @@ export const Dashboard: React.FC = () => {
     const [punexSettings, setPunexSettings]   = useState<Record<string, any>>(() => loadStoredSettings('punexSettings'));
 
     const [isToggling, setIsToggling] = useState<string | null>(null);
+    const [selectedEA, setSelectedEA] = useState<StrategyType>(() => (localStorage.getItem('dashboard_selected_ea') as StrategyType) || 'pipnex');
+    const handleEASelect = (id: StrategyType) => { setSelectedEA(id); localStorage.setItem('dashboard_selected_ea', id); };
     const [commandError, setCommandError] = useState<string | null>(null);
     const [eaConnected, setEaConnected] = useState<boolean | null>(null);
     const [refreshingUser, setRefreshingUser] = useState(false);
@@ -1013,7 +1015,36 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* ═══════════════════════════════════════════════════ */}
+                {/* EA SELECTOR DROPDOWN                                 */}
+                {/* ═══════════════════════════════════════════════════ */}
+                <div className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700/50">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Select Expert Advisor
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={selectedEA}
+                            onChange={(e) => handleEASelect(e.target.value as StrategyType)}
+                            className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 pr-10 text-white text-sm font-semibold appearance-none focus:outline-none transition cursor-pointer"
+                        >
+                            {[
+                                { id: 'pipnex', icon: '📈', label: 'PipNex Algo', enabled: pipnexEnabled },
+                                { id: 'nova',   icon: '🤖', label: 'NOVA EDGE AI', enabled: novaEnabled },
+                                { id: 'smc',    icon: '📊', label: 'SMC Swing Trader', enabled: smcEnabled },
+                                { id: 'punex',  icon: '🌏', label: 'Punex Asian Session', enabled: punexEnabled },
+                            ].map((ea) => (
+                                <option key={ea.id} value={ea.id}>
+                                    {ea.icon} {ea.label}{ea.enabled ? ' · ● Active' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+
+                {/* Selected EA card */}
+                {selectedEA === 'pipnex' && (
                     <StrategyCard
                         type="pipnex" label="PipNex Algo" icon="📈"
                         description="Scalper grid with martingale"
@@ -1024,6 +1055,8 @@ export const Dashboard: React.FC = () => {
                         isToggling={isToggling === 'pipnex'}
                         settingsDef={PIPNEX_SETTINGS} disabled={!eaConnected}
                     />
+                )}
+                {selectedEA === 'nova' && (
                     <StrategyCard
                         type="nova" label="NOVA EDGE AI" icon="🤖"
                         description="Fibonacci swing with RSI + ATR"
@@ -1034,9 +1067,8 @@ export const Dashboard: React.FC = () => {
                         isToggling={isToggling === 'nova'}
                         settingsDef={NOVA_SETTINGS} disabled={!eaConnected}
                     />
-                </div>
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                )}
+                {selectedEA === 'smc' && (
                     <StrategyCard
                         type="smc" label="SMC Swing Trader" icon="📊"
                         description="HTF structure + POI (OB/FVG) + LTF CHoCH"
@@ -1047,6 +1079,8 @@ export const Dashboard: React.FC = () => {
                         isToggling={isToggling === 'smc'}
                         settingsDef={SMC_SETTINGS} disabled={!eaConnected}
                     />
+                )}
+                {selectedEA === 'punex' && (
                     <StrategyCard
                         type="punex" label="Punex Asian Session" icon="🌏"
                         description="Asian range sweep + Order Block 50% entry"
@@ -1057,7 +1091,7 @@ export const Dashboard: React.FC = () => {
                         isToggling={isToggling === 'punex'}
                         settingsDef={PUNEX_SETTINGS} disabled={!eaConnected}
                     />
-                </div>
+                )}
             </div>
 
             {showWelcomeGuide && (
