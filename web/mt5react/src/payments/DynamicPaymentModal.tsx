@@ -16,7 +16,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { UserProfile } from '../types';
+import { UserProfile } from './types';
 import { 
   fetchPaymentConfig, 
   fetchProductsCatalogue, 
@@ -26,7 +26,7 @@ import {
   PaymentConfig, 
   ProductPlanInfo, 
   PaymentRecordDTO 
-} from '../lib/paymentService';
+} from './paymentService';
 
 interface DynamicPaymentModalProps {
   isOpen: boolean;
@@ -172,7 +172,7 @@ export const DynamicPaymentModal: React.FC<DynamicPaymentModalProps> = ({
       phoneNumber: mpesaPhone,
       userId: user?.email || 'guest',
       userEmail: user?.email || 'trader@piptraderai.com',
-      userName: user ? `${user.firstName} ${user.lastName}` : 'PipTraderAI Trader'
+      userName: user ? (user.email ? user.email.split('@')[0] : 'PipTraderAI Trader') : 'PipTraderAI Trader'
     });
 
     setIsSubmitting(false);
@@ -218,7 +218,7 @@ export const DynamicPaymentModal: React.FC<DynamicPaymentModalProps> = ({
       smsMessage: mpesaSmsMessage,
       userId: user?.email || 'guest',
       userEmail: user?.email || 'trader@piptraderai.com',
-      userName: user ? `${user.firstName} ${user.lastName}` : 'PipTraderAI Trader'
+      userName: user ? (user.email ? user.email.split('@')[0] : 'PipTraderAI Trader') : 'PipTraderAI Trader'
     });
 
     setIsSubmitting(false);
@@ -254,7 +254,7 @@ export const DynamicPaymentModal: React.FC<DynamicPaymentModalProps> = ({
       binanceId: binanceId.trim(),
       userId: user?.email || 'guest',
       userEmail: user?.email || 'trader@piptraderai.com',
-      userName: user ? `${user.firstName} ${user.lastName}` : 'PipTraderAI Trader'
+      userName: user ? (user.email ? user.email.split('@')[0] : 'PipTraderAI Trader') : 'PipTraderAI Trader'
     });
 
     setIsSubmitting(false);
