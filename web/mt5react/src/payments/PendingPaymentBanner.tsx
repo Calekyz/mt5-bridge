@@ -27,7 +27,7 @@ export const PendingPaymentBanner: React.FC<Props> = ({ userEmail, onOpenSubscri
     if (!userEmail) return;
     if (showSpinner) setRefreshing(true);
     try {
-      const res = await fetch(`/v1/payments/user/${encodeURIComponent(userEmail)}/pending`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || '/v1'}/payments/user/${encodeURIComponent(userEmail)}/pending`);
       const data = await res.json();
       if (data?.success && Array.isArray(data.pending)) {
         setPending(data.pending);
