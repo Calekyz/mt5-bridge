@@ -1,817 +1,227 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// ═══════════════════════════════════════════════════════════════════
+// Admin Transactions — approval queue for pending payments
+// Reads /v1/payments/admin/all, approve/reject via /v1/payments/admin/verify
+// ═══════════════════════════════════════════════════════════════════
+
+import React, { useState, useEffect } from 'react';
 import {
-  DollarSign,
-  Download,
-  Calendar,
-  Filter,
-  Search,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  CreditCard,
-  Building2,
-  Wallet,
-  Smartphone,
-  ChevronRight,
-  Eye,
-  FileSpreadsheet,
-  Layers,
-  ArrowRight,
-  Ban,
-  Loader2,
+  RefreshCw, CheckCircle2, XCircle, Clock, Search,
+  DollarSign, Smartphone, Wallet, AlertCircle, Loader2
 } from 'lucide-react';
-import { AdminTransactionItem, TransactionAnalytics } from '../payments/types';
 import { AdminApi } from '../api';
+import type { PaymentRecordDTO } from '../payments/types';
 
-interface TransactionsViewProps {
-  onRefreshStats?: () => void;
-}
+type StatusFilter = 'ALL' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
-export const TransactionsView: React.FC<TransactionsViewProps> = ({ onRefreshStats }) => {
-  const [transactions, setTransactions] = useState<AdminTransactionItem[]>([]);
-  const [analytics, setAnalytics] = useState<TransactionAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
+export default function AdminTransactions() {
+  const [payments, setPayments] = useState<PaymentRecordDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>('PENDING');
+  const [search, setSearch] = useState('');
+  const [acting, setActing] = useState<string | null>(null);
 
-  // Filters State
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all' | 'custom'>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [methodFilter, setMethodFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Selected Transaction for Details Modal
-  const [selectedTx, setSelectedTx] = useState<AdminTransactionItem | null>(null);
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [actionToast, setActionToast] = useState<{ ok: boolean; msg: string } | null>(null);
-
-  const handleVerifyPayment = async (paymentId: string, action: 'approve' | 'reject' | 'reject_ban') => {
-    let notes: string | undefined;
-    if (action === 'reject_ban') {
-      const reason = window.prompt('Reason for rejecting + banning this user:', 'Fraudulent payment submission');
-      if (reason === null) return; // user cancelled
-      notes = reason || 'Fraudulent payment submission';
-    } else if (action === 'reject') {
-      const reason = window.prompt('Reason for rejection (optional):', 'Payment could not be verified');
-      if (reason === null) return;
-      notes = reason || 'Payment could not be verified';
-    } else {
-      const ok = window.confirm(`Approve this payment and activate the plan?`);
-      if (!ok) return;
-    }
-
-    setVerifyingId(paymentId);
+  const load = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await AdminApi.verifyPayment(paymentId, action, notes);
-      setActionToast({
-        ok: true,
-        msg: action === 'approve'
-          ? 'Payment approved — plan activated.'
-          : action === 'reject_ban'
-            ? 'Payment rejected and user banned.'
-            : 'Payment rejected.',
-      });
-      await fetchTransactions();
+      const list = await AdminApi.getAllPayments();
+      setPayments(list);
     } catch (err: any) {
-      setActionToast({ ok: false, msg: err?.message || 'Action failed' });
+      setError(err?.message || 'Failed to load payments');
     } finally {
-      setVerifyingId(null);
-      setTimeout(() => setActionToast(null), 4000);
+      setLoading(false);
     }
   };
 
-  const fetchTransactions = async () => {
-    setIsLoading(true);
+  useEffect(() => { load(); }, []);
+
+  const handleVerify = async (id: string, approve: boolean) => {
+    const note = approve ? 'Approved by admin' : prompt('Reason for rejection?') || 'Rejected by admin';
+    setActing(id);
     try {
-      const [txList, txAnalytics] = await Promise.all([
-        AdminApi.getTransactions({
-          dateRange,
-          startDate: dateRange === 'custom' ? startDate : undefined,
-          endDate: dateRange === 'custom' ? endDate : undefined,
-          type: typeFilter,
-          status: statusFilter,
-          paymentMethod: methodFilter,
-          search: searchQuery
-        }),
-        AdminApi.getTransactionAnalytics({
-          dateRange,
-          startDate: dateRange === 'custom' ? startDate : undefined,
-          endDate: dateRange === 'custom' ? endDate : undefined
-        })
-      ]);
-      setTransactions(txList);
-      setAnalytics(txAnalytics);
-    } catch (err) {
-      console.error('Failed to load transactions:', err);
+      const r = await AdminApi.verifyPayment(id, approve, note);
+      if (r.success) await load();
+      else setError(r.message || 'Action failed');
+    } catch (err: any) {
+      setError(err?.message || 'Action failed');
     } finally {
-      setIsLoading(false);
+      setActing(null);
     }
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [dateRange, startDate, endDate, typeFilter, statusFilter, methodFilter]);
-
-  // Debounced search trigger
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchTransactions();
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // CSV Export Handler
-  const handleExportCsv = () => {
-    setIsExporting(true);
-    try {
-      if (transactions.length === 0) {
-        alert('No transactions to export.');
-        setIsExporting(false);
-        return;
-      }
-
-      const headers = [
-        'Transaction ID',
-        'Date (UTC)',
-        'Trader Name',
-        'Trader Email',
-        'Type',
-        'Payment Method',
-        'USD Amount',
-        'KES Amount',
-        'Exchange Rate',
-        'Status',
-        'Reference / Hash',
-        'Receipt Number',
-        'Description',
-        'High Value Alert'
-      ];
-
-      const rows = transactions.map(t => [
-        `"${t.id}"`,
-        `"${t.createdAt}"`,
-        `"${t.userName.replace(/"/g, '""')}"`,
-        `"${t.userEmail}"`,
-        `"${t.type}"`,
-        `"${t.paymentMethod}"`,
-        t.amountUsd,
-        t.amountKes,
-        t.exchangeRate,
-        `"${t.status}"`,
-        `"${t.reference || ''}"`,
-        `"${t.receiptNumber || ''}"`,
-        `"${(t.description || '').replace(/"/g, '""')}"`,
-        t.isHighValue ? 'YES' : 'NO'
-      ]);
-
-      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `PipTraderAI_Transactions_${dateRange}_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('Failed to export CSV:', err);
-    } finally {
-      setIsExporting(false);
+  const filtered = payments.filter((p) => {
+    if (filter !== 'ALL' && p.status !== filter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        p.userEmail?.toLowerCase().includes(q) ||
+        p.id?.toLowerCase().includes(q) ||
+        p.mpesaReceiptNumber?.toLowerCase().includes(q) ||
+        p.transactionHash?.toLowerCase().includes(q)
+      );
     }
+    return true;
+  });
+
+  const counts = {
+    ALL: payments.length,
+    PENDING: payments.filter((p) => p.status === 'PENDING').length,
+    PROCESSING: payments.filter((p) => p.status === 'PROCESSING').length,
+    COMPLETED: payments.filter((p) => p.status === 'COMPLETED').length,
+    FAILED: payments.filter((p) => p.status === 'FAILED').length,
+    CANCELLED: payments.filter((p) => p.status === 'CANCELLED').length,
   };
 
-  const getMethodBadge = (method: string) => {
-    switch (method) {
-      case 'mpesa_automated':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <Smartphone className="w-3 h-3 text-emerald-400" />
-            M-PESA Express
-          </span>
-        );
-      case 'mpesa_manual':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20">
-            <Smartphone className="w-3 h-3 text-teal-400" />
-            M-PESA Paybill
-          </span>
-        );
-      case 'binance_usdt':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Wallet className="w-3 h-3 text-amber-400" />
-            Binance USDT
-          </span>
-        );
-      case 'bank_transfer':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <Building2 className="w-3 h-3 text-blue-400" />
-            Bank Wire
-          </span>
-        );
-      case 'stripe':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            <CreditCard className="w-3 h-3 text-indigo-400" />
-            Stripe Card
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
-            {method}
-          </span>
-        );
-    }
+  const methodIcon = (m: string) => {
+    if (m === 'mpesa_automated' || m === 'mpesa_manual') return <Smartphone size={14} />;
+    if (m === 'binance_usdt') return <Wallet size={14} />;
+    return <DollarSign size={14} />;
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Completed
-          </span>
-        );
-      case 'PENDING':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Clock className="w-3 h-3 text-amber-400" />
-            Pending
-          </span>
-        );
-      case 'FAILED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-            <XCircle className="w-3 h-3 text-rose-400" />
-            Failed
-          </span>
-        );
-      case 'REFUNDED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
-            <ArrowDownRight className="w-3 h-3 text-purple-400" />
-            Refunded
-          </span>
-        );
-      default:
-        return <span className="text-xs text-slate-400">{status}</span>;
-    }
+  const statusColor = (s: string) => {
+    if (s === 'COMPLETED') return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+    if (s === 'PENDING' || s === 'PROCESSING') return 'text-amber-400 bg-amber-500/10 border-amber-500/30';
+    if (s === 'FAILED' || s === 'CANCELLED') return 'text-rose-400 bg-rose-500/10 border-rose-500/30';
+    return 'text-slate-400 bg-slate-500/10 border-slate-500/30';
   };
-
-  const highValueCount = useMemo(() => {
-    return transactions.filter(t => t.isHighValue && t.status === 'COMPLETED').length;
-  }, [transactions]);
 
   return (
-    <div className="space-y-6">
-      {/* Action toast */}
-      {actionToast && (
-        <div className={`fixed top-4 right-4 z-[300] max-w-sm animate-in fade-in slide-in-from-top-2`}>
-          <div className={`rounded-2xl border-2 p-4 shadow-2xl backdrop-blur-md ${
-            actionToast.ok
-              ? 'border-emerald-500/60 bg-gradient-to-br from-emerald-950/95 to-emerald-900/85'
-              : 'border-rose-500/60 bg-gradient-to-br from-rose-950/95 to-rose-900/85'
-          }`}>
-            <div className="flex items-start gap-3">
-              {actionToast.ok ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0 mt-0.5" />
-              ) : (
-                <XCircle className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
-              )}
-              <div className={`text-sm font-bold ${actionToast.ok ? 'text-emerald-100' : 'text-rose-100'}`}>
-                {actionToast.msg}
-              </div>
-            </div>
-          </div>
+    <div className="p-4 max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Payment Approvals</h1>
+          <p className="text-sm text-slate-400 mt-0.5">
+            Approve pending payments to activate users
+          </p>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-white border border-slate-700"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 flex-wrap mb-3">
+        {(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED', 'ALL'] as StatusFilter[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+              filter === s
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
+                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+          >
+            {s} ({counts[s]})
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by email, ID, receipt, tx hash..."
+          className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
+        />
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center gap-2">
+          <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      {/* Header with Title & Export Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Financial Oversight & Transactions</h1>
-            <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Live Ledger
-            </span>
-          </div>
-          <p className="text-sm text-slate-400 mt-1">
-            Real-time audit log of all incoming M-PESA payments, crypto deposits, bot subscriptions, and refunds.
-          </p>
+      {/* List */}
+      {loading && payments.length === 0 ? (
+        <div className="flex justify-center py-16">
+          <Loader2 size={32} className="animate-spin text-slate-500" />
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={fetchTransactions}
-            disabled={isLoading}
-            className="px-3 py-2 rounded-lg bg-[#15192c] hover:bg-[#1c223c] border border-[#262c4d] text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
-            title="Refresh Ledger"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-purple-400' : ''}`} />
-            Refresh
-          </button>
-
-          <button
-            id="export-transactions-csv-btn"
-            onClick={handleExportCsv}
-            disabled={isExporting || transactions.length === 0}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-600/20 flex items-center gap-2 transition-all disabled:opacity-50"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            {isExporting ? 'Generating CSV...' : 'Export to CSV'}
-          </button>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-slate-500 text-sm">
+          No payments match this filter.
         </div>
-      </div>
-
-      {/* Real-Time KPIs Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Total Volume USD & KES */}
-        <div className="p-4 rounded-xl bg-[#0d101f] border border-[#1e233d] shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Volume (Settled)</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tracking-tight">
-              ${(analytics?.totalVolumeUsd || 0).toLocaleString()}
-            </span>
-            <span className="text-xs text-emerald-400 font-medium flex items-center gap-0.5">
-              <ArrowUpRight className="w-3 h-3" />
-              +{analytics?.growthVsPreviousPeriod || 14.8}%
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-mono">
-            ≈ KES {(analytics?.totalVolumeKes || 0).toLocaleString()} (FX ~130)
-          </p>
-        </div>
-
-        {/* KPI 2: Total Transactions */}
-        <div className="p-4 rounded-xl bg-[#0d101f] border border-[#1e233d] shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Transactions</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center">
-              <Layers className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tracking-tight">
-              {transactions.length}
-            </span>
-            <span className="text-xs text-slate-400">
-              ({analytics?.statusBreakdown?.COMPLETED || 0} completed)
-            </span>
-          </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
-            <span className="text-amber-400 font-medium">{analytics?.statusBreakdown?.PENDING || 0} pending</span>
-            <span>•</span>
-            <span className="text-rose-400 font-medium">{analytics?.statusBreakdown?.FAILED || 0} failed</span>
-          </div>
-        </div>
-
-        {/* KPI 3: Average Transaction Value */}
-        <div className="p-4 rounded-xl bg-[#0d101f] border border-[#1e233d] shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Avg Transaction Value</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tracking-tight">
-              ${analytics?.averageTransactionValueUsd || 0}
-            </span>
-            <span className="text-xs text-slate-400">per order</span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-mono">
-            ≈ KES {Math.round((analytics?.averageTransactionValueUsd || 0) * 130).toLocaleString()}
-          </p>
-        </div>
-
-        {/* KPI 4: High Value Activity */}
-        <div className="p-4 rounded-xl bg-[#0d101f] border border-[#1e233d] shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">High-Value Transactions</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white tracking-tight">
-              {highValueCount}
-            </span>
-            <span className="text-xs font-medium text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-              &gt; $200 Tier
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Institutional PropPass & Elite accounts
-          </p>
-        </div>
-      </div>
-
-      {/* Filter Control Bar */}
-      <div className="p-4 rounded-xl bg-[#0d101f] border border-[#1e233d] space-y-4">
-        {/* Date Timeframe Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 bg-[#15192c] p-1 rounded-lg border border-[#262c4d]">
-            <button
-              id="date-filter-all"
-              onClick={() => setDateRange('all')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === 'all'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((p) => (
+            <div
+              key={p.id}
+              className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-slate-700"
             >
-              All Time
-            </button>
-            <button
-              id="date-filter-today"
-              onClick={() => setDateRange('today')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === 'today'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              id="date-filter-week"
-              onClick={() => setDateRange('week')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === 'week'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Last 7 Days
-            </button>
-            <button
-              id="date-filter-month"
-              onClick={() => setDateRange('month')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === 'month'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              This Month
-            </button>
-            <button
-              id="date-filter-custom"
-              onClick={() => setDateRange('custom')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === 'custom'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Custom Range
-            </button>
-          </div>
-
-          {/* Custom Date Pickers */}
-          {dateRange === 'custom' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-[#15192c] border border-[#262c4d] rounded-lg px-2.5 py-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[11px] text-slate-400">From:</span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent text-xs text-white outline-none border-none"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 bg-[#15192c] border border-[#262c4d] rounded-lg px-2.5 py-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[11px] text-slate-400">To:</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent text-xs text-white outline-none border-none"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Secondary Filters: Search, Type, Payment Method, Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[#1e233d]">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search trader, email, receipt..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#15192c] border border-[#262c4d] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
-            />
-          </div>
-
-          {/* Type Filter */}
-          <div>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full bg-[#15192c] border border-[#262c4d] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500 transition-colors"
-            >
-              <option value="all">All Types</option>
-              <option value="SUBSCRIPTION">Bot Subscriptions</option>
-              <option value="DEPOSIT">Direct Account Deposits</option>
-              <option value="CREDIT_PURCHASE">AI Signal Credit Packs</option>
-              <option value="REFUND">Refunds & Adjustments</option>
-            </select>
-          </div>
-
-          {/* Payment Method Filter */}
-          <div>
-            <select
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
-              className="w-full bg-[#15192c] border border-[#262c4d] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500 transition-colors"
-            >
-              <option value="all">All Payment Methods</option>
-              <option value="mpesa_automated">M-PESA Express (STK)</option>
-              <option value="mpesa_manual">M-PESA Paybill (Manual)</option>
-              <option value="binance_usdt">Binance Pay (USDT)</option>
-              <option value="bank_transfer">Direct Bank Wire</option>
-              <option value="stripe">Stripe Card</option>
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-[#15192c] border border-[#262c4d] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500 transition-colors"
-            >
-              <option value="all">All Statuses</option>
-              <option value="COMPLETED">Completed Only</option>
-              <option value="PENDING">Pending Approval</option>
-              <option value="FAILED">Failed / Declined</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Transactions Table */}
-      <div className="rounded-xl bg-[#0d101f] border border-[#1e233d] overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-[#1e233d] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Transaction Ledger ({transactions.length} Records)
-            </span>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#12162a] text-slate-400 border-b border-[#1e233d]">
-                <th className="py-3 px-4 font-semibold">Transaction / Date</th>
-                <th className="py-3 px-4 font-semibold">Trader Details</th>
-                <th className="py-3 px-4 font-semibold">Amount (USD / KES)</th>
-                <th className="py-3 px-4 font-semibold">Type & Gateway</th>
-                <th className="py-3 px-4 font-semibold">Status</th>
-                <th className="py-3 px-4 font-semibold">Reference</th>
-                <th className="py-3 px-4 font-semibold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1e233d]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-purple-500" />
-                      <p>Loading transactions ledger...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Search className="w-8 h-8 text-slate-600" />
-                      <p className="font-medium text-slate-300">No transactions match current filters</p>
-                      <p className="text-xs text-slate-500">Try adjusting the date timeframe or search parameters</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                transactions.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className={`hover:bg-[#14182e] transition-colors ${
-                      tx.isHighValue ? 'bg-amber-500/[0.02]' : ''
-                    }`}
-                  >
-                    {/* ID & Date */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-white font-medium text-[11px]">{tx.id}</span>
-                        {tx.isHighValue && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            HIGH VALUE
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </td>
-
-                    {/* Trader Info */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-medium text-white">{tx.userName}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">{tx.userEmail}</div>
-                    </td>
-
-                    {/* Amount */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-white text-sm">
-                        {tx.amountUsd < 0 ? `-$${Math.abs(tx.amountUsd)}` : `$${tx.amountUsd}`}
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono">
-                        KES {Math.abs(tx.amountKes).toLocaleString()}
-                      </div>
-                    </td>
-
-                    {/* Type & Method */}
-                    <td className="py-3.5 px-4 space-y-1">
-                      <div>{getMethodBadge(tx.paymentMethod)}</div>
-                      <div className="text-[11px] text-slate-400">{tx.description}</div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-4">
-                      {getStatusBadge(tx.status)}
-                    </td>
-
-                    {/* Reference / Receipt */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-mono text-[11px] text-slate-300">
-                        {tx.receiptNumber || tx.reference || '—'}
-                      </div>
-                    </td>
-
-                    {/* Action */}
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {/* Approve / Reject / Ban buttons — only for PENDING rows */}
-                        {tx.status === 'PENDING' && (
-                          <>
-                            <button
-                              onClick={() => handleVerifyPayment(tx.id, 'approve')}
-                              disabled={verifyingId === tx.id}
-                              title="Approve this payment and activate the plan"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 border border-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              {verifyingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleVerifyPayment(tx.id, 'reject')}
-                              disabled={verifyingId === tx.id}
-                              title="Reject this payment (user sees a rejection screen)"
-                              className="px-2.5 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 disabled:opacity-50 border border-rose-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              Reject
-                            </button>
-                            <button
-                              onClick={() => handleVerifyPayment(tx.id, 'reject_ban')}
-                              disabled={verifyingId === tx.id}
-                              title="Reject and BAN the user (for fraudulent submissions)"
-                              className="px-2.5 py-1.5 rounded-lg bg-[#3a0f14] hover:bg-[#5a1a1f] disabled:opacity-50 border border-rose-600 text-rose-300 text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                              Ban
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => setSelectedTx(tx)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#1c223c] hover:bg-purple-600/30 border border-[#2e375e] text-slate-200 text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Details
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Transaction Details Modal */}
-      {selectedTx && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0e1224] border border-[#262d4e] rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-[#1e233d]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5" />
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-white truncate">
+                      {p.userEmail}
+                    </span>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${statusColor(p.status)}`}>
+                      {p.status}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                      {methodIcon(p.paymentMethod)}
+                      {p.paymentMethod}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    <span>ID: {p.id}</span>
+                    <span>Product: {p.productName}</span>
+                    <span>${p.usdPrice} ≈ KES {p.kesAmount}</span>
+                    {p.mpesaReceiptNumber && <span>Receipt: {p.mpesaReceiptNumber}</span>}
+                    {p.transactionHash && (
+                      <span className="truncate max-w-[200px]">Tx: {p.transactionHash}</span>
+                    )}
+                    <span>{new Date(p.createdAt).toLocaleString()}</span>
+                  </div>
+                  {p.statusMessage && (
+                    <div className="text-xs text-slate-400 mt-1 italic">{p.statusMessage}</div>
+                  )}
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">Transaction Audit Inspector</h3>
-                  <p className="text-xs text-slate-400 font-mono">{selectedTx.id}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedTx(null)}
-                className="w-8 h-8 rounded-lg bg-[#1c213a] hover:bg-[#252c4d] text-slate-400 hover:text-white flex items-center justify-center text-sm"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Modal Body Info Grid */}
-            <div className="grid grid-cols-2 gap-3.5 text-xs">
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747]">
-                <span className="text-slate-400 block mb-1">Settled Amount (USD)</span>
-                <span className="text-lg font-bold text-white">${selectedTx.amountUsd}</span>
-              </div>
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747]">
-                <span className="text-slate-400 block mb-1">Equivalent (KES)</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">
-                  KES {selectedTx.amountKes.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747] col-span-2">
-                <span className="text-slate-400 block mb-1">Trader Account</span>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-white">{selectedTx.userName}</span>
-                  <span className="font-mono text-purple-400">{selectedTx.userEmail}</span>
-                </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">Account ID: {selectedTx.userId}</span>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747]">
-                <span className="text-slate-400 block mb-1">Payment Method</span>
-                <div>{getMethodBadge(selectedTx.paymentMethod)}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747]">
-                <span className="text-slate-400 block mb-1">Status</span>
-                <div>{getStatusBadge(selectedTx.status)}</div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747] col-span-2 space-y-1">
-                <span className="text-slate-400 block">Gateway Reference & Receipt</span>
-                <p className="font-mono text-slate-200 bg-[#0d101f] p-2 rounded border border-[#1e233d] select-all break-all">
-                  {selectedTx.receiptNumber || selectedTx.reference || 'N/A'}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747] col-span-2">
-                <span className="text-slate-400 block mb-1">Description / Product Tier</span>
-                <p className="text-slate-200">{selectedTx.description}</p>
-                {selectedTx.tier && (
-                  <span className="inline-block mt-2 px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold border border-indigo-500/30">
-                    Tier: {selectedTx.tier}
-                  </span>
+                {(p.status === 'PENDING' || p.status === 'PROCESSING') && (
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleVerify(p.id, true)}
+                      disabled={acting === p.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold"
+                    >
+                      {acting === p.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleVerify(p.id, false)}
+                      disabled={acting === p.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-bold"
+                    >
+                      <XCircle size={12} />
+                      Reject
+                    </button>
+                  </div>
                 )}
-              </div>
 
-              <div className="p-3 rounded-lg bg-[#14182e] border border-[#202747] col-span-2 text-[11px] text-slate-400 space-y-0.5">
-                <div>Created: {new Date(selectedTx.createdAt).toLocaleString()}</div>
-                {selectedTx.completedAt && (
-                  <div>Completed: {new Date(selectedTx.completedAt).toLocaleString()}</div>
+                {p.status === 'COMPLETED' && (
+                  <div className="flex items-center gap-1 text-emerald-400 text-xs shrink-0">
+                    <CheckCircle2 size={14} />
+                    Activated
+                  </div>
+                )}
+
+                {(p.status === 'PENDING' || p.status === 'PROCESSING') && !acting && (
+                  <div className="flex items-center gap-1 text-amber-400 text-xs shrink-0">
+                    <Clock size={12} />
+                  </div>
                 )}
               </div>
             </div>
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setSelectedTx(null)}
-                className="px-4 py-2 rounded-lg bg-[#1c223c] hover:bg-[#252c4d] text-slate-300 text-xs font-semibold transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
     </div>
   );
-};
+}
