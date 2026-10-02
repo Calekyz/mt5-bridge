@@ -56,7 +56,7 @@ router.get('/products', (_req: Request, res: Response) => {
 // POST /v1/payments/mpesa/stk-push — start automated M-Pesa payment
 // Body: { productId, phoneNumber, userEmail, userName? }
 // ═══════════════════════════════════════════════════════════════════
-router.post('/mpesa/stk-push', async (req: Request, res: Response): Promise<void> => {
+router.post('/mpesa/stk-push', async (req: Request, res: Response): Promise<any> => {
   try {
     const { productId, phoneNumber, userEmail, userName } = req.body;
 
@@ -142,7 +142,7 @@ router.post('/mpesa/stk-push', async (req: Request, res: Response): Promise<void
 // POST /v1/payments/mpesa/callback — M-Pesa/PayWave webhook
 // This is what auto-completes payments. No auth (provider signs).
 // ═══════════════════════════════════════════════════════════════════
-router.post('/mpesa/callback', async (req: Request, res: Response): Promise<void> => {
+router.post('/mpesa/callback', async (req: Request, res: Response): Promise<any> => {
   try {
     const body = req.body || {};
     console.log('📥 M-Pesa callback:', JSON.stringify(body).slice(0, 500));
@@ -205,7 +205,7 @@ router.post('/mpesa/callback', async (req: Request, res: Response): Promise<void
 // Body: { paymentMethod, productId, userEmail, userName?,
 //         transactionRef, binanceId?, phoneNumber?, amountSent? }
 // ═══════════════════════════════════════════════════════════════════
-router.post('/manual/submit', async (req: Request, res: Response): Promise<void> => {
+router.post('/manual/submit', async (req: Request, res: Response): Promise<any> => {
   try {
     const {
       paymentMethod, productId, userEmail, userName,
@@ -284,7 +284,7 @@ router.post('/manual/submit', async (req: Request, res: Response): Promise<void>
 // ═══════════════════════════════════════════════════════════════════
 // GET /v1/payments/status/:paymentId — poll current status
 // ═══════════════════════════════════════════════════════════════════
-router.get('/status/:paymentId', async (req: Request, res: Response): Promise<void> => {
+router.get('/status/:paymentId', async (req: Request, res: Response): Promise<any> => {
   const rec = await getPaymentRecord(String(req.params.paymentId));
   if (!rec) return res.status(404).json({ success: false, error: 'Payment not found' });
   res.json({ success: true, payment: rec });
@@ -293,7 +293,7 @@ router.get('/status/:paymentId', async (req: Request, res: Response): Promise<vo
 // ═══════════════════════════════════════════════════════════════════
 // GET /v1/payments/user/:userEmail — payment history for a user
 // ═══════════════════════════════════════════════════════════════════
-router.get('/user/:userEmail', async (req: Request, res: Response): Promise<void> => {
+router.get('/user/:userEmail', async (req: Request, res: Response): Promise<any> => {
   const list = await getPaymentsByUser(String(req.params.userEmail));
   res.json({ success: true, payments: list });
 });
@@ -301,7 +301,7 @@ router.get('/user/:userEmail', async (req: Request, res: Response): Promise<void
 // ═══════════════════════════════════════════════════════════════════
 // GET /v1/payments/user/:email/pending — any pending payments
 // ═══════════════════════════════════════════════════════════════════
-router.get('/user/:email/pending', async (req: Request, res: Response): Promise<void> => {
+router.get('/user/:email/pending', async (req: Request, res: Response): Promise<any> => {
   const { rows } = await query(
     `SELECT * FROM pipnex_payments
      WHERE user_email = $1 AND status IN ('PENDING','PROCESSING')
@@ -315,12 +315,12 @@ router.get('/user/:email/pending', async (req: Request, res: Response): Promise<
 // ADMIN — list all payments, verify manually
 // (mounted behind adminAuth in index.ts)
 // ═══════════════════════════════════════════════════════════════════
-router.get('/admin/all', async (_req: Request, res: Response): Promise<void> => {
+router.get('/admin/all', async (_req: Request, res: Response): Promise<any> => {
   const list = await getAllPayments();
   res.json({ success: true, payments: list });
 });
 
-router.post('/admin/verify', async (req: Request, res: Response): Promise<void> => {
+router.post('/admin/verify', async (req: Request, res: Response): Promise<any> => {
   const { paymentId, approve, note } = req.body;
   if (!paymentId) return res.status(400).json({ success: false, error: 'paymentId required' });
 
@@ -341,7 +341,7 @@ router.post('/admin/verify', async (req: Request, res: Response): Promise<void> 
 // POST /v1/payments/simulate-complete — DEV ONLY
 // Only works when PAYMENTS_SIMULATE=true
 // ═══════════════════════════════════════════════════════════════════
-router.post('/simulate-complete', async (req: Request, res: Response): Promise<void> => {
+router.post('/simulate-complete', async (req: Request, res: Response): Promise<any> => {
   if (process.env.PAYMENTS_SIMULATE !== 'true') {
     return res.status(403).json({ success: false, error: 'Simulation disabled' });
   }
