@@ -25,7 +25,7 @@ import {
   Ban,
   Loader2,
 } from 'lucide-react';
-import { AdminTransactionItem, TransactionAnalytics } from '../types';
+import { AdminTransactionItem, TransactionAnalytics } from '../payments/types';
 import { AdminApi } from '../api';
 
 interface TransactionsViewProps {
