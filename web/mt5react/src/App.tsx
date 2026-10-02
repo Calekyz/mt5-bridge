@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus, Key, DollarSign
-} from "lucide-react";
+    Home, FileText, TrendingUp, User, Clock, BarChart3, Zap, LogOut, Settings, Users, BookOpen, Download, Plus, Key, DollarSign, Crown } from "lucide-react";
 
 // ---- Components ----
 import { LoginPage } from "./components/LoginPage";
@@ -29,6 +28,7 @@ import { TermsModal } from "./components/TermsModal";
 import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 import AdminTransactions from './pages/AdminTransactions';
+import SubscribePage from './pages/SubscribePage';
 import { PendingPaymentBanner } from './payments/PendingPaymentBanner';
 
 const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
@@ -180,6 +180,7 @@ function App() {
     }
 
     const sideItems = [
+        { path: "/subscribe", label: "Subscribe", icon: Crown },
         { path: "/orders", label: "Orders", icon: FileText },
         { path: "/request", label: "Trade", icon: TrendingUp },
         { path: "/symbol-request", label: "Symbols", icon: Plus },
@@ -324,10 +325,11 @@ function App() {
                         </header>
 
                         {/* MAIN */}
-                        <main className="flex-1 mt-16 ml-20 overflow-y-auto">
+                        <main className="flex-1 mt-16 ml-16 overflow-y-auto">
                             <PendingPaymentBanner userEmail={user?.email} />
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
+                                <Route path="/subscribe" element={<SubscribePage />} />
                                 <Route path="/guide" element={<Guide />} />
                                 <Route path="/orders" element={<OrdersList />} />
                                 <Route path="/request" element={<OrderRequest />} />
@@ -349,11 +351,11 @@ function App() {
                         {/* ═══════════════════════════════════════════════ */}
                         {/*  BOTTOM NAV — GREEN BUTTONS + ANIMATED PANEL   */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <nav className="fixed left-0 top-16 bottom-0 z-40 w-20 backdrop-blur-xl border-r border-slate-700/50 overflow-y-auto scrollbar-hide">
+                        <nav className="fixed left-0 top-16 bottom-0 z-40 w-16 backdrop-blur-xl border-r border-slate-700/50 overflow-y-auto scrollbar-hide">
                             <div className="nav-panel-gradient absolute inset-0 pointer-events-none" />
                             <div className="absolute inset-0 bg-slate-950/85 pointer-events-none" />
                             <div className="absolute top-0 left-0 bottom-0 w-px bg-gradient-to-b from-amber-400/60 via-emerald-400/60 to-red-400/60" />
-                            <div className="relative flex flex-col items-center gap-2 py-4">
+                            <div className="relative flex flex-col items-center gap-1.5 py-3">
                                 {navItems.map((item) => {
                                     const Icon = item.icon;
                                     const isHome = item.isHome;
@@ -363,9 +365,9 @@ function App() {
                                             to={item.path}
                                             className={({ isActive }) => {
                                                 if (isHome) {
-                                                    return `nav-item nav-home-float group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-white shadow-2xl shadow-amber-600/60 ring-2 ring-slate-950 border border-amber-200/50 hover:scale-105 active:scale-95 ${isActive ? 'ring-amber-400/40' : ''}`;
+                                                    return `nav-item nav-home-float group relative flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-white shadow-2xl shadow-amber-600/60 ring-2 ring-slate-950 border border-amber-200/50 hover:scale-105 active:scale-95 ${isActive ? 'ring-amber-400/40' : ''}`;
                                                 }
-                                                return `nav-item group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl ${isActive ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'}`;
+                                                return `nav-item group relative flex flex-col items-center justify-center w-11 h-11 rounded-lg ${isActive ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'}`;
                                             }}
                                         >
                                             {({ isActive }) => (
@@ -383,7 +385,7 @@ function App() {
                                                         {isActive && !isHome && (
                                                             <span className="absolute inset-[-6px] rounded-full bg-emerald-500/30 blur-md pointer-events-none" />
                                                         )}
-                                                        <Icon size={isHome ? 24 : 20} strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2} className="relative" />
+                                                        <Icon size={isHome ? 20 : 18} strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2} className="relative" />
                                                     </span>
                                                     <span className={`relative text-[9px] font-bold mt-1 tracking-wider ${isHome ? 'text-white uppercase' : isActive ? 'text-emerald-200' : 'text-slate-500 group-hover:text-slate-300'}`}>
                                                         {item.label}
