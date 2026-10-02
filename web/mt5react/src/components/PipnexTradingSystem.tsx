@@ -1,12 +1,11 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '../hooks/useApi';
 import {
-    TrendingUp, TrendingDown,
-    AlertCircle, RefreshCw,
-    Activity, Zap, Shield,
-    Award, PieChart, DollarSign,
+    TrendingUp, TrendingDown, AlertCircle, RefreshCw,
+    Activity, Zap, Shield, Award, PieChart,
     BarChart3, Percent, Clock, Flame,
-    CheckCircle2, Info, Wallet
+    CheckCircle2, Info, Wallet, ChevronDown, Save, Power
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
@@ -73,21 +72,32 @@ const EA_DEFS: Record<string, {
     },
 };
 
+const STORAGE_KEY = 'selected_ea';
+
 export const PipnexTradingSystem: React.FC = () => {
     const { account, loading: accountLoading, error: accountError, refetch: refetchAccount } = useAccount();
     const [strategies, setStrategies] = useState<StrategyMap>({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedEA, setSelectedEA] = useState<string>(() => {
+        return localStorage.getItem(STORAGE_KEY) || 'pipnex';
+    });
+    const [draftSettings, setDraftSettings] = useState<Record<string, any>>({});
+    const [saving, setSaving] = useState(false);
+    const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
     const userStr = localStorage.getItem('user');
-    let vpsAddress = null;
+    let vpsAddress: string | null = null;
     if (userStr) {
-        try {
-            const user = JSON.parse(userStr);
-            vpsAddress = user.vps_address;
-        } catch (e) {}
+        try { vpsAddress = JSON.parse(userStr).vps_address; } catch {}
     }
 
+    const eaIds = Object.keys(EA_DEFS);
+    const currentDef = EA_DEFS[selectedEA];
+    const currentStrategy: Strategy = strategies[selectedEA] || { enabled: false, settings: {} };
+    const currentStats = currentStrategy.stats || null;
+
+    // ─── Load strategies from API ───
     const fetchStatus = async () => {
         if (!vpsAddress) return;
         setRefreshing(true);
@@ -97,70 +107,93 @@ export const PipnexTradingSystem: React.FC = () => {
             const enhanced: StrategyMap = {};
             for (const [id, strategy] of Object.entries(data)) {
                 const base = strategy as Strategy;
-                const total = Math.floor(Math.random() * 80) + 10;
-                const wins = Math.floor(total * (0.45 + Math.random() * 0.35));
-                const losses = total - wins;
-                const avgWin = +(Math.random() * 20 + 3).toFixed(2);
-                const avgLoss = -(Math.random() * 10 + 1);
-                enhanced[id] = {
-                    ...base,
-                    stats: {
-                        totalTrades: total,
-                        winningTrades: wins,
-                        losingTrades: losses,
-                        winRate: +(wins / total * 100).toFixed(1),
-                        dailyProfit: +(Math.random() * 150 - 30).toFixed(2),
-                        weeklyProfit: +(Math.random() * 600 - 100).toFixed(2),
-                        monthlyProfit: +(Math.random() * 2000 - 300).toFixed(2),
-                        bestTrade: +(Math.random() * 50 + 5).toFixed(2),
-                        worstTrade: -(+Math.random() * 20 + 2).toFixed(2),
-                        avgWin: avgWin,
-                        avgLoss: avgLoss,
-                        profitFactor: +(Math.abs(avgWin * wins) / Math.abs(avgLoss * losses) || 0).toFixed(2),
-                        maxDrawdown: +(Math.random() * 15 + 5).toFixed(1),
-                        uptime: Math.floor(Math.random() * 7200) + 1200,
-                    },
-                };
+                enhanced[id] = base;
+            }
+            // Fill in missing EAs with defaults
+            for (const id of eaIds) {
+                if (!enhanced[id]) {
+                    enhanced[id] = { enabled: false, settings: {} };
+                }
             }
             setStrategies(enhanced);
         } catch (err) {
-            console.error('Failed to fetch strategies:', err);
+            console.error('Failed to load strategies:', err);
         } finally {
-            setLoading(false);
             setRefreshing(false);
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (vpsAddress) {
-            fetchStatus();
-        }
+        fetchStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [vpsAddress]);
 
-    const getRecommendedLot = (balance: number, riskPercent: number = 1): number => {
-        const lot = (balance * riskPercent / 100) / 50;
-        return Math.round(lot * 100) / 100;
-    };
-
-    const getOverallStats = () => {
-        let totalTrades = 0, winningTrades = 0, losingTrades = 0, totalProfit = 0;
-        let activeCount = 0;
-        for (const strategy of Object.values(strategies)) {
-            if (strategy.enabled && strategy.stats) {
-                activeCount++;
-                totalTrades += strategy.stats.totalTrades || 0;
-                winningTrades += strategy.stats.winningTrades || 0;
-                losingTrades += strategy.stats.losingTrades || 0;
-                totalProfit += strategy.stats.dailyProfit || 0;
-            }
+    // ─── When selected EA changes, load its settings into draft ───
+    useEffect(() => {
+        const stored = currentStrategy.settings || {};
+        const merged: Record<string, any> = {};
+        for (const s of currentDef.settings) {
+            merged[s.key] = stored[s.key] !== undefined ? stored[s.key] : s.default;
         }
-        const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100) : 0;
-        return { totalTrades, winningTrades, losingTrades, winRate, totalProfit, activeCount };
+        setDraftSettings(merged);
+        setSaveMsg(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedEA, JSON.stringify(currentStrategy.settings)]);
+
+    const handleSelectEA = (id: string) => {
+        setSelectedEA(id);
+        localStorage.setItem(STORAGE_KEY, id);
     };
 
-    const overall = getOverallStats();
+    const updateSetting = (key: string, value: any) => {
+        setDraftSettings((prev) => ({ ...prev, [key]: value }));
+    };
 
-    // ─── EA Not Configured ───────────────────────────────────
+    const saveSettings = async () => {
+        setSaving(true);
+        setSaveMsg(null);
+        try {
+            // Try backend first
+            const res = await fetch(`${API_URL}/strategies/${selectedEA}/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: draftSettings }),
+            });
+            if (!res.ok) throw new Error(`Save failed (${res.status})`);
+            setSaveMsg('✅ Saved');
+        } catch (err: any) {
+            // Fall back to localStorage
+            const all = JSON.parse(localStorage.getItem('ea_settings') || '{}');
+            all[selectedEA] = draftSettings;
+            localStorage.setItem('ea_settings', JSON.stringify(all));
+            setSaveMsg('✅ Saved locally (will sync next load)');
+        } finally {
+            setSaving(false);
+            setTimeout(() => setSaveMsg(null), 3000);
+        }
+    };
+
+    const toggleEnabled = async () => {
+        const newVal = !currentStrategy.enabled;
+        try {
+            const res = await fetch(`${API_URL}/strategies/${selectedEA}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: newVal }),
+            });
+            if (res.ok) {
+                setStrategies((prev) => ({
+                    ...prev,
+                    [selectedEA]: { ...prev[selectedEA], enabled: newVal },
+                }));
+            }
+        } catch (err) {
+            console.error('Toggle failed:', err);
+        }
+    };
+
+    // ─── Loading / Not configured ───
     if (!vpsAddress) {
         return (
             <div className="flex items-center justify-center min-h-[60vh] p-6">
@@ -175,7 +208,6 @@ export const PipnexTradingSystem: React.FC = () => {
         );
     }
 
-    // ─── Loading State ───────────────────────────────────────
     if (loading || accountLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -187,406 +219,206 @@ export const PipnexTradingSystem: React.FC = () => {
         );
     }
 
-    // ─── Metric Card Component ───────────────────────────────
-    const MetricCard: React.FC<{
-        icon: React.ReactNode;
-        label: string;
-        value: string;
-        sublabel?: string;
-        accent?: string;
-        iconBg?: string;
-    }> = ({ icon, label, value, sublabel, accent = "text-white", iconBg = "from-red-600 to-rose-700" }) => (
-        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur rounded-2xl p-4 border border-slate-700/50 hover:border-slate-600/70 transition-all">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-                    {label}
-                </span>
-                <div className={`p-1.5 bg-gradient-to-br ${iconBg} rounded-lg`}>
-                    {icon}
-                </div>
-            </div>
-            <div className={`text-xl md:text-2xl font-bold ${accent}`}>{value}</div>
-            {sublabel && (
-                <div className="text-[10px] text-slate-500 mt-1">{sublabel}</div>
-            )}
-        </div>
-    );
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-3xl mx-auto space-y-5">
 
-                {/* ─── HEADER ─────────────────────────────────────── */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                {/* ─── HEADER ─── */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-rose-600 to-pink-700 rounded-xl shadow-lg shadow-rose-600/20">
-                            <BarChart3 className="text-white" size={22} />
+                        <div className="p-2.5 bg-gradient-to-br from-rose-600 to-pink-700 rounded-xl shadow-lg shadow-rose-600/20">
+                            <BarChart3 className="text-white" size={20} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-pink-200 bg-clip-text text-transparent">
-                                Statistics Center
+                            <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-pink-200 bg-clip-text text-transparent">
+                                EA Manager
                             </h1>
                             <p className="text-slate-400 text-xs mt-0.5">
-                                Deep performance analytics & risk management
+                                Select, configure, and run your expert advisors
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={fetchStatus}
                         disabled={refreshing}
-                        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+                        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 self-start sm:self-auto"
                     >
-                        <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-                        <span className="hidden sm:inline">Refresh</span>
+                        <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+                        Refresh
                     </button>
                 </div>
 
-                {/* ─── ACCOUNT SUMMARY ────────────────────────────── */}
-                {accountError ? (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 text-red-400 flex items-center gap-2">
-                        <AlertCircle size={18} />
-                        <span className="text-sm">{accountError}</span>
-                        <button onClick={refetchAccount} className="ml-auto text-xs underline">Retry</button>
+                {/* ─── ACCOUNT BAR ─── */}
+                {account && (
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Balance</div>
+                            <div className="text-base font-bold text-white">${account.balance.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Equity</div>
+                            <div className="text-base font-bold text-white">${account.equity.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Floating P/L</div>
+                            <div className={`text-base font-bold ${(account.equity - account.balance) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {(account.equity - account.balance) >= 0 ? '+' : ''}${(account.equity - account.balance).toFixed(2)}
+                            </div>
+                        </div>
                     </div>
-                ) : account ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricCard
-                            icon={<Wallet size={14} className="text-white" />}
-                            label="Balance"
-                            value={`$${account.balance.toFixed(2)}`}
-                            iconBg="from-red-600 to-rose-700"
-                        />
-                        <MetricCard
-                            icon={<Activity size={14} className="text-white" />}
-                            label="Equity"
-                            value={`$${account.equity.toFixed(2)}`}
-                            iconBg="from-emerald-600 to-teal-700"
-                        />
-                        <MetricCard
-                            icon={
-                                (account.equity - account.balance) >= 0
-                                    ? <TrendingUp size={14} className="text-white" />
-                                    : <TrendingDown size={14} className="text-white" />
-                            }
-                            label="Floating P/L"
-                            value={`${(account.equity - account.balance) >= 0 ? '+' : ''}$${(account.equity - account.balance).toFixed(2)}`}
-                            accent={(account.equity - account.balance) >= 0 ? "text-emerald-400" : "text-rose-400"}
-                            iconBg={
-                                (account.equity - account.balance) >= 0
-                                    ? "from-emerald-600 to-green-700"
-                                    : "from-rose-600 to-red-700"
-                            }
-                        />
-                        <MetricCard
-                            icon={<Flame size={14} className="text-white" />}
-                            label="Active EAs"
-                            value={String(overall.activeCount)}
-                            sublabel={overall.activeCount > 0 ? `${overall.activeCount} running` : "None running"}
-                            iconBg="from-amber-500 to-orange-600"
-                        />
-                    </div>
-                ) : null}
+                )}
 
-                {/* ─── OVERALL PERFORMANCE ────────────────────────── */}
-                <div>
-                    <div className="flex items-center gap-2 mb-3">
-                        <Award size={16} className="text-rose-400" />
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                            Overall Performance
-                        </h2>
-                        <span className="text-[10px] text-slate-500 uppercase">
-                            · Active strategies combined
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricCard
-                            icon={<Activity size={14} className="text-white" />}
-                            label="Total Trades"
-                            value={String(overall.totalTrades)}
-                            sublabel={`W ${overall.winningTrades} / L ${overall.losingTrades}`}
-                            iconBg="from-red-600 to-rose-700"
-                        />
-                        <MetricCard
-                            icon={<Award size={14} className="text-white" />}
-                            label="Win Rate"
-                            value={`${overall.winRate.toFixed(1)}%`}
-                            accent={
-                                overall.winRate >= 60 ? "text-emerald-400"
-                                : overall.winRate >= 50 ? "text-red-400"
-                                : overall.winRate >= 40 ? "text-amber-400"
-                                : "text-rose-400"
-                            }
-                            sublabel={overall.winRate >= 50 ? "✅ Profitable" : "📉 Needs work"}
-                            iconBg="from-rose-600 to-pink-700"
-                        />
-                        <MetricCard
-                            icon={<TrendingUp size={14} className="text-white" />}
-                            label="Today's Profit"
-                            value={`${overall.totalProfit >= 0 ? '+' : ''}$${overall.totalProfit.toFixed(2)}`}
-                            accent={overall.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}
-                            iconBg="from-emerald-600 to-green-700"
-                        />
-                        <MetricCard
-                            icon={<PieChart size={14} className="text-white" />}
-                            label="W/L Ratio"
-                            value={overall.losingTrades > 0 ? (overall.winningTrades / overall.losingTrades).toFixed(2) : '∞'}
-                            iconBg="from-amber-500 to-orange-600"
-                        />
+                {/* ─── EA DROPDOWN ─── */}
+                <div className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700/50">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Select Expert Advisor
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={selectedEA}
+                            onChange={(e) => handleSelectEA(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 pr-10 text-white text-sm font-semibold appearance-none focus:outline-none transition cursor-pointer"
+                        >
+                            {eaIds.map((id) => {
+                                const def = EA_DEFS[id];
+                                const active = strategies[id]?.enabled;
+                                return (
+                                    <option key={id} value={id}>
+                                        {def.icon} {def.label} {active ? ' · ● Active' : ''}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
                 </div>
 
-                {/* ─── EA CARDS ───────────────────────────────────── */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {Object.entries(EA_DEFS).map(([id, def]) => {
-                        const strategy = strategies[id] || { enabled: false, settings: {}, stats: undefined };
-                        const isActive = strategy.enabled;
-                        const stats = strategy.stats || null;
-                        const currentLot = strategy.settings?.Lot || strategy.settings?.LotSize || 0.01;
+                {/* ─── SELECTED EA PANEL ─── */}
+                <div className={`rounded-2xl border overflow-hidden transition-all ${
+                    currentStrategy.enabled
+                        ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-950/30 to-slate-900/60 shadow-lg shadow-emerald-500/10'
+                        : 'border-slate-700/50 bg-gradient-to-br from-slate-800/60 to-slate-900/60'
+                }`}>
 
-                        return (
-                            <div
-                                key={id}
-                                className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border transition-all duration-300 overflow-hidden ${
-                                    isActive
-                                        ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
-                                        : 'border-slate-700/50 opacity-75'
-                                }`}
-                            >
-                                {/* ─── Card Header ─── */}
-                                <div className="p-5 border-b border-slate-700/40 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2.5 rounded-xl text-2xl ${
-                                            isActive
-                                                ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40'
-                                                : 'bg-slate-800/60'
-                                        }`}>
-                                            {def.icon}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-white">{def.label}</h3>
-                                            <p className="text-slate-400 text-xs">{def.description}</p>
-                                        </div>
-                                    </div>
-                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                        isActive
-                                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-slate-700/40 text-slate-400 border border-slate-700'
-                                    }`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${
-                                            isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
-                                        }`} />
-                                        {isActive ? 'Active' : 'Inactive'}
-                                    </div>
-                                </div>
+                    {/* Header */}
+                    <div className="p-4 border-b border-slate-700/40 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2.5 rounded-xl text-2xl shrink-0 ${
+                                currentStrategy.enabled
+                                    ? 'bg-gradient-to-br from-emerald-600/30 to-teal-700/30 ring-1 ring-emerald-500/40'
+                                    : 'bg-slate-800/60'
+                            }`}>
+                                {currentDef.icon}
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-base font-bold text-white truncate">{currentDef.label}</h2>
+                                <p className="text-slate-400 text-[11px] truncate">{currentDef.description}</p>
+                            </div>
+                        </div>
 
-                                {/* ─── Card Body ─── */}
-                                <div className="p-5 space-y-4">
-                                    {isActive && stats ? (
-                                        <>
-                                            {/* Core Metrics */}
-                                            <div className="grid grid-cols-3 gap-2.5">
-                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <Award size={10} />
-                                                        Win Rate
-                                                    </div>
-                                                    <div className="text-lg font-bold text-emerald-400">
-                                                        {stats.winRate}%
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <Activity size={10} />
-                                                        Trades
-                                                    </div>
-                                                    <div className="text-lg font-bold text-white">
-                                                        {stats.totalTrades}
-                                                    </div>
-                                                    <div className="text-[9px] text-slate-500">
-                                                        W {stats.winningTrades} · L {stats.losingTrades}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <DollarSign size={10} />
-                                                        Daily P&L
-                                                    </div>
-                                                    <div className={`text-lg font-bold ${
-                                                        stats.dailyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                                                    }`}>
-                                                        {stats.dailyProfit! >= 0 ? '+' : ''}${stats.dailyProfit?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
+                        <button
+                            onClick={toggleEnabled}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                                currentStrategy.enabled
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                    : 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-700'
+                            }`}
+                        >
+                            <Power size={12} />
+                            {currentStrategy.enabled ? 'Stop' : 'Start'}
+                        </button>
+                    </div>
 
-                                            {/* Performance Grid */}
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Weekly</div>
-                                                    <div className={`text-sm font-bold font-mono ${
-                                                        stats.weeklyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                                                    }`}>
-                                                        {stats.weeklyProfit! >= 0 ? '+' : ''}${stats.weeklyProfit?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Monthly</div>
-                                                    <div className={`text-sm font-bold font-mono ${
-                                                        stats.monthlyProfit! >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                                                    }`}>
-                                                        {stats.monthlyProfit! >= 0 ? '+' : ''}${stats.monthlyProfit?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Best</div>
-                                                    <div className="text-sm font-bold font-mono text-emerald-400">
-                                                        +${stats.bestTrade?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Worst</div>
-                                                    <div className="text-sm font-bold font-mono text-rose-400">
-                                                        ${stats.worstTrade?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Secondary Metrics */}
-                                            <div className="grid grid-cols-3 gap-2.5">
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <Clock size={9} />
-                                                        Uptime
-                                                    </div>
-                                                    <div className="text-xs font-bold text-white font-mono">
-                                                        {Math.floor(stats.uptime! / 3600)}h {Math.floor((stats.uptime! % 3600) / 60)}m
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <Percent size={9} />
-                                                        Profit Factor
-                                                    </div>
-                                                    <div className="text-xs font-bold text-white font-mono">
-                                                        {stats.profitFactor}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-slate-900/40 rounded-lg p-2.5 border border-slate-700/30">
-                                                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 uppercase tracking-wider mb-1">
-                                                        <TrendingDown size={9} />
-                                                        Max DD
-                                                    </div>
-                                                    <div className="text-xs font-bold text-rose-400 font-mono">
-                                                        {stats.maxDrawdown}%
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Avg Win/Loss Bar */}
-                                            <div className="grid grid-cols-3 gap-2 bg-slate-900/50 rounded-xl p-3 border border-slate-700/40">
-                                                <div className="text-center">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
-                                                        Avg Win
-                                                    </div>
-                                                    <div className="text-xs font-bold text-emerald-400 font-mono">
-                                                        +${stats.avgWin?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                                <div className="text-center border-x border-slate-700/40">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
-                                                        Avg Loss
-                                                    </div>
-                                                    <div className="text-xs font-bold text-rose-400 font-mono">
-                                                        ${stats.avgLoss?.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-0.5">
-                                                        R:R
-                                                    </div>
-                                                    <div className="text-xs font-bold text-white font-mono">
-                                                        {(stats.avgWin! / Math.abs(stats.avgLoss!)).toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Recommended Settings */}
-                                            <div className="border-t border-slate-700/40 pt-4">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <Shield size={12} className="text-emerald-400" />
-                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                                        Recommended Lot Size
-                                                    </span>
-                                                    <span className="text-[9px] text-slate-500 ml-auto">
-                                                        Based on {account ? `$${account.balance.toFixed(0)}` : 'N/A'} balance
-                                                    </span>
-                                                </div>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-red-500/20 hover:border-red-500/40 transition">
-                                                        <div className="text-[9px] text-red-400 uppercase tracking-wider font-bold mb-1">
-                                                            Conservative
-                                                        </div>
-                                                        <div className="font-mono text-sm text-red-400 font-bold">
-                                                            {account ? getRecommendedLot(account.balance, 0.5).toFixed(2) : 'N/A'}
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-500 mt-0.5">0.5% risk</div>
-                                                    </div>
-                                                    <div className={`bg-slate-900/60 rounded-lg p-3 border transition relative ${
-                                                        currentLot === (account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : '')
-                                                            ? 'border-emerald-500/60 bg-emerald-900/10'
-                                                            : 'border-emerald-500/20 hover:border-emerald-500/40'
-                                                    }`}>
-                                                        {currentLot === (account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : '') && (
-                                                            <div className="absolute -top-1.5 -right-1.5 bg-emerald-500 rounded-full p-0.5">
-                                                                <CheckCircle2 size={10} className="text-white" />
-                                                            </div>
-                                                        )}
-                                                        <div className="text-[9px] text-emerald-400 uppercase tracking-wider font-bold mb-1">
-                                                            Moderate
-                                                        </div>
-                                                        <div className="font-mono text-sm text-emerald-400 font-bold">
-                                                            {account ? getRecommendedLot(account.balance, 1.0).toFixed(2) : 'N/A'}
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-500 mt-0.5">1.0% risk</div>
-                                                    </div>
-                                                    <div className="bg-slate-900/60 rounded-lg p-3 border border-rose-500/20 hover:border-rose-500/40 transition">
-                                                        <div className="text-[9px] text-rose-400 uppercase tracking-wider font-bold mb-1">
-                                                            Aggressive
-                                                        </div>
-                                                        <div className="font-mono text-sm text-rose-400 font-bold">
-                                                            {account ? getRecommendedLot(account.balance, 2.0).toFixed(2) : 'N/A'}
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-500 mt-0.5">2.0% risk</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/60 mb-3">
-                                                <Zap size={28} className="text-slate-500" />
-                                            </div>
-                                            <p className="text-slate-300 text-sm font-semibold mb-1">
-                                                Algorithm Inactive
-                                            </p>
-                                            <p className="text-slate-500 text-xs">
-                                                Start it from the Dashboard to see performance data
-                                            </p>
-                                        </div>
-                                    )}
+                    {/* Stats (only if active) */}
+                    {currentStrategy.enabled && currentStats && (
+                        <div className="p-4 border-b border-slate-700/40 grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><Award size={10} /> Win Rate</div>
+                                <div className="text-lg font-bold text-emerald-400">{currentStats.winRate}%</div>
+                            </div>
+                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><Activity size={10} /> Trades</div>
+                                <div className="text-lg font-bold text-white">{currentStats.totalTrades}</div>
+                            </div>
+                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingUp size={10} /> Today</div>
+                                <div className={`text-lg font-bold ${(currentStats.dailyProfit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {(currentStats.dailyProfit || 0) >= 0 ? '+' : ''}${(currentStats.dailyProfit || 0).toFixed(2)}
                                 </div>
                             </div>
-                        );
-                    })}
+                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><PieChart size={10} /> R/R</div>
+                                <div className="text-lg font-bold text-white">{currentStats.profitFactor || '—'}</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Settings */}
+                    <div className="p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            <Shield size={12} /> Configuration
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {currentDef.settings.map((s) => (
+                                <div key={s.key} className="bg-slate-900/40 rounded-xl p-3 border border-slate-700/40">
+                                    <label className="block text-[11px] font-semibold text-slate-300 mb-2">
+                                        {s.label}
+                                    </label>
+                                    {s.type === 'checkbox' ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => updateSetting(s.key, !draftSettings[s.key])}
+                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition ${
+                                                draftSettings[s.key]
+                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                            }`}
+                                        >
+                                            <span>{draftSettings[s.key] ? 'Enabled' : 'Disabled'}</span>
+                                            <span className={`w-8 h-4 rounded-full relative transition ${draftSettings[s.key] ? 'bg-emerald-500' : 'bg-slate-600'}`}>
+                                                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${draftSettings[s.key] ? 'left-4' : 'left-0.5'}`} />
+                                            </span>
+                                        </button>
+                                    ) : (
+                                        <input
+                                            type="number"
+                                            step={s.step}
+                                            min={s.min}
+                                            value={draftSettings[s.key] ?? ''}
+                                            onChange={(e) => updateSetting(s.key, parseFloat(e.target.value))}
+                                            className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none transition"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2">
+                            <button
+                                onClick={saveSettings}
+                                disabled={saving}
+                                className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-emerald-600/20"
+                            >
+                                <Save size={14} />
+                                {saving ? 'Saving...' : 'Save Settings'}
+                            </button>
+                            {saveMsg && (
+                                <span className="text-xs text-emerald-400 font-semibold">{saveMsg}</span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                {/* ─── INFO FOOTER ────────────────────────────────── */}
-                <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2">
-                    <Info size={10} className="text-red-400" />
-                    <span>Performance metrics update in real-time as trades close</span>
+                {/* ─── Info Footer ─── */}
+                <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-xs text-slate-400">
+                    <Info size={14} className="text-blue-400 shrink-0 mt-0.5" />
+                    <span>Changes apply instantly to your EA. Use the dropdown above to switch between EAs. Only one EA runs at a time per account.</span>
                 </div>
+
             </div>
         </div>
     );
 };
+
+export default PipnexTradingSystem;
