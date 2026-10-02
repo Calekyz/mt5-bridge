@@ -118,7 +118,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
             const data = await res.json();
 
             if (mode === 'signup') {
-                setSignupMessage(data.message || 'Account created. Please contact admin for an access key to log in.');
+                setSignupMessage('Account created! Continue to payment.');
+                setPaymentEmail((email || '').trim().toLowerCase());
+                setShowPayment(true);
                 setLoading(false);
                 return;
             }

@@ -324,7 +324,7 @@ function App() {
                         </header>
 
                         {/* MAIN */}
-                        <main className="flex-1 mt-16 mb-28 overflow-y-auto">
+                        <main className="flex-1 mt-16 ml-20 overflow-y-auto">
                             <PendingPaymentBanner userEmail={user?.email} />
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
@@ -349,96 +349,50 @@ function App() {
                         {/* ═══════════════════════════════════════════════ */}
                         {/*  BOTTOM NAV — GREEN BUTTONS + ANIMATED PANEL   */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t border-slate-700/50 overflow-hidden">
-                            {/* ── Animated gradient background ── */}
+                        <nav className="fixed left-0 top-16 bottom-0 z-40 w-20 backdrop-blur-xl border-r border-slate-700/50 overflow-y-auto scrollbar-hide">
                             <div className="nav-panel-gradient absolute inset-0 pointer-events-none" />
-                            {/* ── Dark overlay for legibility ── */}
                             <div className="absolute inset-0 bg-slate-950/85 pointer-events-none" />
-                            {/* ── Top glow line ── */}
-                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-amber-400/60 via-emerald-400/60 to-red-400/60" />
-                            {/* ── Subtle moving shimmer ── */}
-                            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/5 to-transparent"
-                                     style={{ animation: 'panelShimmer 6s ease-in-out infinite' }} />
-                            </div>
-
-                            <div className="relative max-w-4xl mx-auto px-3 py-3">
-                                <div className="flex justify-around items-end overflow-x-auto scrollbar-hide gap-1">
-
-                                    {navItems.map((item) => {
-                                        const Icon = item.icon;
-                                        const isHome = item.isHome;
-
-                                        return (
-                                            <NavLink
-                                                key={item.path}
-                                                to={item.path}
-                                                className={({ isActive }) => {
-                                                    if (isHome) {
-                                                        return `nav-item nav-home-float nav-btn-home group relative flex flex-col items-center justify-center mx-2
-                                                            w-[68px] h-[68px] -mt-10 rounded-[22px]
-                                                            bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600
-                                                            text-white
-                                                            shadow-2xl shadow-amber-600/60
-                                                            ring-4 ring-slate-950
-                                                            border border-amber-200/50
-                                                            hover:scale-[1.08] active:scale-95
-                                                            ${isActive ? 'ring-amber-400/40 scale-105' : ''}`;
-                                                    }
-                                                    return `nav-item nav-btn-base group relative flex flex-col items-center justify-center
-                                                        w-[58px] h-[58px] rounded-2xl mx-1
-                                                        ${isActive
-                                                            ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50'
-                                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
-                                                        }`;
-                                                }}
-                                            >
-                                                {({ isActive }) => (
-                                                    <>
-                                                        {/* HOME decorations */}
-                                                        {isHome && (
-                                                            <>
-                                                                <span className="nav-home-ring absolute inset-[-3px] rounded-[25px] border border-dashed border-amber-200/50 pointer-events-none" />
-                                                                <span className="nav-home-halo absolute inset-[-6px] rounded-[28px] bg-amber-400/30 blur-lg pointer-events-none" />
-                                                                <span className="absolute inset-0 rounded-[22px] overflow-hidden pointer-events-none">
-                                                                    <span className="nav-home-shimmer absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-                                                                </span>
-                                                            </>
-                                                        )}
-
-                                                        {/* Active indicator bar (green glow) */}
+                            <div className="absolute top-0 left-0 bottom-0 w-px bg-gradient-to-b from-amber-400/60 via-emerald-400/60 to-red-400/60" />
+                            <div className="relative flex flex-col items-center gap-2 py-4">
+                                {navItems.map((item) => {
+                                    const Icon = item.icon;
+                                    const isHome = item.isHome;
+                                    return (
+                                        <NavLink
+                                            key={item.path}
+                                            to={item.path}
+                                            className={({ isActive }) => {
+                                                if (isHome) {
+                                                    return `nav-item nav-home-float group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-white shadow-2xl shadow-amber-600/60 ring-2 ring-slate-950 border border-amber-200/50 hover:scale-105 active:scale-95 ${isActive ? 'ring-amber-400/40' : ''}`;
+                                                }
+                                                return `nav-item group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl ${isActive ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'}`;
+                                            }}
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    {isHome && (
+                                                        <>
+                                                            <span className="nav-home-ring absolute inset-[-3px] rounded-[19px] border border-dashed border-amber-200/50 pointer-events-none" />
+                                                            <span className="nav-home-halo absolute inset-[-6px] rounded-[22px] bg-amber-400/30 blur-lg pointer-events-none" />
+                                                        </>
+                                                    )}
+                                                    {isActive && !isHome && (
+                                                        <span className="nav-indicator absolute -right-1 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-full bg-gradient-to-b from-emerald-300 via-teal-300 to-emerald-300 shadow-lg shadow-emerald-500/70" />
+                                                    )}
+                                                    <span className="nav-icon nav-btn-icon relative flex items-center justify-center">
                                                         {isActive && !isHome && (
-                                                            <span className="nav-indicator absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-300 shadow-lg shadow-emerald-500/70" />
+                                                            <span className="absolute inset-[-6px] rounded-full bg-emerald-500/30 blur-md pointer-events-none" />
                                                         )}
-
-                                                        {/* Icon */}
-                                                        <span className={`nav-icon nav-btn-icon relative flex items-center justify-center ${isHome ? 'drop-shadow-lg' : ''}`}>
-                                                            {isActive && !isHome && (
-                                                                <span className="absolute inset-[-6px] rounded-full bg-emerald-500/30 blur-md pointer-events-none" />
-                                                            )}
-                                                            <Icon
-                                                                size={isHome ? 26 : 20}
-                                                                strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2}
-                                                                className={`relative nav-btn-icon ${isHome ? 'nav-btn-home-icon' : ''}`}
-                                                            />
-                                                        </span>
-
-                                                        {/* Label */}
-                                                        <span className={`relative nav-btn-label text-[9px] font-bold mt-1 tracking-wider ${
-                                                            isHome
-                                                                ? 'text-white text-[10px] uppercase'
-                                                                : isActive
-                                                                    ? 'text-emerald-200'
-                                                                    : 'text-slate-500 group-hover:text-slate-300'
-                                                        }`}>
-                                                            {item.label}
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </NavLink>
-                                        );
-                                    })}
-                                </div>
+                                                        <Icon size={isHome ? 24 : 20} strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2} className="relative" />
+                                                    </span>
+                                                    <span className={`relative text-[9px] font-bold mt-1 tracking-wider ${isHome ? 'text-white uppercase' : isActive ? 'text-emerald-200' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                                                        {item.label}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </NavLink>
+                                    );
+                                })}
                             </div>
                         </nav>
 
