@@ -21,8 +21,7 @@ const WHATSAPP_NUMBER = '254116081230';
 const WHATSAPP_MESSAGE = encodeURIComponent(
     'Hello! I want to get lifetime access to PipTrader AI for $255. Can you help me configure my account?'
 );
-const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
-
+// (WHATSAPP_LINK removed — Get Access now goes to /subscribe)
 const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
 
 const PREFIX: Record<StrategyType, string> = {
