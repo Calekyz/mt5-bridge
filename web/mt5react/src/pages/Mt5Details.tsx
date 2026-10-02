@@ -7,9 +7,7 @@ import {
 import { toast } from 'react-toastify';
 
 const WHATSAPP_NUMBER = '254116081230';
-const WHATSAPP_MESSAGE = encodeURIComponent(
-    'Hello! I want lifetime premium access to PipTrader AI for $255. Please tell me how to get started.'
-);
+// (WHATSAPP_MESSAGE removed)
 // (WHATSAPP_LINK removed — Upgrade banner now goes to /subscribe)
 const WHATSAPP_SUPPORT_MESSAGE = encodeURIComponent(
     'Hello! I need to update or remove my MT5 details on PipTrader AI.'
