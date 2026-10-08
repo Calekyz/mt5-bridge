@@ -81,6 +81,22 @@ const OrderRequestForm: React.FC = () => {
         loadSymbols();
     }, [vpsAddress]);
 
+    // ─── AUTO-PREFILL: once symbols load, prefill if empty ───
+    useEffect(() => {
+        if (formData.symbol) return;         // user already picked something
+        if (detectingSymbol) return;          // still detecting from EA
+        if (symbols.length === 0) return;     // symbol list not ready
+
+        const pick = (chartSymbol && symbols.includes(chartSymbol))
+            ? chartSymbol
+            : symbols[0];
+
+        if (pick) {
+            setFormData((prev) => ({ ...prev, symbol: pick }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [symbols, chartSymbol, detectingSymbol]);
+
     // ─── Detect current chart symbol ────────────────────────
     // 1) Try EA status endpoint (returns the symbol the EA is attached to)
     // 2) Fallback: most common symbol from open + pending orders
