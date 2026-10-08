@@ -247,22 +247,21 @@ const FALLBACK_SYMBOLS = [
 ];
 
 export async function getSymbols(): Promise<string[]> {
+    // Fetch live from the user's EA via backend. No hardcoded fallback —
+    // each broker (Valetax, JustMarkets, etc.) exposes its own symbols.
     try {
         const res = await fetch(`${BASE_URL}/symbols`, {
             method: "GET",
             headers: getAuthHeaders(),
         });
         if (!res.ok) {
-            console.warn(`Symbols endpoint returned ${res.status}, using fallback list`);
-            return FALLBACK_SYMBOLS;
+            console.warn(`Symbols endpoint returned ${res.status}`);
+            return [];
         }
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-            return data;
-        }
-        return FALLBACK_SYMBOLS;
+        return Array.isArray(data) ? data : [];
     } catch (error) {
-        console.warn('Failed to fetch symbols from EA, using fallback list:', error);
-        return FALLBACK_SYMBOLS;
+        console.warn('Failed to fetch symbols from EA:', error);
+        return [];
     }
 }
