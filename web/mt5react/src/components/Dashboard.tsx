@@ -220,7 +220,7 @@ export const Dashboard: React.FC = () => {
                     setStoredState('smcEnabled', false);
                     setStoredState('punexEnabled', false);
 
-                    sendCommand('PipNex_Enable', 0).catch(err => console.error('PipNex stop:', err));
+                    sendCommand('PipNex_Enable', 0).catch(err => console.error('PipTrader stop:', err));
                     sendCommand('Nova_Enable', 0).catch(err => console.error('Nova stop:', err));
                     sendCommand('Smc_Enable', 0).catch(err => console.error('SMC stop:', err));
                     sendCommand('Punex_Enable', 0).catch(err => console.error('Punex stop:', err));
@@ -439,8 +439,8 @@ export const Dashboard: React.FC = () => {
             } catch { fail++; }
         }
         setPipnexSettings(prev => ({ ...prev, ...values }));
-        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} PipNex settings`);
-        else toast.warning(`Applied ${ok}/${ok + fail} PipNex settings`);
+        if (fail === 0) toast.success(`✅ Quantum AI applied ${ok} PipTrader settings`);
+        else toast.warning(`Applied ${ok}/${ok + fail} PipTrader settings`);
     };
 
     const applyNovaSuggestion = async (suggestion: NovaSuggestion) => {
@@ -595,7 +595,7 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="relative mt-4 pt-4 border-t border-red-500/20 grid grid-cols-2 gap-2">
-                                    {['PipNex Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Punex Asian Session'].map((item, i) => (
+                                    {['PipTrader Scalper Algo', 'NOVA Swing Algo', 'SMC Swing Trader', 'Punex Asian Session'].map((item, i) => (
                                         <div key={i} className="flex items-center gap-1.5 text-[11px] text-slate-300">
                                             <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />
                                             <span className="truncate">{item}</span>
@@ -1029,7 +1029,7 @@ export const Dashboard: React.FC = () => {
                             className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 pr-10 text-white text-sm font-semibold appearance-none focus:outline-none transition cursor-pointer"
                         >
                             {[
-                                { id: 'pipnex', icon: '📈', label: 'PipNex Algo', enabled: pipnexEnabled },
+                                { id: 'pipnex', icon: '📈', label: 'PipTrader Algo', enabled: pipnexEnabled },
                                 { id: 'nova',   icon: '🤖', label: 'NOVA EDGE AI', enabled: novaEnabled },
                                 { id: 'smc',    icon: '📊', label: 'SMC Swing Trader', enabled: smcEnabled },
                                 { id: 'punex',  icon: '🌏', label: 'Punex Asian Session', enabled: punexEnabled },
@@ -1046,7 +1046,7 @@ export const Dashboard: React.FC = () => {
                 {/* Selected EA card */}
                 {selectedEA === 'pipnex' && (
                     <StrategyCard
-                        type="pipnex" label="PipNex Algo" icon="📈"
+                        type="pipnex" label="PipTrader Algo" icon="📈"
                         description="Scalper grid with martingale"
                         enabled={pipnexEnabled} settings={pipnexSettings}
                         localInputs={localInputs.pipnex}

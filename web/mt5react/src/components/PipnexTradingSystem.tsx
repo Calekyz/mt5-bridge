@@ -47,7 +47,7 @@ const EA_DEFS: Record<string, {
     }[];
 }> = {
     pipnex: {
-        label: 'PipNex Algo',
+        label: 'PipTrader Algo',
         icon: '📈',
         description: 'Scalper grid with martingale',
         settings: [

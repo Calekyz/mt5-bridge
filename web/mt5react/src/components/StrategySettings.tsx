@@ -23,7 +23,7 @@ interface StrategySettingsProps {
 
 const STRATEGY_DEFS: Record<string, { label: string; description: string; icon: string; settings: StrategySetting[] }> = {
     pipnex: {
-        label: 'PipNex Algo',
+        label: 'PipTrader Algo',
         description: 'Scalper grid with martingale strategy',
         icon: '📈',
         settings: [

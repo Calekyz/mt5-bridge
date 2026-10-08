@@ -363,7 +363,7 @@ const Guide: React.FC = () => {
                     </div>
 
                     {/* ═══════════════════════════════════════════ */}
-                    {/*  ALGO 1 — PipNex                            */}
+                    {/*  ALGO 1 — PipTrader                            */}
                     {/* ═══════════════════════════════════════════ */}
                     <div className="bg-gradient-to-br from-amber-900/20 via-slate-900/50 to-slate-900/60 border border-amber-500/30 rounded-2xl p-5 md:p-6">
                         <div className="flex items-center gap-3 mb-4">
@@ -371,7 +371,7 @@ const Guide: React.FC = () => {
                                 <Target className="text-white" size={22} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-extrabold text-white">PipNex Algo</h3>
+                                <h3 className="text-lg font-extrabold text-white">PipTrader Algo</h3>
                                 <p className="text-amber-300 text-xs">Scalper grid with martingale · High frequency</p>
                             </div>
                             <span className="hidden sm:inline-flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
@@ -385,7 +385,7 @@ const Guide: React.FC = () => {
                                     <Info size={12} /> What it does
                                 </h4>
                                 <p className="text-sm text-slate-300 leading-relaxed">
-                                    PipNex opens a **grid of trades** in one direction and adds more positions every time price
+                                    PipTrader opens a **grid of trades** in one direction and adds more positions every time price
                                     moves against it by a set pip distance. When the combined profit reaches your target, all
                                     positions close together. It works best in **ranging markets** where price bounces up
                                     and down inside a zone.
@@ -1023,7 +1023,7 @@ const Guide: React.FC = () => {
                             { problem: 'Failed to send command', cause: "EA busy, or command didn't reach the server.", fix: 'Wait 5s, try again. If it keeps failing, refresh the page.' },
                             { problem: 'Risk Guard failed', cause: 'Could not reach the EA to capture starting balance.', fix: 'Ensure EA shows Connected. Try starting the algo again.' },
                             { problem: "Algo won't start", cause: 'VPS not set, EA offline, or button not clicked.', fix: 'Check VPS Address, EA status, and click Start Algo again.' },
-                            { problem: "Trades aren't opening", cause: "Algo running but market conditions haven't triggered a signal.", fix: 'Wait — PipNex can wait 30+ mins. NOVA/SMC might wait hours. Punex waits until London open.' },
+                            { problem: "Trades aren't opening", cause: "Algo running but market conditions haven't triggered a signal.", fix: 'Wait — PipTrader can wait 30+ mins. NOVA/SMC might wait hours. Punex waits until London open.' },
                             { problem: 'Order history is empty', cause: 'No trades in the selected date range.', fix: 'Widen the date range — try the 90-day preset or a custom range.' },
                         ].map((item, i) => (
                             <div key={i} className="bg-gradient-to-br from-rose-900/10 via-slate-800/40 to-slate-900/60 border border-slate-700/50 rounded-2xl p-5">
