@@ -52,8 +52,9 @@ router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
 
 // ─── SYMBOLS (GET) ────────────────────────────────────────
 // ─── SYMBOLS (GET) — fetch LIVE from the user's EA ─────────
-// The EA exposes /v1/symbol/list which returns:
-//   { symbols: [{ name: "XAUUSD.vcn", trade_mode, description, path }, ...] }
+// The EA exposes /v1/symbol/list but the JSON has unescaped backslashes
+// in `path` fields (e.g. "ECN\AUDCAD.vcn"). We use regex extraction
+// instead of JSON.parse so bad escaping doesn't break the whole response.
 let __symbolsCache: { key: string; symbols: string[]; ts: number } | null = null;
 
 router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
@@ -61,25 +62,34 @@ router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
         const vpsAddress = await getUserVps(req.user!.id);
         if (!vpsAddress) return res.json([]);
 
-        // Cache 30s per VPS
         const now = Date.now();
         if (__symbolsCache && __symbolsCache.key === vpsAddress && now - __symbolsCache.ts < 30000) {
             return res.json(__symbolsCache.symbols);
         }
 
-        const data = await callEA(vpsAddress, 'GET', '/v1/symbol/list');
+        const base = vpsAddress.startsWith('http') ? vpsAddress : `http://${vpsAddress}`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
 
-        // Response shape: { symbols: [{ name, trade_mode, description, path }, ...] }
-        let symbols: string[] = [];
-        if (data && Array.isArray(data.symbols)) {
-            symbols = data.symbols
-                .map((s: any) => (typeof s === 'string' ? s : s?.name))
-                .filter(Boolean);
-        } else if (Array.isArray(data)) {
-            symbols = data.map((s: any) => (typeof s === 'string' ? s : s?.name)).filter(Boolean);
+        let raw = '';
+        try {
+            const eaRes = await fetch(`${base}/v1/symbol/list`, { signal: controller.signal });
+            raw = await eaRes.text();
+        } finally {
+            clearTimeout(timer);
         }
 
-        symbols = Array.from(new Set(symbols)).sort();
+        // Regex-extract every "name": "XXX" — ignores all other bad escaping
+        const names: string[] = [];
+        const re = /"name"\s*:\s*"([^"]+)"/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(raw)) !== null) {
+            if (m[1] && m[1].length < 40 && !m[1].includes('\\')) {
+                names.push(m[1]);
+            }
+        }
+
+        const symbols = Array.from(new Set(names)).sort();
         __symbolsCache = { key: vpsAddress, symbols, ts: now };
         res.json(symbols);
     } catch (err: any) {
