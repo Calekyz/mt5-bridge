@@ -52,54 +52,34 @@ router.get('/quote', authMiddleware, async (req: AuthRequest, res) => {
 
 // ─── SYMBOLS (GET) ────────────────────────────────────────
 // ─── SYMBOLS (GET) — fetch LIVE from the user's EA ─────────
+// The EA exposes /v1/symbol/list which returns:
+//   { symbols: [{ name: "XAUUSD.vcn", trade_mode, description, path }, ...] }
 let __symbolsCache: { key: string; symbols: string[]; ts: number } | null = null;
 
 router.get('/symbols', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const vpsAddress = await getUserVps(req.user!.id);
-        if (!vpsAddress) {
-            // No VPS — return empty so UI shows "no symbols"
-            return res.json([]);
-        }
+        if (!vpsAddress) return res.json([]);
 
-        // Cache for 30s per VPS so we don't hammer the EA
+        // Cache 30s per VPS
         const now = Date.now();
         if (__symbolsCache && __symbolsCache.key === vpsAddress && now - __symbolsCache.ts < 30000) {
             return res.json(__symbolsCache.symbols);
         }
 
-        // Try the WORKING endpoint first (/symbols), then /v1/symbol/list as fallback
-        const paths = ['/symbols', '/v1/symbol/list', '/v1/symbols'];
+        const data = await callEA(vpsAddress, 'GET', '/v1/symbol/list');
+
+        // Response shape: { symbols: [{ name, trade_mode, description, path }, ...] }
         let symbols: string[] = [];
-
-        for (const path of paths) {
-            try {
-                const data = await callEA(vpsAddress, 'GET', path);
-                if (!data) continue;
-
-                // Shape 1: plain array of strings
-                if (Array.isArray(data) && data.length > 0) {
-                    symbols = data.map((s: any) => typeof s === 'string' ? s : (s?.name || s?.symbol || '')).filter(Boolean);
-                    if (symbols.length > 0) break;
-                }
-                // Shape 2: { symbols: [...] }
-                if (data.symbols && Array.isArray(data.symbols) && data.symbols.length > 0) {
-                    symbols = data.symbols.map((s: any) => typeof s === 'string' ? s : (s?.name || s?.symbol || '')).filter(Boolean);
-                    if (symbols.length > 0) break;
-                }
-                // Shape 3: { charts: [{symbol, ...}] }
-                if (data.charts && Array.isArray(data.charts) && data.charts.length > 0) {
-                    symbols = data.charts.map((c: any) => c.symbol || c.Symbol || '').filter(Boolean);
-                    if (symbols.length > 0) break;
-                }
-            } catch (err) {
-                // try next path
-            }
+        if (data && Array.isArray(data.symbols)) {
+            symbols = data.symbols
+                .map((s: any) => (typeof s === 'string' ? s : s?.name))
+                .filter(Boolean);
+        } else if (Array.isArray(data)) {
+            symbols = data.map((s: any) => (typeof s === 'string' ? s : s?.name)).filter(Boolean);
         }
 
-        // De-dupe + sort
         symbols = Array.from(new Set(symbols)).sort();
-
         __symbolsCache = { key: vpsAddress, symbols, ts: now };
         res.json(symbols);
     } catch (err: any) {
