@@ -27,6 +27,7 @@ import AdminUnsubscribes from "./pages/AdminUnsubscribes";
 import { TermsModal } from "./components/TermsModal";
 import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
+import { SupportWidget } from './components/SupportWidget';
 import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
 import { PendingPaymentBanner } from './payments/PendingPaymentBanner';
@@ -404,6 +405,9 @@ function App() {
                 ) : (
                     <LoginPage onLogin={handleLogin} />
                 )}
+
+                {/* ═══ Floating Support Widget (visible everywhere) ═══ */}
+                <SupportWidget />
             </div>
         </Router>
     );
