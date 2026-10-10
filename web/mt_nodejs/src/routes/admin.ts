@@ -329,4 +329,53 @@ router.delete(
     }
 );
 
+
+// ─── POST /admin/users/bulk/delete-selected  { ids: [1,2,3] } ───
+router.post(
+    '/users/bulk/delete-selected',
+    authMiddleware,
+    requireSuperAdmin,
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const ids = Array.isArray(req.body?.ids) ? req.body.ids.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x)) : [];
+            if (ids.length === 0) {
+                return res.status(400).json({ error: 'No user IDs provided' });
+            }
+
+            // Never delete admin
+            const check = await query(
+                `SELECT id, email, role FROM users WHERE id = ANY($1::int[])`,
+                [ids]
+            );
+            const deletable = check.rows.filter(
+                (u: any) => u.role !== 'admin' && u.email !== SUPER_ADMIN_EMAIL
+            );
+            const protectedCount = check.rows.length - deletable.length;
+            const deletableIds = deletable.map((u: any) => u.id);
+
+            if (deletableIds.length === 0) {
+                return res.json({ success: true, deleted: 0, protected: protectedCount });
+            }
+
+            await query(
+                `DELETE FROM user_mt5_accounts WHERE user_id = ANY($1::int[])`,
+                [deletableIds]
+            );
+            await query(
+                `DELETE FROM users WHERE id = ANY($1::int[])`,
+                [deletableIds]
+            );
+
+            res.json({
+                success: true,
+                deleted: deletableIds.length,
+                protected: protectedCount,
+            });
+        } catch (err: any) {
+            console.error('bulk delete selected error:', err);
+            next(err);
+        }
+    }
+);
+
 export default router;

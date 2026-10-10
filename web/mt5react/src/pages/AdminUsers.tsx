@@ -37,6 +37,8 @@ export default function AdminUsersPage() {
   const [acting, setActing] = useState<number | null>(null);
   const [bulkActing, setBulkActing] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -49,6 +51,8 @@ export default function AdminUsersPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setUsers(data.users || []);
+      // Clear selection on reload
+      setSelectedIds(new Set());
     } catch (err: any) {
       setError(err?.message || 'Failed to load users');
     } finally {
@@ -109,6 +113,41 @@ export default function AdminUsersPage() {
     }
   };
 
+  const toggleOne = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelectedIds((prev) => {
+      if (prev.size === users.length) return new Set();
+      return new Set(users.map((u) => u.id));
+    });
+  };
+  const deleteSelected = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} selected user(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await fetch(`${API}/admin/users/bulk/delete-selected`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Bulk delete failed');
+      alert(`✅ Deleted ${data.deleted} user(s)` + (data.protected ? ` (${data.protected} protected)` : ''));
+      await load();
+    } catch (err: any) {
+      alert('Delete failed: ' + (err?.message || 'unknown'));
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const counts = {
     all: users.length,
     configured: users.filter((u) => u.isConfigured).length,
@@ -156,6 +195,31 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
+      {/* Bulk action bar */}
+      {users.length > 0 && (
+        <div className="flex items-center justify-between gap-2 mb-3 p-2.5 rounded-lg bg-slate-900/60 border border-slate-700/60">
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={users.length > 0 && selectedIds.size === users.length}
+              onChange={toggleAll}
+              className="w-4 h-4 accent-emerald-500 rounded"
+            />
+            Select All ({selectedIds.size}/{users.length})
+          </label>
+          {selectedIds.size > 0 && (
+            <button
+              onClick={deleteSelected}
+              disabled={bulkDeleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-bold"
+            >
+              {bulkDeleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              Delete Selected ({selectedIds.size})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Search */}
       <form onSubmit={handleSearch} className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -191,8 +255,18 @@ export default function AdminUsersPage() {
           {users.map((u) => (
             <div
               key={u.id}
-              className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-slate-700 flex flex-wrap items-center gap-3"
+              className={`p-3 rounded-lg bg-slate-900/60 border flex flex-wrap items-center gap-3 transition ${
+                selectedIds.has(u.id)
+                  ? 'border-emerald-500/50 bg-emerald-500/5'
+                  : 'border-slate-800 hover:border-slate-700'
+              }`}
             >
+              <input
+                type="checkbox"
+                checked={selectedIds.has(u.id)}
+                onChange={() => toggleOne(u.id)}
+                className="w-4 h-4 accent-emerald-500 rounded shrink-0"
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-white truncate">{u.email}</span>
