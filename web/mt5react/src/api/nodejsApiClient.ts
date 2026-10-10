@@ -238,13 +238,7 @@ export async function getQuote(symbol: string): Promise<Quote> {
 }
 
 // ─── SYMBOLS ─────────────────────────────────────────────
-const FALLBACK_SYMBOLS = [
-    "XAUUSD", "XAUUSD.m", "XAUUSDd", "XAUUSD.pro", "GOLD", "GOLD.m",
-    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "NZDUSD",
-    "BTCUSD", "ETHUSD", "USDCHF", "EURGBP", "EURJPY", "GBPJPY",
-    "AUDJPY", "CADJPY", "NZDJPY", "EURCAD", "GBPCAD", "EURAUD",
-    "AUDCAD", "AUDNZD", "NZDCAD", "CHFJPY"
-];
+// (FALLBACK_SYMBOLS removed — symbols now come live from the EA)
 
 export async function getSymbols(): Promise<string[]> {
     // Fetch live from the user's EA via backend. No hardcoded fallback —
