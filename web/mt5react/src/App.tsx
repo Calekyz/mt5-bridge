@@ -28,6 +28,7 @@ import { TermsModal } from "./components/TermsModal";
 import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 import { SupportWidget } from './components/SupportWidget';
+import AdminUsersPage from './pages/AdminUsers';
 import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
 import { PendingPaymentBanner } from './payments/PendingPaymentBanner';
@@ -195,6 +196,7 @@ function App() {
     ];
     if (isAdmin) sideItems.push({ path: "/admin", label: "Admin", icon: Users });
     if (isAdmin) sideItems.push({ path: "/admin/transactions", label: "Payments", icon: DollarSign });
+    if (isAdmin) sideItems.push({ path: "/admin/users", label: "Users", icon: Users });
 
     const middleIndex = Math.floor(sideItems.length / 2);
     const navItems: any[] = [...sideItems];
@@ -346,6 +348,7 @@ function App() {
                                 <Route path="/admin/unsubscribes" element={isAdmin ? <AdminUnsubscribes /> : <Navigate to="/" replace />} />
                                 <Route path="/admin/terms-acceptances" element={isAdmin ? <AdminTermsAcceptances /> : <Navigate to="/" replace />} />
                                 <Route path="/admin/transactions" element={isAdmin ? <AdminTransactions /> : <Navigate to="/" replace />} />
+                                <Route path="/admin/users" element={isAdmin ? <AdminUsersPage /> : <Navigate to="/" replace />} />
                             </Routes>
                         </main>
 

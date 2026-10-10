@@ -1,3 +1,4 @@
+import { authMiddleware, AuthRequest } from '../auth';
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../db';
@@ -180,5 +181,152 @@ router.patch('/client/vps', adminKeyMiddleware, async (req: Request, res: Respon
         next(error);
     }
 });
+
+
+// ═══════════════════════════════════════════════════════════════════
+// USER MANAGEMENT — search + bulk delete
+// Guarded: only caleborenge8@gmail.com (hardcoded super-admin)
+// ═══════════════════════════════════════════════════════════════════
+const SUPER_ADMIN_EMAIL = 'caleborenge8@gmail.com';
+
+function requireSuperAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+    if (!req.user || req.user.email !== SUPER_ADMIN_EMAIL) {
+        return res.status(403).json({ error: 'Super-admin only' });
+    }
+    next();
+}
+
+// ─── GET /admin/users/search?filter=all|configured|not_configured&q=xxx ───
+router.get(
+    '/users/search',
+    authMiddleware,
+    requireSuperAdmin,
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const filter = String(req.query.filter || 'all');
+            const q = String(req.query.q || '').trim().toLowerCase();
+
+            const rows = await query(
+                `SELECT u.id, u.email, u.role, u.created_at,
+                        u.plan, u.payment_status, u.activated_at,
+                        a.vps_address, a.label as account_label
+                 FROM users u
+                 LEFT JOIN user_mt5_accounts a ON a.user_id = u.id
+                 WHERE u.role != 'admin'
+                    OR u.email = $1
+                 ORDER BY u.id ASC`,
+                [SUPER_ADMIN_EMAIL]
+            );
+
+            let users = rows.rows.filter((u: any) => u.email !== SUPER_ADMIN_EMAIL);
+
+            // Filter by configured
+            if (filter === 'configured') {
+                users = users.filter((u: any) => !!u.vps_address);
+            } else if (filter === 'not_configured') {
+                users = users.filter((u: any) => !u.vps_address);
+            }
+
+            // Search by email OR vps_address
+            if (q) {
+                users = users.filter((u: any) =>
+                    (u.email || '').toLowerCase().includes(q) ||
+                    (u.vps_address || '').toLowerCase().includes(q)
+                );
+            }
+
+            res.json({
+                success: true,
+                total: users.length,
+                users: users.map((u: any) => ({
+                    id: u.id,
+                    email: u.email,
+                    role: u.role,
+                    createdAt: u.created_at,
+                    plan: u.plan,
+                    paymentStatus: u.payment_status,
+                    activatedAt: u.activated_at,
+                    vpsAddress: u.vps_address,
+                    accountLabel: u.account_label,
+                    isConfigured: !!u.vps_address,
+                })),
+            });
+        } catch (err: any) {
+            console.error('user search error:', err);
+            next(err);
+        }
+    }
+);
+
+// ─── DELETE /admin/users/:id (single user + their mt5 accounts) ───
+router.delete(
+    '/users/:id/safe',
+    authMiddleware,
+    requireSuperAdmin,
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const id = String(req.params.id);
+
+            // Fetch the target user
+            const target = await query('SELECT email, role FROM users WHERE id = $1', [id]);
+            if (target.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            if (target.rows[0].role === 'admin' || target.rows[0].email === SUPER_ADMIN_EMAIL) {
+                return res.status(400).json({ error: 'Cannot delete admin' });
+            }
+
+            // Delete MT5 accounts first (or set user_id null — hard delete here)
+            await query('DELETE FROM user_mt5_accounts WHERE user_id = $1', [id]);
+            await query('DELETE FROM users WHERE id = $1', [id]);
+
+            res.json({ success: true, deleted: target.rows[0].email });
+        } catch (err: any) {
+            console.error('delete user error:', err);
+            next(err);
+        }
+    }
+);
+
+// ─── DELETE /admin/users/bulk/all-non-admin ───
+// Requires body: { confirm: "DELETE_ALL_USERS" }
+router.delete(
+    '/users/bulk/all-non-admin',
+    authMiddleware,
+    requireSuperAdmin,
+    async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const confirm = String(req.body?.confirm || '');
+            if (confirm !== 'DELETE_ALL_USERS') {
+                return res.status(400).json({
+                    error: 'Confirmation required. Send { "confirm": "DELETE_ALL_USERS" }',
+                });
+            }
+
+            // Count first
+            const countBefore = await query(
+                `SELECT COUNT(*)::int as n FROM users WHERE email != $1 AND role != 'admin'`,
+                [SUPER_ADMIN_EMAIL]
+            );
+            const n = countBefore.rows[0]?.n || 0;
+
+            // Delete dependent data first
+            await query(
+                `DELETE FROM user_mt5_accounts
+                 WHERE user_id IN (SELECT id FROM users WHERE email != $1 AND role != 'admin')`,
+                [SUPER_ADMIN_EMAIL]
+            );
+            await query(
+                `DELETE FROM users WHERE email != $1 AND role != 'admin'`,
+                [SUPER_ADMIN_EMAIL]
+            );
+
+            res.json({ success: true, deleted: n });
+        } catch (err: any) {
+            console.error('bulk delete error:', err);
+            next(err);
+        }
+    }
+);
 
 export default router;
