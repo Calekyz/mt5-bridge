@@ -119,39 +119,45 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
     const ac = healthColorMap[account.color];
 
     return (
-        <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border overflow-hidden transition-all ${
-            expanded ? 'border-amber-500/40 shadow-lg shadow-amber-500/10' : 'border-amber-500/25 hover:border-amber-500/50'
+        <div className={`relative rounded-2xl border overflow-hidden transition-all ${
+            expanded
+                ? 'border-amber-500/50 bg-gradient-to-br from-amber-950/20 via-slate-900/90 to-slate-950 shadow-xl shadow-amber-500/10'
+                : 'border-amber-500/30 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 hover:border-amber-500/50'
         }`}>
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent pointer-events-none" />
             <button
                 onClick={() => setExpanded(!expanded)}
                 className="w-full flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-800/40 transition group"
             >
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600 shadow-lg shadow-amber-500/40 group-hover:shadow-amber-500/60 transition-all group-hover:scale-105">
-                        <Brain size={20} className="text-white" />
+                    <div className="relative p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/30 transition-all">
+                        <Brain size={18} className="text-amber-300" strokeWidth={2.2} />
+                        {expanded && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 shadow-lg shadow-amber-500/70 animate-pulse" />
+                        )}
                     </div>
                     <div className="text-left min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-base md:text-lg font-extrabold bg-gradient-to-r from-yellow-200 via-amber-200 to-orange-300 bg-clip-text text-transparent">
+                            <h2 className="text-[15px] font-extrabold text-white tracking-tight">
                                 Quantum AI
                             </h2>
-                            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 uppercase font-bold tracking-wider">
+                            <span className="text-[8px] bg-amber-500/15 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/40 uppercase font-extrabold tracking-widest">
                                 Beta
                             </span>
                         </div>
-                        <p className="text-slate-400 text-[11px] mt-0.5 truncate">
+                        <p className="text-slate-500 text-[11px] mt-0.5 font-medium truncate">
                             Smart advisor · Balance analysis · Trade health · Settings suggestions
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="hidden sm:inline text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                    <span className="hidden sm:inline text-[9px] text-amber-400 font-extrabold uppercase tracking-[0.15em]">
                         {expanded ? 'Close' : 'Open'}
                     </span>
-                    <div className={`p-1.5 rounded-lg transition-all ${
+                    <div className={`p-1.5 rounded-lg transition-all border ${
                         expanded
-                            ? 'bg-amber-500/20 text-amber-300'
-                            : 'bg-amber-500/15 text-amber-400 group-hover:bg-amber-500/25'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-amber-500/10 text-amber-400 border-amber-500/30 group-hover:bg-amber-500/20'
                     }`}>
                         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
@@ -176,7 +182,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
 
                     <div className="px-5 pt-4 space-y-3">
                         <div>
-                            <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
+                            <label className="block text-[9px] text-slate-400 uppercase tracking-[0.18em] font-extrabold mb-1.5">
                                 Strategy
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -198,7 +204,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5">
+                            <label className="block text-[9px] text-slate-400 uppercase tracking-[0.18em] font-extrabold mb-1.5">
                                 Risk Profile
                             </label>
                             <div className="grid grid-cols-3 gap-2">
@@ -251,12 +257,12 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
                                     <Zap size={12} className="text-amber-400" />
-                                    <h3 className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                                        Suggested Settings · {modeLabel}
+                                    <h3 className="text-[9px] text-slate-400 uppercase tracking-[0.18em] font-extrabold">
+                                        Suggested Settings · <span className="text-amber-300">{modeLabel}</span>
                                     </h3>
                                 </div>
 
-                                <div className="bg-slate-900/50 rounded-xl border border-slate-700/40 divide-y divide-slate-700/40">
+                                <div className="bg-slate-950/60 rounded-lg border border-slate-800 divide-y divide-slate-800">
                                     {Object.entries(currentSuggestion).map(([key, value]) => {
                                         if (key === 'reasons') return null;
                                         if (key === 'MaxLoss') return null;
@@ -279,7 +285,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className="text-sm font-mono font-bold text-white flex-shrink-0">
+                                                <div className="text-sm font-mono font-bold text-white tabular-nums flex-shrink-0">
                                                     {displayValue}
                                                 </div>
                                             </div>
@@ -318,11 +324,31 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                                 Running Trades ({tradeScores.length})
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-emerald-400 font-bold">🟢 {summary.healthy}</span>
-                                            <span className="text-[10px] text-amber-400 font-bold">🟡 {summary.watch}</span>
-                                            {summary.caution > 0 && <span className="text-[10px] text-orange-400 font-bold">🟠 {summary.caution}</span>}
-                                            {summary.highRisk > 0 && <span className="text-[10px] text-rose-400 font-bold">🔴 {summary.highRisk}</span>}
+                                        <div className="flex items-center gap-2.5">
+                                            {summary.healthy > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold tabular-nums">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/60" />
+                                                    {summary.healthy}
+                                                </span>
+                                            )}
+                                            {summary.watch > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold tabular-nums">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-lg shadow-amber-500/60" />
+                                                    {summary.watch}
+                                                </span>
+                                            )}
+                                            {summary.caution > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] text-orange-400 font-bold tabular-nums">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-lg shadow-orange-500/60" />
+                                                    {summary.caution}
+                                                </span>
+                                            )}
+                                            {summary.highRisk > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] text-rose-400 font-bold tabular-nums">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-lg shadow-rose-500/60" />
+                                                    {summary.highRisk}
+                                                </span>
+                                            )}
                                             {showHealth ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                                         </div>
                                     </button>
@@ -342,7 +368,7 @@ export const QuantumAICard: React.FC<QuantumAICardProps> = ({
                                                                     t.direction === 'BUY' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
                                                                 }`}>{t.direction}</span>
                                                             </div>
-                                                            <div className={`text-xs font-bold ${tc.text} flex-shrink-0`}>{t.score}</div>
+                                                            <div className={`text-sm font-extrabold font-mono tabular-nums ${tc.text} flex-shrink-0`}>{t.score}</div>
                                                         </div>
                                                         <div className="mt-1.5 text-[10px] text-slate-400 space-y-0.5">
                                                             {t.reasons.map((r, i) => (

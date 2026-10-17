@@ -44,42 +44,47 @@ export const QuantumAIHealthPanel: React.FC<QuantumAIHealthPanelProps> = ({
     const ac = healthColorMap[avgColor];
 
     return (
-        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-rose-500/30 overflow-hidden">
+        <div className="relative rounded-2xl border border-rose-500/30 bg-gradient-to-br from-rose-950/20 via-slate-900/90 to-slate-950 shadow-xl shadow-rose-500/10 overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-400/50 to-transparent pointer-events-none" />
             {/* ─── HEADER (always visible) ─────────────────────── */}
             <button
                 onClick={() => setExpanded(!expanded)}
                 className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/40 transition"
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-rose-600 to-pink-700 shadow-lg shadow-rose-600/30">
-                        <Brain size={14} className="text-white" />
+                    <div className="relative p-1.5 rounded-lg bg-rose-500/15 border border-rose-500/40 shadow-lg shadow-rose-500/20">
+                        <Brain size={14} className="text-rose-300" strokeWidth={2.2} />
                     </div>
                     <div className="text-left">
-                        <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold flex items-center gap-2">
+                        <div className="text-[9px] text-slate-400 uppercase tracking-[0.18em] font-extrabold flex items-center gap-2">
                             Quantum AI Health
-                            <span className={`${ac.text} font-mono`}>
+                            <span className={`${ac.text} font-mono tabular-nums font-extrabold`}>
                                 avg {summary.avgScore}
                             </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
+                        <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
                             {summary.healthy > 0 && (
-                                <span className="text-[10px] text-emerald-400 font-bold">
-                                    🟢 {summary.healthy} healthy
+                                <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold tabular-nums">
+                                    <span className="w-1 h-1 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/60" />
+                                    {summary.healthy} healthy
                                 </span>
                             )}
                             {summary.watch > 0 && (
-                                <span className="text-[10px] text-amber-400 font-bold">
-                                    🟡 {summary.watch} watch
+                                <span className="flex items-center gap-1 text-[9px] text-amber-400 font-bold tabular-nums">
+                                    <span className="w-1 h-1 rounded-full bg-amber-400 shadow-lg shadow-amber-500/60" />
+                                    {summary.watch} watch
                                 </span>
                             )}
                             {summary.caution > 0 && (
-                                <span className="text-[10px] text-orange-400 font-bold">
-                                    🟠 {summary.caution} caution
+                                <span className="flex items-center gap-1 text-[9px] text-orange-400 font-bold tabular-nums">
+                                    <span className="w-1 h-1 rounded-full bg-orange-400 shadow-lg shadow-orange-500/60" />
+                                    {summary.caution} caution
                                 </span>
                             )}
                             {summary.highRisk > 0 && (
-                                <span className="text-[10px] text-rose-400 font-bold">
-                                    🔴 {summary.highRisk} high risk
+                                <span className="flex items-center gap-1 text-[9px] text-rose-400 font-bold tabular-nums">
+                                    <span className="w-1 h-1 rounded-full bg-rose-400 shadow-lg shadow-rose-500/60" />
+                                    {summary.highRisk} high risk
                                 </span>
                             )}
                         </div>
@@ -137,15 +142,15 @@ export const QuantumAIHealthPanel: React.FC<QuantumAIHealthPanelProps> = ({
                                         }`}>
                                             {t.direction}
                                         </span>
-                                        <span className={`text-[10px] font-mono font-bold ${
+                                        <span className={`text-[10px] font-mono font-extrabold tabular-nums ${
                                             isProfit ? 'text-emerald-400' : 'text-rose-400'
                                         }`}>
                                             {isProfit ? '+' : ''}${t.profit.toFixed(2)}
                                         </span>
                                     </div>
-                                    <div className={`text-sm font-mono font-bold ${tc.text} flex-shrink-0`}>
+                                    <div className={`text-base font-mono font-extrabold tabular-nums ${tc.text} flex-shrink-0`}>
                                         {t.score}
-                                        <span className="text-[9px] text-slate-500 ml-1">
+                                        <span className="text-[9px] text-slate-500 ml-1 font-medium">
                                             {t.label}
                                         </span>
                                     </div>
