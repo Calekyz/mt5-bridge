@@ -6,7 +6,7 @@ import { getOrders } from '../api/nodejsApiClient';
 import { QuantumAICard } from './QuantumAICard';
 import type { PipnexSuggestion, NovaSuggestion, SmcSuggestion, PunexSuggestion } from './quantumAI';
 import {
-    AlertCircle, Play, Square, Key, Wifi, WifiOff, Server,
+    AlertCircle, Play, Square, Key, WifiOff, Server,
     AlertTriangle, RefreshCw, Shield, TrendingUp, TrendingDown,
     BookOpen, X as XIcon, Zap, Activity, ChevronDown,
     Info, Clock, BarChart3, Sparkles, Crown, MessageCircle,
