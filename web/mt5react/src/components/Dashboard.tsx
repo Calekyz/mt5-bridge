@@ -906,62 +906,76 @@ export const Dashboard: React.FC = () => {
                     />
                 ) : null}
 
-                <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border overflow-hidden transition-all ${
+                <div className={`relative rounded-2xl border overflow-hidden transition-all ${
                     riskSession?.is_active
-                        ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10'
-                        : 'border-slate-700/50'
+                        ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-950/20 via-slate-900/90 to-slate-950 shadow-xl shadow-emerald-500/10'
+                        : 'border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30'
                 }`}>
-                    <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
+                    {riskSession?.is_active && (
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+                    )}
+                    <div className="relative px-5 py-4 border-b border-slate-800/60 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-xl ${
+                            <div className={`p-2 rounded-xl border ${
                                 riskSession?.is_active
-                                    ? 'bg-gradient-to-br from-emerald-600 to-teal-700 shadow-lg shadow-emerald-600/20'
-                                    : 'bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-600/20'
+                                    ? 'bg-emerald-500/15 border-emerald-500/40 shadow-lg shadow-emerald-500/20'
+                                    : 'bg-amber-500/10 border-amber-500/30'
                             }`}>
-                                <Shield size={18} className="text-white" />
+                                <Shield size={16} className={riskSession?.is_active ? 'text-emerald-300' : 'text-amber-300'} strokeWidth={2.2} />
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <h2 className="text-[11px] font-extrabold text-white uppercase tracking-[0.18em] flex items-center gap-2">
                                     Risk Guard
                                     {riskSession?.is_active && (
-                                        <span className="flex items-center gap-1 text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 normal-case tracking-normal">
-                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                                        <span className="flex items-center gap-1 text-[9px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 normal-case tracking-normal font-bold">
+                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-500/60" />
                                             ACTIVE
                                         </span>
                                     )}
+                                    {!riskSession?.is_active && (
+                                        <span className="text-[9px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700/60 normal-case tracking-normal font-bold">
+                                            STANDBY
+                                        </span>
+                                    )}
                                 </h2>
-                                <p className="text-slate-500 text-[10px] mt-0.5">Auto-stops all algos when SL or TP is hit</p>
+                                <p className="text-slate-500 text-[10px] mt-0.5 font-medium">Auto-stops all algos when SL or TP is hit</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="flex items-center gap-1.5 text-[10px] text-rose-400 uppercase tracking-wider font-bold mb-1.5">
-                                    <TrendingDown size={11} />Stop Loss ($)
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="relative rounded-xl border border-rose-500/30 bg-slate-900/60 p-3">
+                                <label className="flex items-center gap-1.5 text-[9px] text-rose-300 uppercase tracking-[0.18em] font-extrabold mb-1.5">
+                                    <TrendingDown size={10} strokeWidth={2.5} />Stop Loss
                                 </label>
-                                <input type="number" step="0.01" min="0"
-                                    value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
-                                    onChange={(e) => setSlInput(e.target.value)}
-                                    placeholder="e.g. 100"
-                                    disabled={riskSession?.is_active}
-                                    className="w-full bg-slate-900/60 border border-rose-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
-                                <p className="text-[10px] text-slate-500 mt-1">Algo stops if equity drops by this amount</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-slate-500 font-mono text-sm">$</span>
+                                    <input type="number" step="0.01" min="0"
+                                        value={riskSession?.is_active ? (riskSession.sl_amount ?? '') : slInput}
+                                        onChange={(e) => setSlInput(e.target.value)}
+                                        placeholder="100"
+                                        disabled={riskSession?.is_active}
+                                        className="flex-1 bg-transparent text-white text-lg font-mono font-bold focus:outline-none placeholder:text-slate-600 tabular-nums disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+                                <p className="text-[9px] text-slate-500 mt-1.5 font-medium">Stop algos if equity drops by this amount</p>
                             </div>
-                            <div>
-                                <label className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase tracking-wider font-bold mb-1.5">
-                                    <TrendingUp size={11} />Take Profit ($)
+                            <div className="relative rounded-xl border border-emerald-500/30 bg-slate-900/60 p-3">
+                                <label className="flex items-center gap-1.5 text-[9px] text-emerald-300 uppercase tracking-[0.18em] font-extrabold mb-1.5">
+                                    <TrendingUp size={10} strokeWidth={2.5} />Take Profit
                                 </label>
-                                <input type="number" step="0.01" min="0"
-                                    value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
-                                    onChange={(e) => setTpInput(e.target.value)}
-                                    placeholder="e.g. 200"
-                                    disabled={riskSession?.is_active}
-                                    className="w-full bg-slate-900/60 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
-                                <p className="text-[10px] text-slate-500 mt-1">Algo stops when equity rises by this amount</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-slate-500 font-mono text-sm">$</span>
+                                    <input type="number" step="0.01" min="0"
+                                        value={riskSession?.is_active ? (riskSession.tp_amount ?? '') : tpInput}
+                                        onChange={(e) => setTpInput(e.target.value)}
+                                        placeholder="200"
+                                        disabled={riskSession?.is_active}
+                                        className="flex-1 bg-transparent text-white text-lg font-mono font-bold focus:outline-none placeholder:text-slate-600 tabular-nums disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+                                <p className="text-[9px] text-slate-500 mt-1.5 font-medium">Stop algos if equity rises by this amount</p>
                             </div>
                         </div>
 
@@ -1006,22 +1020,30 @@ export const Dashboard: React.FC = () => {
                         </div>
 
                         {riskSession?.is_active && riskCurrent && (
-                            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Start Balance</div>
-                                    <div className="font-mono text-sm text-white font-bold">${riskSession.starting_balance.toFixed(2)}</div>
+                            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                                <div className="relative rounded-lg border border-slate-800 bg-slate-900/60 p-3 overflow-hidden">
+                                    <div className="text-[8px] text-slate-500 uppercase tracking-[0.18em] font-extrabold mb-1">Start Balance</div>
+                                    <div className="font-mono text-sm text-slate-200 font-bold tabular-nums">
+                                        <span className="text-slate-500 text-xs">$</span>{riskSession.starting_balance.toFixed(2)}
+                                    </div>
                                 </div>
-                                <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Current Equity</div>
-                                    <div className="font-mono text-sm text-white font-bold">${riskCurrent.equity.toFixed(2)}</div>
+                                <div className="relative rounded-lg border border-violet-500/30 bg-slate-900/60 p-3 overflow-hidden">
+                                    <div className="text-[8px] text-violet-300 uppercase tracking-[0.18em] font-extrabold mb-1">Live Equity</div>
+                                    <div className="font-mono text-sm text-white font-bold tabular-nums">
+                                        <span className="text-violet-400 text-xs">$</span>{riskCurrent.equity.toFixed(2)}
+                                    </div>
                                 </div>
-                                <div className={`rounded-xl p-3 border ${
-                                    riskCurrent.raw_drawdown > 0 ? 'bg-rose-900/20 border-rose-500/30' : 'bg-slate-900/60 border-slate-700/40'
+                                <div className={`relative rounded-lg p-3 overflow-hidden border ${
+                                    riskCurrent.raw_drawdown > 0 ? 'bg-rose-950/30 border-rose-500/40' : 'bg-slate-900/60 border-slate-800'
                                 }`}>
-                                    <div className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1">Drawdown</div>
-                                    <div className={`font-mono text-sm font-bold ${riskCurrent.raw_drawdown > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
-                                        ${riskCurrent.raw_drawdown.toFixed(2)}
-                                        {riskSession.sl_amount && <span className="text-[10px] opacity-60 ml-1">/ ${riskSession.sl_amount.toFixed(2)}</span>}
+                                    <div className={`text-[8px] uppercase tracking-[0.18em] font-extrabold mb-1 ${
+                                        riskCurrent.raw_drawdown > 0 ? 'text-rose-300' : 'text-slate-500'
+                                    }`}>Drawdown</div>
+                                    <div className={`font-mono text-sm font-bold tabular-nums ${
+                                        riskCurrent.raw_drawdown > 0 ? 'text-rose-400' : 'text-slate-500'
+                                    }`}>
+                                        <span className="text-xs opacity-70">$</span>{riskCurrent.raw_drawdown.toFixed(2)}
+                                        {riskSession.sl_amount && <span className="text-[9px] opacity-60 ml-1 font-normal">/ ${riskSession.sl_amount.toFixed(2)}</span>}
                                     </div>
                                 </div>
                                 <div className={`rounded-xl p-3 border ${
@@ -1069,15 +1091,17 @@ export const Dashboard: React.FC = () => {
                 {/* ═══════════════════════════════════════════════════ */}
                 {/* EA SELECTOR DROPDOWN                                 */}
                 {/* ═══════════════════════════════════════════════════ */}
-                <div className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700/50">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <div className="relative rounded-2xl p-4 border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+                    <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em] mb-2 flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-cyan-400" />
                         Select Expert Advisor
                     </label>
                     <div className="relative">
                         <select
                             value={selectedEA}
                             onChange={(e) => handleEASelect(e.target.value as StrategyType)}
-                            className="w-full bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 pr-10 text-white text-sm font-semibold appearance-none focus:outline-none transition cursor-pointer"
+                            className="w-full bg-slate-800/80 border border-slate-700/80 focus:border-cyan-500/60 hover:border-slate-600 rounded-xl px-4 py-3 pr-10 text-white text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition cursor-pointer"
                         >
                             {[
                                 { id: 'pipnex', icon: '📈', label: 'PipTrader Algo', enabled: pipnexEnabled },
