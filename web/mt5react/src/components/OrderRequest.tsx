@@ -413,12 +413,13 @@ const OrderRequestForm: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* ─── SYMBOL & VOLUME CARD ──────────────────────── */}
-                    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 bg-gradient-to-r from-red-500 to-rose-600 rounded-lg">
-                                <BarChart3 className="w-4 h-4 text-white" />
+                    <div className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5 overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30">
+                                <BarChart3 size={13} className="text-cyan-300" strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                 Order Details
                             </h3>
                         </div>
@@ -458,7 +459,7 @@ const OrderRequestForm: React.FC = () => {
                                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                         required
                                         minLength={2}
-                                        className={`w-full px-4 py-3 rounded-xl border bg-slate-900/60 text-white placeholder-slate-500 font-mono uppercase text-sm transition-all pr-10 ${
+                                        className={`w-full px-4 py-3 rounded-xl border bg-slate-950/70 text-white placeholder-slate-500 font-mono uppercase text-base font-bold tabular-nums transition-all pr-10 ${
                                             formData.symbol && !isSymbolValid() && formData.symbol.length >= 2
                                                 ? 'border-rose-500/60 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
                                                 : formData.symbol && chartSymbol && formData.symbol.toUpperCase() === chartSymbol.toUpperCase()
@@ -537,7 +538,7 @@ const OrderRequestForm: React.FC = () => {
                                     step="0.01"
                                     min={0.01}
                                     required
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all font-mono"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-700/60 bg-slate-950/70 text-white placeholder-slate-500 text-base font-bold focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono tabular-nums"
                                 />
                             </div>
                         </div>
@@ -545,13 +546,14 @@ const OrderRequestForm: React.FC = () => {
 
                     {/* ─── LIVE PRICE CARD ───────────────────────────── */}
                     {formData.symbol.length >= 2 && (
-                        <div className="bg-gradient-to-br from-emerald-900/20 via-slate-900/60 to-blue-900/20 backdrop-blur rounded-2xl border border-emerald-500/20 p-5">
+                        <div className="relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/20 via-slate-900/90 to-slate-950 shadow-xl shadow-emerald-500/10 p-5 overflow-hidden">
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
                             <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-gradient-to-r from-emerald-500 to-rose-500 rounded-lg">
-                                        <Activity className="w-4 h-4 text-white" />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30">
+                                        <Activity size={13} className="text-emerald-300" strokeWidth={2.5} />
                                     </div>
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                         Live Market Price
                                     </h3>
                                 </div>
@@ -568,36 +570,30 @@ const OrderRequestForm: React.FC = () => {
 
                             {quote && !loadingQuote && (
                                 <>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-2.5">
                                         {/* BID */}
-                                        <div className="bg-slate-900/60 rounded-xl p-3 border border-rose-500/20">
-                                            <div className="text-[10px] text-rose-300 uppercase tracking-wider mb-1 font-semibold">
-                                                BID
-                                            </div>
-                                            <div className="text-lg md:text-xl font-bold text-rose-400 font-mono">
+                                        <div className="relative rounded-xl p-3 border border-rose-500/30 bg-rose-950/20 overflow-hidden">
+                                            <div className="text-[8px] text-rose-300 uppercase tracking-[0.2em] mb-1 font-extrabold">BID</div>
+                                            <div className="text-lg md:text-xl font-extrabold text-rose-400 font-mono tabular-nums leading-none">
                                                 {quote.bid.toFixed(5)}
                                             </div>
                                         </div>
                                         {/* SPREAD */}
-                                        <div className="bg-slate-900/60 rounded-xl p-3 border border-amber-500/20">
-                                            <div className="text-[10px] text-amber-300 uppercase tracking-wider mb-1 font-semibold">
-                                                SPREAD
-                                            </div>
-                                            <div className="text-lg md:text-xl font-bold text-amber-400 font-mono">
+                                        <div className="relative rounded-xl p-3 border border-amber-500/30 bg-amber-950/20 overflow-hidden">
+                                            <div className="text-[8px] text-amber-300 uppercase tracking-[0.2em] mb-1 font-extrabold">SPREAD</div>
+                                            <div className="text-lg md:text-xl font-extrabold text-amber-400 font-mono tabular-nums leading-none">
                                                 {getSpread()?.toFixed(5)}
                                             </div>
                                             {spreadPips !== null && (
-                                                <div className="text-[10px] text-amber-500/70 mt-0.5">
+                                                <div className="text-[9px] text-amber-500/70 mt-1 font-mono">
                                                     {spreadPips.toFixed(1)} pips
                                                 </div>
                                             )}
                                         </div>
                                         {/* ASK */}
-                                        <div className="bg-slate-900/60 rounded-xl p-3 border border-emerald-500/20">
-                                            <div className="text-[10px] text-emerald-300 uppercase tracking-wider mb-1 font-semibold">
-                                                ASK
-                                            </div>
-                                            <div className="text-lg md:text-xl font-bold text-emerald-400 font-mono">
+                                        <div className="relative rounded-xl p-3 border border-emerald-500/30 bg-emerald-950/20 overflow-hidden">
+                                            <div className="text-[8px] text-emerald-300 uppercase tracking-[0.2em] mb-1 font-extrabold">ASK</div>
+                                            <div className="text-lg md:text-xl font-extrabold text-emerald-400 font-mono tabular-nums leading-none">
                                                 {quote.ask.toFixed(5)}
                                             </div>
                                         </div>
@@ -652,12 +648,13 @@ const OrderRequestForm: React.FC = () => {
                     )}
 
                     {/* ─── DIRECTION & SLIPPAGE CARD ─────────────────── */}
-                    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 bg-gradient-to-r from-rose-500 to-pink-600 rounded-lg">
-                                <TrendingUp className="w-4 h-4 text-white" />
+                    <div className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5 overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent" />
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30">
+                                <TrendingUp size={13} className="text-rose-300" strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                 Direction & Execution
                             </h3>
                         </div>
@@ -672,9 +669,9 @@ const OrderRequestForm: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setFormData((prev) => ({ ...prev, order_type: "buy" }))}
-                                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                                        className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-widest transition-all ${
                                             formData.order_type === "buy"
-                                                ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-600/30 scale-105'
+                                                ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-600/40 ring-2 ring-emerald-400/30'
                                                 : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/50'
                                         }`}
                                     >
@@ -684,9 +681,9 @@ const OrderRequestForm: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setFormData((prev) => ({ ...prev, order_type: "sell" }))}
-                                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                                        className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-widest transition-all ${
                                             formData.order_type === "sell"
-                                                ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-600/30 scale-105'
+                                                ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-600/40 ring-2 ring-rose-400/30'
                                                 : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/50'
                                         }`}
                                     >
@@ -717,16 +714,17 @@ const OrderRequestForm: React.FC = () => {
                     </div>
 
                     {/* ─── RISK MANAGEMENT CARD ──────────────────────── */}
-                    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="p-1.5 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg">
-                                <Shield className="w-4 h-4 text-white" />
+                    <div className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5 overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30">
+                                <Shield size={13} className="text-amber-300" strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                 Risk Management
                             </h3>
-                            <span className="text-[10px] text-slate-500 uppercase">
-                                (Optional)
+                            <span className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">
+                                Optional
                             </span>
                         </div>
 
@@ -745,7 +743,7 @@ const OrderRequestForm: React.FC = () => {
                                     onChange={handleChange}
                                     step="0.0001"
                                     min={0}
-                                    className="w-full px-4 py-3 rounded-xl border border-rose-700/40 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all font-mono"
+                                    className="w-full px-4 py-3 rounded-xl border border-rose-700/40 bg-slate-950/70 text-white placeholder-slate-500 text-base font-bold focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 transition-all font-mono tabular-nums"
                                 />
                                 <p className="text-[10px] text-slate-500">
                                     Close position if price moves against you
@@ -766,7 +764,7 @@ const OrderRequestForm: React.FC = () => {
                                     onChange={handleChange}
                                     step="0.0001"
                                     min={0}
-                                    className="w-full px-4 py-3 rounded-xl border border-emerald-700/40 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all font-mono"
+                                    className="w-full px-4 py-3 rounded-xl border border-emerald-700/40 bg-slate-950/70 text-white placeholder-slate-500 text-base font-bold focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono tabular-nums"
                                 />
                                 <p className="text-[10px] text-slate-500">
                                     Auto-close position when profit target is hit
@@ -795,10 +793,13 @@ const OrderRequestForm: React.FC = () => {
                     </div>
 
                     {/* ─── ORDER SUMMARY CARD ────────────────────────── */}
-                    <div className="bg-gradient-to-br from-blue-900/20 via-slate-900/60 to-indigo-900/20 backdrop-blur rounded-2xl border border-red-500/20 p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    <div className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5 overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-1.5 rounded-lg bg-blue-500/15 border border-blue-500/30">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse block" />
+                            </div>
+                            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                 Order Summary
                             </h3>
                         </div>
@@ -806,19 +807,19 @@ const OrderRequestForm: React.FC = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/40">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Symbol</div>
-                                <div className="text-sm font-bold text-white font-mono truncate">
+                                <div className="text-sm font-extrabold text-white font-mono tabular-nums truncate">
                                     {formData.symbol || "—"}
                                 </div>
                             </div>
                             <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/40">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Volume</div>
-                                <div className="text-sm font-bold text-white font-mono">
+                                <div className="text-sm font-extrabold text-white font-mono tabular-nums">
                                     {formData.volume || "—"}
                                 </div>
                             </div>
                             <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/40">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Direction</div>
-                                <div className={`text-sm font-bold flex items-center gap-1 ${
+                                <div className={`text-sm font-extrabold flex items-center gap-1 tabular-nums ${
                                     formData.order_type === "buy" ? "text-emerald-400" : "text-rose-400"
                                 }`}>
                                     {formData.order_type === "buy" ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -827,7 +828,7 @@ const OrderRequestForm: React.FC = () => {
                             </div>
                             <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/40">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Est. Price</div>
-                                <div className="text-sm font-bold text-amber-400 font-mono">
+                                <div className="text-sm font-extrabold text-amber-400 font-mono tabular-nums">
                                     {getCurrentPrice()?.toFixed(5) || "—"}
                                 </div>
                             </div>
@@ -858,7 +859,7 @@ const OrderRequestForm: React.FC = () => {
                         <button
                             type="submit"
                             disabled={!isSymbolValid() || submitting}
-                            className={`w-full font-bold py-4 px-6 rounded-2xl transition-all duration-300 transform shadow-xl flex items-center justify-center gap-2.5 ${
+                            className={`w-full font-extrabold py-4 px-6 rounded-2xl transition-all duration-300 transform shadow-xl flex items-center justify-center gap-2.5 uppercase tracking-widest text-sm ${
                                 isSymbolValid() && !submitting
                                     ? formData.order_type === 'buy'
                                         ? 'bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-emerald-600/30 hover:scale-[1.01] active:scale-[0.99]'
