@@ -791,84 +791,94 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-xl shadow-lg shadow-red-600/20">
-                            <BarChart3 className="text-white" size={22} />
+                        <div className="relative p-2.5 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/60 shadow-lg shadow-black/30">
+                            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 pointer-events-none" />
+                            <BarChart3 className="relative text-cyan-300" size={20} strokeWidth={2.2} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
+                            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
                                 Trading Dashboard
                             </h1>
-                            <p className="text-slate-400 text-xs mt-0.5">Live account · EA control · Risk management</p>
+                            <p className="text-slate-500 text-[11px] mt-0.5 font-medium">Live account · EA control · Risk management</p>
                         </div>
                     </div>
 
-                    <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur ${
+                    <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border backdrop-blur-md transition-all ${
                         eaConnected === null
                             ? 'bg-slate-800/60 border-slate-700/50'
                             : eaConnected
-                                ? 'bg-emerald-900/20 border-emerald-500/30'
-                                : 'bg-rose-900/20 border-rose-500/30'
+                                ? 'bg-emerald-500/10 border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                                : 'bg-rose-500/10 border-rose-500/40 shadow-lg shadow-rose-500/10'
                     }`}>
                         {eaConnected === null ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-slate-500/40 border-t-slate-300 rounded-full animate-spin" />
-                                <span className="text-slate-300 text-xs font-semibold">Checking EA...</span>
+                                <div className="w-3.5 h-3.5 border-2 border-slate-500/40 border-t-slate-300 rounded-full animate-spin" />
+                                <span className="text-slate-300 text-[11px] font-semibold">Connecting...</span>
                             </>
                         ) : eaConnected ? (
                             <>
-                                <Wifi size={16} className="text-emerald-400" />
-                                <div>
-                                    <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider">EA Connected</div>
-                                    <div className="text-slate-500 text-[10px]">{vpsAddress}</div>
+                                <span className="relative flex w-1.5 h-1.5">
+                                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                                    <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                </span>
+                                <div className="flex flex-col leading-tight">
+                                    <span className="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Live</span>
+                                    <span className="text-slate-500 text-[9px] font-mono">{vpsAddress?.replace('http://', '') || 'EA active'}</span>
                                 </div>
                             </>
                         ) : (
                             <>
-                                <WifiOff size={16} className="text-rose-400" />
-                                <div>
-                                    <div className="text-rose-400 text-xs font-bold uppercase tracking-wider">EA Disconnected</div>
-                                    <div className="text-slate-500 text-[10px]">Check VPS or EA</div>
+                                <WifiOff size={14} className="text-rose-400" />
+                                <div className="flex flex-col leading-tight">
+                                    <span className="text-rose-300 text-[10px] font-bold uppercase tracking-widest">Offline</span>
+                                    <span className="text-slate-500 text-[9px]">Check VPS</span>
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {accessKey && (
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border border-slate-700/50 flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg flex-shrink-0">
-                                <Key size={14} className="text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Access Key</div>
-                                <code className="text-white font-mono text-xs truncate block">{accessKey}</code>
+                        <div className="group relative bg-slate-900/60 backdrop-blur rounded-xl p-3 border border-slate-800 hover:border-amber-500/30 transition-all overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            <div className="relative flex items-center gap-2.5">
+                                <div className="p-1.5 rounded-md bg-amber-500/15 border border-amber-500/30 flex-shrink-0">
+                                    <Key size={12} className="text-amber-300" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Access Key</div>
+                                    <code className="text-slate-200 font-mono text-[11px] truncate block mt-0.5">{accessKey}</code>
+                                </div>
                             </div>
                         </div>
                     )}
-                    <div className={`bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-xl p-4 border flex items-center gap-3 ${
-                        vpsAddress ? 'border-slate-700/50' : 'border-red-500/40'
+                    <div className={`group relative bg-slate-900/60 backdrop-blur rounded-xl p-3 border transition-all overflow-hidden ${
+                        vpsAddress ? 'border-slate-800 hover:border-emerald-500/30' : 'border-rose-500/40'
                     }`}>
-                        <div className={`p-2 rounded-lg flex-shrink-0 ${
-                            vpsAddress
-                                ? 'bg-gradient-to-br from-emerald-600 to-teal-700'
-                                : 'bg-gradient-to-br from-red-500 to-rose-600'
-                        }`}>
-                            <Server size={14} className="text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">VPS Address</div>
-                            <div className="flex items-center gap-2">
-                                <code className={`font-mono text-xs truncate ${vpsAddress ? 'text-white' : 'text-red-400'}`}>
-                                    {vpsAddress || 'Pending assignment...'}
-                                </code>
-                                <button onClick={() => refreshUserInfo(true)} disabled={refreshingUser}
-                                    className="text-slate-500 hover:text-red-400 transition disabled:opacity-50 flex-shrink-0"
-                                    title="Refresh VPS info">
-                                    <RefreshCw size={12} className={refreshingUser ? 'animate-spin' : ''} />
-                                </button>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${vpsAddress ? 'from-emerald-500/5' : 'from-rose-500/5'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`} />
+                        <div className="relative flex items-center gap-2.5">
+                            <div className={`p-1.5 rounded-md flex-shrink-0 border ${
+                                vpsAddress
+                                    ? 'bg-emerald-500/15 border-emerald-500/30'
+                                    : 'bg-rose-500/15 border-rose-500/40'
+                            }`}>
+                                <Server size={12} className={vpsAddress ? 'text-emerald-300' : 'text-rose-300'} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">VPS Address</div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <code className={`font-mono text-[11px] truncate ${vpsAddress ? 'text-slate-200' : 'text-rose-400'}`}>
+                                        {vpsAddress || 'Pending assignment...'}
+                                    </code>
+                                    <button onClick={() => refreshUserInfo(true)} disabled={refreshingUser}
+                                        className="text-slate-500 hover:text-emerald-400 transition disabled:opacity-50 flex-shrink-0"
+                                        title="Refresh VPS info">
+                                        <RefreshCw size={10} className={refreshingUser ? 'animate-spin' : ''} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
