@@ -293,6 +293,68 @@ function App() {
                         .nav-btn-icon { width: 22px !important; height: 22px !important; }
                         .nav-btn-home-icon { width: 30px !important; height: 30px !important; }
                     }
+
+                    /* ═══════════════════════════════════════════════════════════ */
+                    /*  GLOBAL DESIGN SYSTEM — applies to ALL pages             */
+                    /* ═══════════════════════════════════════════════════════════ */
+                    
+                    /* Typography */
+                    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+                    h1, h2, h3, h4 { letter-spacing: -0.02em; }
+                    
+                    /* Inputs — universal refinement */
+                    input[type="text"], input[type="number"], input[type="email"],
+                    input[type="password"], input[type="tel"], input[type="url"],
+                    textarea, select {
+                        font-feature-settings: 'tnum' 1, 'lnum' 1;
+                        transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+                    }
+                    input[type="number"] { -moz-appearance: textfield; }
+                    input[type="number"]::-webkit-outer-spin-button,
+                    input[type="number"]::-webkit-inner-spin-button {
+                        -webkit-appearance: none;
+                        margin: 0;
+                    }
+                    input:focus, textarea:focus, select:focus {
+                        outline: none;
+                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+                    }
+                    
+                    /* Buttons — universal smooth transitions */
+                    button {
+                        transition: background-color 200ms ease, border-color 200ms ease,
+                                    color 200ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                                    box-shadow 200ms ease, opacity 200ms ease;
+                        -webkit-tap-highlight-color: transparent;
+                    }
+                    button:active:not(:disabled) { transform: scale(0.97); }
+                    button:disabled { cursor: not-allowed; }
+                    
+                    /* Custom scrollbar — sleek, thin */
+                    ::-webkit-scrollbar { width: 6px; height: 6px; }
+                    ::-webkit-scrollbar-track { background: transparent; }
+                    ::-webkit-scrollbar-thumb {
+                        background: rgba(148, 163, 184, 0.18);
+                        border-radius: 3px;
+                        transition: background 200ms ease;
+                    }
+                    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.35); }
+                    
+                    /* Selection */
+                    ::selection { background: rgba(16, 185, 129, 0.3); color: #fff; }
+                    
+                    /* Card entrance animation */
+                    @keyframes cardEnter {
+                        from { opacity: 0; transform: translateY(6px); }
+                        to   { opacity: 1; transform: translateY(0); }
+                    }
+                    .card-enter { animation: cardEnter 0.4s ease-out both; }
+                    
+                    /* Smooth tabular numbers everywhere they matter */
+                    .tabular-nums { font-variant-numeric: tabular-nums; }
+                    
+                    /* Link hover refinement */
+                    a { transition: color 180ms ease, opacity 180ms ease, transform 150ms ease; }
                 `}</style>
 
                 {isAuthenticated ? (
