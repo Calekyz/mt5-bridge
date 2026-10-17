@@ -36,7 +36,7 @@ import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
 import { PendingPaymentBanner } from './payments/PendingPaymentBanner';
 
-const LOGO_URL = "https://i.postimg.cc/YCzbHFXH/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png";
+const LOGO_URL = "https://i.postimg.cc/RFMfM938/Neon-Cloud-Forex-AI-Logo.png";
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8891/v1';
 
 function getToken(): string | null {
@@ -211,6 +211,8 @@ function App() {
 
                 {/* ═══════════════ GLOBAL ANIMATIONS ═══════════════ */}
                 <style>{`
+                    body, html, * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+                    
                     .scrollbar-hide::-webkit-scrollbar { display: none; }
                     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 

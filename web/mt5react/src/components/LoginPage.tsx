@@ -27,7 +27,7 @@ const TELEGRAM_LINK = 'https://t.me/calekyz';
 
 const BOT_PRICE = '$195';
 
-const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
+const LOGO_URL = 'https://i.postimg.cc/RFMfM938/Neon-Cloud-Forex-AI-Logo.png';
 const BG_URL = 'https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error }) => {

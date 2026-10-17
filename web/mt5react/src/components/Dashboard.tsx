@@ -20,7 +20,7 @@ const BOT_PRICE = '$195';
 // (WHATSAPP_NUMBER removed)
 // (WHATSAPP_MESSAGE removed)
 // (WHATSAPP_LINK removed — Get Access now goes to /subscribe)
-const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
+const LOGO_URL = 'https://i.postimg.cc/RFMfM938/Neon-Cloud-Forex-AI-Logo.png';
 
 const PREFIX: Record<StrategyType, string> = {
     pipnex: 'PipNex_',
@@ -690,30 +690,71 @@ export const Dashboard: React.FC = () => {
             <div className="max-w-7xl mx-auto space-y-5">
 
                 {/* ═══════════════════════════════════════════════════════ */}
+                {/*  LIVE STATUS RIBBON                                    */}
+                {/* ═══════════════════════════════════════════════════════ */}
+                <div className="relative rounded-2xl border border-slate-700/50 bg-gradient-to-r from-slate-900/85 via-slate-900/70 to-slate-950/85 backdrop-blur-xl overflow-hidden shadow-lg shadow-black/20">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-transparent to-cyan-500/5 pointer-events-none" />
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
+                    <div className="relative px-4 py-3 flex items-center justify-between gap-3 overflow-x-auto scrollbar-hide">
+                        <div className="flex items-center gap-2.5 shrink-0">
+                            <span className="relative flex w-2 h-2">
+                                <span className={`absolute inset-0 rounded-full ${eaConnected ? 'bg-emerald-400' : 'bg-rose-400'} animate-ping opacity-75`} />
+                                <span className={`relative w-2 h-2 rounded-full ${eaConnected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                            </span>
+                            <span className={`text-[10px] font-extrabold uppercase tracking-[0.2em] ${eaConnected ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                {eaConnected ? 'Live' : 'Offline'}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                                · {eaConnected ? 'EA Connected' : 'Check VPS / EA'}
+                            </span>
+                        </div>
+                        {account && (
+                            <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+                                <div className="text-right">
+                                    <div className="text-[8px] text-slate-500 uppercase font-extrabold tracking-widest">Balance</div>
+                                    <div className="text-[13px] font-bold text-white leading-tight">${account.balance.toFixed(2)}</div>
+                                </div>
+                                <div className="w-px h-6 bg-slate-800" />
+                                <div className="text-right">
+                                    <div className="text-[8px] text-slate-500 uppercase font-extrabold tracking-widest">Equity</div>
+                                    <div className="text-[13px] font-bold text-white leading-tight">${account.equity.toFixed(2)}</div>
+                                </div>
+                                <div className="w-px h-6 bg-slate-800" />
+                                <div className="text-right">
+                                    <div className="text-[8px] text-slate-500 uppercase font-extrabold tracking-widest">Floating</div>
+                                    <div className={`text-[13px] font-bold leading-tight ${(account.equity - account.balance) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {(account.equity - account.balance) >= 0 ? '+' : ''}${(account.equity - account.balance).toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════ */}
                 {/*  WELCOME LOGO ANIMATION BANNER                         */}
                 {/* ═══════════════════════════════════════════════════════ */}
                 {showWelcomeBanner && (
-                    <div className="welcome-banner relative flex flex-col items-center justify-center py-6">
-                        {/* Ambient glow behind */}
+                    <div className="welcome-banner relative flex flex-col items-center justify-center py-8">
+                        {/* Soft ambient glow */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="w-40 h-40 bg-red-500/20 rounded-full blur-[60px]" />
+                            <div className="w-64 h-64 bg-gradient-to-br from-cyan-500/10 via-sky-500/8 to-blue-600/10 rounded-full blur-[80px]" />
                         </div>
 
-                        {/* Logo with pulsing rings */}
-                        <div className="relative w-24 h-24 flex items-center justify-center mb-4">
-                            <div className="absolute inset-0 rounded-full border-2 border-red-500/40 welcome-ring" />
-                            <div className="absolute inset-0 rounded-full border-2 border-rose-500/30 welcome-ring" style={{ animationDelay: '0.8s' }} />
-                            <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-red-600/30 to-rose-700/30 backdrop-blur-sm border border-red-500/50 shadow-2xl shadow-red-600/40 flex items-center justify-center">
-                                <img src={LOGO_URL} alt="PipTrader AI" className="w-14 h-14 object-contain" />
+                        {/* Logo — clean card */}
+                        <div className="relative w-24 h-24 flex items-center justify-center mb-5">
+                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800/60 to-slate-900/60 blur-xl" />
+                            <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/60 shadow-2xl shadow-black/60 flex items-center justify-center backdrop-blur-md">
+                                <img src={LOGO_URL} alt="PipTrader AI" className="w-16 h-16 object-contain" />
                             </div>
                         </div>
 
-                        {/* Welcome text */}
-                        <h2 className="welcome-title text-3xl md:text-4xl font-black bg-gradient-to-r from-red-300 via-rose-300 to-orange-300 bg-clip-text text-transparent tracking-tight text-center">
+                        {/* Text */}
+                        <h2 className="welcome-title text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-slate-300 bg-clip-text text-transparent tracking-tight text-center">
                             Welcome Back
                         </h2>
-                        <p className="mt-2 text-sm text-slate-400 font-medium">
-                            Your algos are ready · Let's trade
+                        <p className="mt-2 text-xs text-slate-500 font-medium tracking-wide uppercase">
+                            Your algos are ready · Let&apos;s trade
                         </p>
                     </div>
                 )}

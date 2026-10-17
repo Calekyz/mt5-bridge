@@ -80,7 +80,7 @@ export const Loader: React.FC = () => {
 
           <div className="relative w-14 h-14 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-slate-800/80 flex items-center justify-center shadow-2xl shadow-red-950/50">
             <img
-              src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png"
+              src="https://i.postimg.cc/RFMfM938/Neon-Cloud-Forex-AI-Logo.png"
               alt="PipTrader AI"
               className="w-9 h-9 object-contain"
             />

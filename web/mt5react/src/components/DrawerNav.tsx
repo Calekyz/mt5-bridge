@@ -84,7 +84,7 @@ export function DrawerNav({ isAdmin, onLogout }: DrawerNavProps) {
         <div className="p-4 border-b border-slate-700/40 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src="https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png"
+              src="https://i.postimg.cc/RFMfM938/Neon-Cloud-Forex-AI-Logo.png"
               alt="PipTrader"
               className="h-8 w-auto rounded-lg ring-1 ring-slate-700/50"
             />
