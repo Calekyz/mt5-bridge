@@ -102,7 +102,7 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
     // ─── EA Not Configured ───────────────────────────────────
     if (!vpsAddress) {
         return (
-            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-6">
+            <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-6">
                 <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-yellow-500/20 rounded-lg">
                         <AlertCircle size={18} className="text-yellow-400" />
@@ -220,7 +220,7 @@ export const StrategySettings: React.FC<StrategySettingsProps> = ({
                                     max={setting.max}
                                     value={settings[setting.key] ?? ''}
                                     onChange={(e) => handleChange(setting.key, parseFloat(e.target.value) || 0)}
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all pr-12"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-all pr-12"
                                 />
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-mono">
                                     {setting.step && setting.step < 1 ? '±' + setting.step : ''}

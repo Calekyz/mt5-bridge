@@ -251,15 +251,15 @@ export const PipnexTradingSystem: React.FC = () => {
                 {/* ─── ACCOUNT BAR ─── */}
                 {account && (
                     <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                        <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider">Balance</div>
                             <div className="text-base font-bold text-white">${account.balance.toFixed(2)}</div>
                         </div>
-                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                        <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider">Equity</div>
                             <div className="text-base font-bold text-white">${account.equity.toFixed(2)}</div>
                         </div>
-                        <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                        <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                             <div className="text-[10px] text-slate-500 uppercase tracking-wider">Floating P/L</div>
                             <div className={`text-base font-bold ${(account.equity - account.balance) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 {(account.equity - account.balance) >= 0 ? '+' : ''}${(account.equity - account.balance).toFixed(2)}
@@ -332,21 +332,21 @@ export const PipnexTradingSystem: React.FC = () => {
                     {/* Stats (only if active) */}
                     {currentStrategy.enabled && currentStats && (
                         <div className="p-4 border-b border-slate-700/40 grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><Award size={10} /> Win Rate</div>
                                 <div className="text-lg font-bold text-emerald-400">{currentStats.winRate}%</div>
                             </div>
-                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><Activity size={10} /> Trades</div>
                                 <div className="text-lg font-bold text-white">{currentStats.totalTrades}</div>
                             </div>
-                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingUp size={10} /> Today</div>
                                 <div className={`text-lg font-bold ${(currentStats.dailyProfit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                     {(currentStats.dailyProfit || 0) >= 0 ? '+' : ''}${(currentStats.dailyProfit || 0).toFixed(2)}
                                 </div>
                             </div>
-                            <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40">
+                            <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1"><PieChart size={10} /> R/R</div>
                                 <div className="text-lg font-bold text-white">{currentStats.profitFactor || '—'}</div>
                             </div>

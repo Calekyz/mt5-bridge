@@ -979,7 +979,7 @@ const Guide: React.FC = () => {
                             { q: 'Can I withdraw profits?', a: "Yes, directly from your MetaTrader 5 or the broker's portal." },
                             { q: 'Which algo should I choose?', a: 'Beginners: start with Punex (1 trade/day, low risk). Swing traders: NOVA or SMC. Active traders: PipNex.' },
                         ].map((item, i) => (
-                            <details key={i} className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden group">
+                            <details key={i} className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden group">
                                 <summary className="cursor-pointer p-4 font-semibold text-white hover:bg-slate-700/30 transition flex items-center justify-between list-none">
                                     <span className="flex items-center gap-3">
                                         <span className="p-1.5 bg-red-500/15 border border-red-500/30 rounded-lg flex-shrink-0">
@@ -1031,7 +1031,7 @@ const Guide: React.FC = () => {
                                     <span className="p-1.5 bg-rose-500/15 border border-rose-500/30 rounded-lg flex-shrink-0">
                                         <XCircle size={14} className="text-rose-400" />
                                     </span>
-                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                                    <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                         {item.problem}
                                     </h4>
                                 </div>
@@ -1271,7 +1271,7 @@ const Guide: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Search the guide..."
-                        className="w-full bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-2xl pl-12 pr-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all"
+                        className="w-full bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-2xl pl-12 pr-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     />
                     {searchTerm && (
                         <button
@@ -1293,7 +1293,7 @@ const Guide: React.FC = () => {
 
                     {/* ─── SIDEBAR (TOC) ──────────────────────────────── */}
                     <div className={`lg:col-span-1 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-3 lg:sticky lg:top-6">
+                        <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-3 lg:sticky lg:top-6">
                             <div className="flex items-center gap-2 px-3 py-2 mb-2">
                                 <ListOrdered size={14} className="text-red-400" />
                                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
