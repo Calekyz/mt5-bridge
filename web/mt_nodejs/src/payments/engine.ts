@@ -51,13 +51,13 @@ export interface PaymentRecord {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// PRODUCT CATALOGUE — $255 lifetime / $160 yearly
+// PRODUCT CATALOGUE — $125 lifetime / $160 yearly
 // ═══════════════════════════════════════════════════════════════════
 export const PRODUCTS_CATALOGUE: Record<string, ProductPlan> = {
   lifetime: {
     id: 'lifetime',
     name: 'Lifetime Access',
-    usdPrice: 255,
+    usdPrice: 125,
     billing: 'one-time',
     subtitle: 'Pay once. Full access forever.',
     badge: 'BEST VALUE',

@@ -8,11 +8,11 @@ const PLANS = [
   {
     id: 'lifetime',
     label: 'Lifetime Access',
-    price: '$255',
+    price: '$125',
     billing: 'one-time',
     color: 'from-amber-500 to-orange-600',
     badge: 'BEST VALUE',
-    message: 'Hi PipTrader AI, I want Lifetime Access ($255). Please help me get set up.',
+    message: 'Hi PipTrader AI, I want Lifetime Access ($125). Please help me get set up.',
   },
   {
     id: 'yearly',

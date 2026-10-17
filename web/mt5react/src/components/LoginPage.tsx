@@ -25,7 +25,7 @@ const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}
 const BROKER_LINK = 'https://ma.valetax.com/p/2083506';
 const TELEGRAM_LINK = 'https://t.me/calekyz';
 
-const BOT_PRICE = '$255';
+const BOT_PRICE = '$125';
 
 const LOGO_URL = 'https://i.postimg.cc/4ygqTvHz/Chat-GPT-Image-Sep-7-2026-02-38-09-AM.png';
 const BG_URL = 'https://i.postimg.cc/DwvhGhZM/Chat-GPT-Image-Sep-7-2026-02-36-16-AM.png';
@@ -311,7 +311,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         >
                                             <div className="text-amber-400 text-[9px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1"><Crown size={10} /> Best Value</div>
                                             <div className="text-white font-bold text-sm">Lifetime</div>
-                                            <div className="text-2xl font-extrabold text-white leading-tight">$255</div>
+                                            <div className="text-2xl font-extrabold text-white leading-tight">$125</div>
                                             <div className="text-slate-400 text-[10px]">one-time</div>
                                         </button>
                                         <button
