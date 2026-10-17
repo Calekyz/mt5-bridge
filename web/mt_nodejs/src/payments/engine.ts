@@ -51,7 +51,7 @@ export interface PaymentRecord {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// PRODUCT CATALOGUE — $125 lifetime / $160 yearly
+// PRODUCT CATALOGUE — $125 lifetime / $95 yearly
 // ═══════════════════════════════════════════════════════════════════
 export const PRODUCTS_CATALOGUE: Record<string, ProductPlan> = {
   lifetime: {
@@ -75,7 +75,7 @@ export const PRODUCTS_CATALOGUE: Record<string, ProductPlan> = {
   yearly: {
     id: 'yearly',
     name: 'Yearly Access',
-    usdPrice: 160,
+    usdPrice: 95,
     billing: '/ year',
     subtitle: 'Everything included. VPS bundled.',
     highlighted: false,

@@ -17,11 +17,11 @@ const PLANS = [
   {
     id: 'yearly',
     label: 'Yearly Access',
-    price: '$160',
+    price: '$95',
     billing: '/ year',
     color: 'from-emerald-500 to-teal-600',
     badge: '',
-    message: 'Hi PipTrader AI, I want Yearly Access ($160/year). Please help me get set up.',
+    message: 'Hi PipTrader AI, I want Yearly Access ($95/year). Please help me get set up.',
   },
 ];
 

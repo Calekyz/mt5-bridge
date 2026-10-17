@@ -22,7 +22,7 @@ export default function SubscribePage() {
       features: ['Full MT5 Bridge dashboard','Auto-trading signals (unlimited)','VPS included — lifetime','EA license — lifetime','All future features included','Priority support'],
     },
     {
-      id: 'yearly', name: 'Yearly Access', usd: 160, billing: '/ year',
+      id: 'yearly', name: 'Yearly Access', usd: 95, billing: '/ year',
       color: 'from-emerald-500 to-teal-600', highlighted: false,
       features: ['Full MT5 Bridge dashboard','Auto-trading signals (unlimited)','VPS included ($10/mo — bundled)','EA license — 12 months','All features during subscription','Support via WhatsApp/Telegram'],
     },
