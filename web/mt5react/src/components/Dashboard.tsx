@@ -1359,12 +1359,22 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                 </div>
             </div>
 
-            <div className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                    <Zap size={12} className="text-red-400" />
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Parameters</span>
+            <div className="p-5 border-t border-slate-800/60">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-amber-500/15 border border-amber-500/30">
+                            <Zap size={10} className="text-amber-300" strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[9px] text-slate-400 uppercase tracking-[0.18em] font-extrabold">Parameters</span>
+                    </div>
+                    {enabled && (
+                        <span className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                            Live
+                        </span>
+                    )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {settingsDef.map((setting) => {
                         if (setting.dependsOn && !settings[setting.dependsOn]) return null;
 
@@ -1377,29 +1387,34 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             const checked = !!settings[setting.key];
                             return (
                                 <div key={setting.key}
-                                    className={`bg-slate-900/40 rounded-xl p-3.5 border transition-all ${
-                                        checked ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/10' : 'border-slate-700/40'
+                                    className={`relative rounded-lg p-3 border transition-all ${
+                                        checked
+                                            ? 'bg-emerald-950/30 border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                                            : 'bg-slate-900/60 border-slate-800'
                                     }`}>
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{setting.label}</div>
-                                            <div className={`text-[11px] font-bold uppercase tracking-wider ${
-                                                checked ? 'text-emerald-400' : 'text-slate-500'
+                                            <div className={`text-[9px] font-extrabold uppercase tracking-[0.18em] mb-1 ${
+                                                checked ? 'text-emerald-300' : 'text-slate-500'
+                                            }`}>{setting.label}</div>
+                                            <div className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                                                checked ? 'text-emerald-400' : 'text-slate-600'
                                             }`}>
-                                                {checked ? '● ON' : '○ OFF'}
+                                                <span className={`w-1.5 h-1.5 rounded-full ${checked ? 'bg-emerald-400 shadow-lg shadow-emerald-500/60 animate-pulse' : 'bg-slate-600'}`} />
+                                                {checked ? 'ON' : 'OFF'}
                                             </div>
                                         </div>
                                         <button type="button" onClick={() => onCheckboxChange(type, setting.key, !checked)}
                                             disabled={disabled} aria-pressed={checked} aria-label={`Toggle ${setting.label}`}
-                                            className={`relative inline-flex items-center flex-shrink-0 w-14 h-7 rounded-full transition-all duration-300 shadow-lg ${
+                                            className={`relative inline-flex items-center flex-shrink-0 w-11 h-6 rounded-full transition-all duration-300 shadow-lg ${
                                                 checked
                                                     ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/40'
                                                     : 'bg-slate-700 shadow-slate-900/40'
                                             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}`}>
-                                            <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
-                                                checked ? 'translate-x-7' : 'translate-x-0'
+                                            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                                checked ? 'translate-x-5' : 'translate-x-0'
                                             }`}>
-                                                {checked ? <span className="w-2 h-2 rounded-full bg-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-slate-400" />}
+                                                {checked ? <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
                                             </span>
                                         </button>
                                     </div>
@@ -1407,23 +1422,37 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
                             );
                         }
 
+                        const lblLower = setting.label.toLowerCase();
+                        const prefixDollar = lblLower.includes('($)') || lblLower.includes('profit') || lblLower.includes('loss');
+                        const suffixPercent = lblLower.includes('%') || lblLower.includes('percent');
+
                         return (
-                            <div key={setting.key} className="bg-slate-900/40 rounded-xl p-3.5 border border-slate-700/40 hover:border-slate-600/60 transition-all">
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{setting.label}</label>
+                            <div key={setting.key}
+                                className={`relative rounded-lg p-3 border transition-all ${
+                                    isChanged
+                                        ? 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/5'
+                                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                                }`}>
+                                <div className="flex items-center justify-between mb-1.5 gap-2">
+                                    <label className="text-[9px] text-slate-400 font-extrabold uppercase tracking-[0.15em] truncate">{setting.label}</label>
                                     {isChanged && (
-                                        <span className="text-[9px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/30 font-bold">
-                                            changed
+                                        <span className="flex items-center gap-1 text-[8px] text-amber-300 font-extrabold uppercase tracking-widest flex-shrink-0">
+                                            <span className="w-1 h-1 rounded-full bg-amber-400 shadow-lg shadow-amber-500/60" />
+                                            Mod
                                         </span>
                                     )}
                                 </div>
-                                <input type="text" inputMode="decimal" value={rawValue}
-                                    onChange={(e) => onInputChange(type, setting.key, e.target.value)}
-                                    onBlur={() => onInputBlur(type, setting.key)}
-                                    disabled={disabled}
-                                    className="w-full bg-slate-950/60 border border-slate-600/60 rounded-lg px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition disabled:opacity-50"
-                                    placeholder={String(setting.default)}
-                                />
+                                <div className="flex items-baseline gap-1">
+                                    {prefixDollar && <span className="text-slate-500 font-mono text-xs font-bold">$</span>}
+                                    <input type="text" inputMode="decimal" value={rawValue}
+                                        onChange={(e) => onInputChange(type, setting.key, e.target.value)}
+                                        onBlur={() => onInputBlur(type, setting.key)}
+                                        disabled={disabled}
+                                        className="flex-1 min-w-0 bg-transparent text-white text-base font-mono font-bold tabular-nums focus:outline-none placeholder:text-slate-600 placeholder:font-normal disabled:opacity-50"
+                                        placeholder={String(setting.default)}
+                                    />
+                                    {suffixPercent && <span className="text-slate-500 font-mono text-xs font-bold">%</span>}
+                                </div>
                             </div>
                         );
                     })}
