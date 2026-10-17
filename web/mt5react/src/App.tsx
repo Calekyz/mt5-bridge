@@ -30,6 +30,7 @@ import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 import { SupportWidget } from './components/SupportWidget';
 import { LeftNav } from './components/LeftNav';
+import { DrawerNav } from './components/DrawerNav';
 import AdminUsersPage from './pages/AdminUsers';
 import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
@@ -295,7 +296,7 @@ function App() {
                     <>
                         {/* HEADER */}
                         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-700/50">
-                            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+                            <div className="max-w-7xl mx-auto pl-32 pr-4 py-3 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-gradient-to-br from-red-500/30 to-rose-500/30 blur-xl rounded-full" />
@@ -330,7 +331,7 @@ function App() {
                         </header>
 
                         {/* MAIN */}
-                        <main className="flex-1 mt-16 ml-16 overflow-y-auto">
+                        <main className="flex-1 mt-16 ml-0 overflow-y-auto">
                             <PendingPaymentBanner userEmail={user?.email} />
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
@@ -357,7 +358,7 @@ function App() {
                         {/* ═══════════════════════════════════════════════ */}
                         {/*  BOTTOM NAV — GREEN BUTTONS + ANIMATED PANEL   */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <LeftNav isAdmin={isAdmin} />
+                        <DrawerNav isAdmin={isAdmin} onLogout={handleLogout} />
 
                         <ToastContainer style={{ width: "400px", height: "100px" }} position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
                         <InstallPrompt />
