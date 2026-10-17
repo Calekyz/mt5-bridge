@@ -16,7 +16,7 @@ import { toast } from 'react-toastify';
 
 type StrategyType = 'pipnex' | 'nova' | 'smc' | 'punex';
 
-const BOT_PRICE = '$125';
+const BOT_PRICE = '$195';
 // (WHATSAPP_NUMBER removed)
 // (WHATSAPP_MESSAGE removed)
 // (WHATSAPP_LINK removed — Get Access now goes to /subscribe)

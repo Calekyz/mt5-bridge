@@ -17,12 +17,12 @@ export default function SubscribePage() {
 
   const plans = [
     {
-      id: 'lifetime', name: 'Lifetime Access', usd: 125, billing: 'one-time',
+      id: 'lifetime', name: 'Lifetime Access', usd: 195, billing: 'one-time',
       badge: 'BEST VALUE', color: 'from-amber-500 to-orange-600', highlighted: true,
       features: ['Full MT5 Bridge dashboard','Auto-trading signals (unlimited)','VPS included — lifetime','EA license — lifetime','All future features included','Priority support'],
     },
     {
-      id: 'yearly', name: 'Yearly Access', usd: 95, billing: '/ year',
+      id: 'yearly', name: 'Yearly Access', usd: 115, billing: '/ year',
       color: 'from-emerald-500 to-teal-600', highlighted: false,
       features: ['Full MT5 Bridge dashboard','Auto-trading signals (unlimited)','VPS included ($10/mo — bundled)','EA license — 12 months','All features during subscription','Support via WhatsApp/Telegram'],
     },
