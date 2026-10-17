@@ -360,10 +360,10 @@ const OrderHistory: React.FC = () => {
                             <BarChart3 className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-blue-200 bg-clip-text text-transparent">
+                            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
                                 Order History
                             </h1>
-                            <p className="text-slate-400 text-xs mt-0.5">
+                            <p className="text-slate-500 text-[11px] mt-0.5 font-medium">
                                 Closed trades · Live stats · Auto-refresh every 5s
                             </p>
                         </div>

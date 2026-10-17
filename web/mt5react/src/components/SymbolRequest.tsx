@@ -347,10 +347,10 @@ const SymbolRequest: React.FC = () => {
                         <Plus className="text-white" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-violet-100 to-rose-200 bg-clip-text text-transparent">
+                        <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
                             Request a Symbol
                         </h1>
-                        <p className="text-slate-400 text-xs mt-0.5">
+                        <p className="text-slate-500 text-[11px] mt-0.5 font-medium">
                             Browse by category or request any custom symbol · Delivered via WhatsApp
                         </p>
                     </div>

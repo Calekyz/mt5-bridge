@@ -251,7 +251,7 @@ export default function WsStreaming() {
                             )}
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">
+                            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
                                 WebSocket Streaming
                             </h1>
                             <div className="flex items-center gap-2 mt-0.5">

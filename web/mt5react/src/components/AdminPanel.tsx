@@ -342,10 +342,10 @@ export const AdminPanel: React.FC = () => {
                             <Crown className="text-white" size={22} />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-white via-rose-100 to-pink-200 bg-clip-text text-transparent">
+                            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
                                 Admin Panel
                             </h1>
-                            <p className="text-slate-400 text-xs mt-0.5">
+                            <p className="text-slate-500 text-[11px] mt-0.5 font-medium">
                                 Manage users, VPS assignments & access keys
                             </p>
                         </div>
