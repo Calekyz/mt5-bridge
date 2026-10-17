@@ -6,7 +6,7 @@ import { query } from '../db';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 export function generateToken(userId: number, email: string): string {
-    return jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn: '7d' });
+    return jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn: '30d' });
 }
 
 export function verifyToken(token: string): { id: number; email: string } | null {

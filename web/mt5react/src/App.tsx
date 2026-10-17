@@ -69,33 +69,79 @@ function App() {
 
     useEffect(() => {
         if (!isAuthenticated) return;
+        // Poll less aggressively (60s vs 10s). Also verify when tab becomes visible again.
         const interval = setInterval(() => {
             const token = getToken();
             if (!token) { handleLogout(); return; }
             verifyToken(token);
-        }, 10000);
-        return () => clearInterval(interval);
+        }, 60_000);
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') {
+                const token = getToken();
+                if (token) verifyToken(token);
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     }, [isAuthenticated]);
 
-    const verifyToken = async (token: string) => {
+    const verifyToken = async (token: string, opts: { retryOnNetwork?: boolean } = { retryOnNetwork: true }) => {
         try {
             const res = await fetch(`${API_URL}/auth/verify`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
             });
+
+            // 401 = real auth failure → logout
+            if (res.status === 401) {
+                clearToken();
+                setIsAuthenticated(false);
+                setUser(null);
+                setAuthChecked(true);
+                return;
+            }
+
+            // 200 = success
             if (res.ok) {
                 const data = await res.json();
                 setUser(data.user);
                 setIsAuthenticated(true);
-            } else {
-                clearToken();
-                setIsAuthenticated(false);
-                setUser(null);
+                setAuthChecked(true);
+                return;
             }
-        } catch {
-            clearToken();
-            setIsAuthenticated(false);
-            setUser(null);
-        } finally { setAuthChecked(true); }
+
+            // 5xx (Render cold start, proxy error, etc.) → retry once
+            if (opts.retryOnNetwork) {
+                await new Promise((r) => setTimeout(r, 1500));
+                return verifyToken(token, { retryOnNetwork: false });
+            }
+
+            // Still failing after retry → DO NOT log out. Keep user cached, they'll retry on next poll.
+            console.warn('Auth verify returned', res.status, '— keeping session (will retry)');
+            setAuthChecked(true);
+        } catch (err) {
+            // Network error / timeout / Render cold start — retry once
+            if (opts.retryOnNetwork) {
+                await new Promise((r) => setTimeout(r, 2000));
+                return verifyToken(token, { retryOnNetwork: false });
+            }
+            // Still offline → keep the user logged in with cached state
+            const cachedUser = (() => {
+                try {
+                    const raw = localStorage.getItem('user');
+                    return raw ? JSON.parse(raw) : null;
+                } catch { return null; }
+            })();
+            if (cachedUser) {
+                setUser(cachedUser);
+                setIsAuthenticated(true);
+            }
+            setAuthChecked(true);
+        }
     };
 
     useEffect(() => {
