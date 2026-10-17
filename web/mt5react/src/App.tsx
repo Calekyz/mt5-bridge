@@ -31,6 +31,7 @@ import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 import { SupportWidget } from './components/SupportWidget';
 import { LeftNav } from './components/LeftNav';
 import { DrawerNav } from './components/DrawerNav';
+import { HomeFab } from './components/HomeFab';
 import AdminUsersPage from './pages/AdminUsers';
 import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
@@ -371,6 +372,7 @@ function App() {
 
                 {/* ═══ Floating Support Widget (visible everywhere) ═══ */}
                 <SupportWidget />
+                <HomeFab />
             </div>
         </Router>
     );
