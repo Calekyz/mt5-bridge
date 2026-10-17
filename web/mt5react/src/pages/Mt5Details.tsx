@@ -536,7 +536,7 @@ export const Mt5DetailsPage: React.FC = () => {
                 )}
 
                 {/* MT5 Details Card */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${
@@ -547,7 +547,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                 {details ? <CheckCircle2 size={18} className="text-white" /> : <AlertCircle size={18} className="text-white" />}
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                     Account Details
                                 </h2>
                                 <p className="text-slate-500 text-[10px] mt-0.5">
@@ -584,7 +584,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                         value={form.label}
                                         onChange={(e) => setForm(prev => ({ ...prev, label: e.target.value }))}
                                         placeholder="e.g. Main, FTMO, Live"
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20"
                                     />
                                 </div>
 
@@ -624,7 +624,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                         value={form.mt5_server}
                                         onChange={(e) => setForm(prev => ({ ...prev, mt5_server: e.target.value }))}
                                         placeholder="e.g. ICMarketsSC-Live, FTMO-Server"
-                                        className="w-full bg-slate-900/60 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+                                        className="w-full bg-slate-900/60 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
                                     />
                                     <p className="text-[10px] text-slate-500 mt-1">
                                         ⓘ Copy exactly from your MT5 login dialog — it's case-sensitive
@@ -640,7 +640,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                         onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                                         placeholder="Anything the admin should know (e.g. prop firm rules, lot caps)"
                                         rows={3}
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm resize-none focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm resize-none focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20"
                                     />
                                 </div>
 
@@ -733,7 +733,7 @@ export const Mt5DetailsPage: React.FC = () => {
                 </div>
 
                 {/* Symbols on Chart Card */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-xl ${
@@ -744,7 +744,7 @@ export const Mt5DetailsPage: React.FC = () => {
                                 <BarChart3 size={18} className="text-white" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                     Symbols on Chart
                                 </h2>
                                 <p className="text-slate-500 text-[10px] mt-0.5">

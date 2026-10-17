@@ -298,7 +298,7 @@ export default function WsStreaming() {
                 </div>
 
                 {/* ─── COMMAND PANEL ──────────────────────────────── */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
 
                     {/* Tabs */}
                     <div className="flex flex-wrap gap-2 p-4 border-b border-slate-700/40">
@@ -330,7 +330,7 @@ export default function WsStreaming() {
                                         value={symbolsInput}
                                         onChange={(e) => setSymbolsInput(e.target.value)}
                                         placeholder="XAUUSD, EURUSD, BTCUSD"
-                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition"
+                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition"
                                         onKeyDown={(e) => e.key === "Enter" && handlePricesSubmit()}
                                     />
                                     <button
@@ -369,7 +369,7 @@ export default function WsStreaming() {
                                         value={ohlcInput}
                                         onChange={(e) => setOhlcInput(e.target.value)}
                                         placeholder="M1,EURUSD,5|M5,GBPUSD,10"
-                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition"
+                                        className="flex-1 min-w-[200px] bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition"
                                         onKeyDown={(e) => e.key === "Enter" && handleOHLCSubmit()}
                                     />
                                     <button
@@ -506,7 +506,7 @@ export default function WsStreaming() {
                                 <span className={`w-2 h-2 rounded-full ${
                                     paused ? "bg-amber-400" : "bg-emerald-400 animate-pulse"
                                 }`} />
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                     Live Messages
                                 </h3>
                                 <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">

@@ -471,7 +471,7 @@ const OrderHistory: React.FC = () => {
                 )}
 
                 {/* ─── DATE FILTER ────────────────────────────────── */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5">
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                         <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider mr-2">
                             Quick Range:
@@ -485,7 +485,7 @@ const OrderHistory: React.FC = () => {
 
                     <div className="flex flex-wrap items-end gap-3">
                         <div>
-                            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                            <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-[0.18em] mb-1.5">
                                 <Calendar size={12} />
                                 From
                             </label>
@@ -497,7 +497,7 @@ const OrderHistory: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                            <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-[0.18em] mb-1.5">
                                 <Calendar size={12} />
                                 To
                             </label>

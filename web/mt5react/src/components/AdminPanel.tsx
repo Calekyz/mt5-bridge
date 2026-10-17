@@ -451,7 +451,7 @@ export const AdminPanel: React.FC = () => {
                         <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                             <Search size={14} className="text-white" />
                         </div>
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                             Find User
                         </h2>
                         <span className="text-[10px] text-slate-500 uppercase tracking-wider">
@@ -466,7 +466,7 @@ export const AdminPanel: React.FC = () => {
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
                             placeholder="Type an email, ID, VPS address or role (admin/user)..."
-                            className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
+                            className="w-full bg-slate-950/60 border-2 border-slate-700/60 rounded-xl pl-12 pr-32 py-3.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition font-mono"
                             autoComplete="off"
                             spellCheck={false}
                         />
@@ -509,12 +509,12 @@ export const AdminPanel: React.FC = () => {
                 </div>
 
                 {/* ADD NEW CLIENT */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
                         <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                             <UserPlus size={16} className="text-white" />
                         </div>
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Add New Client</h2>
+                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Add New Client</h2>
                         <span className="text-[10px] text-slate-500 ml-auto">Creates user + assigns VPS + generates key</span>
                     </div>
 
@@ -527,7 +527,7 @@ export const AdminPanel: React.FC = () => {
                                     value={clientEmail}
                                     onChange={(e) => setClientEmail(e.target.value)}
                                     placeholder="client@example.com"
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition"
                                     required
                                 />
                             </div>
@@ -539,7 +539,7 @@ export const AdminPanel: React.FC = () => {
                                         value={clientPassword}
                                         onChange={(e) => setClientPassword(e.target.value)}
                                         placeholder="Set a secure password"
-                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 pr-10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 pr-10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition font-mono"
                                         required
                                     />
                                     <button
@@ -564,7 +564,7 @@ export const AdminPanel: React.FC = () => {
                                 value={clientVps}
                                 onChange={(e) => setClientVps(e.target.value)}
                                 placeholder="http://51.75.104.231:8890"
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition font-mono"
                             />
                         </div>
 
@@ -631,12 +631,12 @@ export const AdminPanel: React.FC = () => {
                 </div>
 
                 {/* ADD USER */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-700/40 flex items-center gap-2">
                         <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg">
                             <UserPlus size={16} className="text-white" />
                         </div>
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Add User Only</h2>
+                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Add User Only</h2>
                         <span className="text-[10px] text-slate-500 ml-auto">Assign VPS separately below</span>
                     </div>
 
@@ -649,7 +649,7 @@ export const AdminPanel: React.FC = () => {
                                     value={newEmail}
                                     onChange={(e) => setNewEmail(e.target.value)}
                                     placeholder="user@example.com"
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition"
                                     required
                                 />
                             </div>
@@ -660,7 +660,7 @@ export const AdminPanel: React.FC = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition"
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition"
                                     required
                                 />
                             </div>
@@ -692,7 +692,7 @@ export const AdminPanel: React.FC = () => {
                             <div className="p-1.5 bg-gradient-to-br from-red-600 to-rose-700 rounded-lg">
                                 <Users size={14} className="text-white" />
                             </div>
-                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">All Users</h2>
+                            <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">All Users</h2>
                             <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
                                 {filteredUsers.length === users.length
                                     ? `${users.length}`
@@ -946,7 +946,7 @@ export const AdminPanel: React.FC = () => {
                                 <div className="p-1.5 bg-gradient-to-br from-rose-600 to-pink-700 rounded-lg">
                                     <Key size={14} className="text-white" />
                                 </div>
-                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Access Keys</h2>
+                                <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Access Keys</h2>
                                 <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
                                     {filteredKeys.length}
                                 </span>

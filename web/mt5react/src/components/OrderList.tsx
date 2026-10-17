@@ -618,7 +618,7 @@ export const OrdersList: React.FC = () => {
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Active Positions</h2>
+                                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Active Positions</h2>
                                         <span className="text-xs text-slate-500">({opened.length})</span>
                                     </div>
                                     <button
@@ -748,7 +748,7 @@ export const OrdersList: React.FC = () => {
                                 <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Clock size={14} className="text-amber-400" />
-                                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Pending Orders</h2>
+                                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Pending Orders</h2>
                                         <span className="text-xs text-slate-500">({pending.length})</span>
                                     </div>
                                 </div>

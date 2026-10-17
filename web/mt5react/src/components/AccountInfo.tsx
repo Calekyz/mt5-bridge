@@ -216,7 +216,7 @@ const AccountInfo: React.FC = () => {
                 <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-700/40 flex items-center gap-2">
                         <Shield size={14} className="text-red-400" />
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                        <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                             Account Details
                         </h2>
                     </div>

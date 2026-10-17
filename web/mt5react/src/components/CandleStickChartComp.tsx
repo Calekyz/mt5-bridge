@@ -273,7 +273,7 @@ export function CandleChart() {
     if (!vpsAddress) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-6 flex items-center justify-center">
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-8 max-w-md text-center">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-8 max-w-md text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 mb-4">
                         <AlertCircle size={28} className="text-amber-400" />
                     </div>
@@ -334,7 +334,7 @@ export function CandleChart() {
                 </div>
 
                 {/* ─── FILTER CARD ────────────────────────────────── */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 p-5">
+                <div className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 p-5">
                     {/* Filters */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                         {/* Symbol */}
@@ -348,12 +348,12 @@ export function CandleChart() {
                                     value={symbol}
                                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                                     placeholder="e.g. XAUUSD"
-                                    className="flex-1 min-w-0 bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition font-mono uppercase"
+                                    className="flex-1 min-w-0 bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition font-mono uppercase"
                                 />
                                 <select
                                     onChange={(e) => e.target.value && setSymbol(e.target.value)}
                                     value=""
-                                    className="bg-slate-900/60 border border-slate-600/60 rounded-xl px-2 py-2.5 text-slate-300 text-xs focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition cursor-pointer"
+                                    className="bg-slate-900/60 border border-slate-600/60 rounded-xl px-2 py-2.5 text-slate-300 text-xs focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition cursor-pointer"
                                     style={{ colorScheme: 'dark' }}
                                 >
                                     <option value="">Popular</option>
@@ -373,7 +373,7 @@ export function CandleChart() {
                             <select
                                 value={timeframe}
                                 onChange={(e) => setTimeframe(e.target.value)}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition cursor-pointer"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition cursor-pointer"
                                 style={{ colorScheme: 'dark' }}
                             >
                                 {TIMEFRAMES.map((tf) => (
@@ -393,7 +393,7 @@ export function CandleChart() {
                                 value={fromDate}
                                 onChange={(e) => handleDateChange(setFromDate, e.target.value)}
                                 max={toDate}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition [color-scheme:dark]"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition [color-scheme:dark]"
                             />
                         </div>
 
@@ -409,7 +409,7 @@ export function CandleChart() {
                                 onChange={(e) => handleDateChange(setToDate, e.target.value)}
                                 min={fromDate}
                                 max={new Date().toISOString().split('T')[0]}
-                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition [color-scheme:dark]"
+                                className="w-full bg-slate-900/60 border border-slate-600/60 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20 transition [color-scheme:dark]"
                             />
                         </div>
 
@@ -472,7 +472,7 @@ export function CandleChart() {
                             <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                    <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                         Live Candlesticks
                                     </h2>
                                 </div>

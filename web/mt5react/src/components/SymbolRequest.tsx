@@ -389,7 +389,7 @@ const SymbolRequest: React.FC = () => {
                 {/* ─── REQUEST CARD ───────────────────────────────── */}
                 <form
                     onSubmit={handleSubmit}
-                    className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden"
+                    className="rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 shadow-xl shadow-black/30 overflow-hidden"
                 >
                     {/* ─── TABS ───────────────────────────────────── */}
                     <div className="p-4 border-b border-slate-700/40 bg-slate-900/40">
@@ -424,7 +424,7 @@ const SymbolRequest: React.FC = () => {
 
                         {/* Symbol input */}
                         <div className="space-y-2">
-                            <label className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            <label className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-[0.18em]">
                                 <span>
                                     {activeTab === 'custom' ? 'Symbol Name *' : `Search ${currentTab.label} Symbols *`}
                                 </span>
@@ -457,7 +457,7 @@ const SymbolRequest: React.FC = () => {
                                         isAlreadyAvailable
                                             ? 'border-amber-500/60 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30'
                                             : normalizedInput.length >= 2
-                                                ? 'border-emerald-500/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30'
+                                                ? 'border-emerald-500/50 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20'
                                                 : 'border-slate-600/60 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30'
                                     }`}
                                 />
@@ -592,7 +592,7 @@ const SymbolRequest: React.FC = () => {
 
                         {/* Notes */}
                         <div className="space-y-2">
-                            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.18em]">
                                 Notes <span className="text-slate-600 normal-case tracking-normal">(optional)</span>
                             </label>
                             <textarea
@@ -603,7 +603,7 @@ const SymbolRequest: React.FC = () => {
                                 maxLength={200}
                                 rows={3}
                                 disabled={!vpsAddress}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-900/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-600/60 bg-slate-950/70 text-white placeholder-slate-500 text-base font-bold tabular-nums focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <p className="text-[10px] text-slate-500">
                                 {notes.length}/200 characters
@@ -646,7 +646,7 @@ const SymbolRequest: React.FC = () => {
                 <div className="bg-slate-900/40 border border-slate-700/40 rounded-2xl p-5 space-y-3">
                     <div className="flex items-center gap-2">
                         <Shield size={14} className="text-red-400" />
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                             What happens next
                         </h3>
                     </div>
@@ -676,7 +676,7 @@ const SymbolRequest: React.FC = () => {
                         <div className="px-5 py-3 border-b border-slate-700/40 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <History size={14} className="text-violet-400" />
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">
                                     Your Recent Requests
                                 </h3>
                                 <span className="text-xs text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">
