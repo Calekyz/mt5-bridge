@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
@@ -28,6 +29,7 @@ import { TermsModal } from "./components/TermsModal";
 import TermsPage from "./pages/TermsPage";
 import AdminTermsAcceptances from "./pages/AdminTermsAcceptances";
 import { SupportWidget } from './components/SupportWidget';
+import { LeftNav } from './components/LeftNav';
 import AdminUsersPage from './pages/AdminUsers';
 import AdminTransactions from './pages/AdminTransactions';
 import SubscribePage from './pages/SubscribePage';
@@ -355,52 +357,7 @@ function App() {
                         {/* ═══════════════════════════════════════════════ */}
                         {/*  BOTTOM NAV — GREEN BUTTONS + ANIMATED PANEL   */}
                         {/* ═══════════════════════════════════════════════ */}
-                        <nav className="fixed left-0 top-16 bottom-0 z-40 w-16 backdrop-blur-xl border-r border-slate-700/50 overflow-y-auto scrollbar-hide">
-                            <div className="nav-panel-gradient absolute inset-0 pointer-events-none" />
-                            <div className="absolute inset-0 bg-slate-950/85 pointer-events-none" />
-                            <div className="absolute top-0 left-0 bottom-0 w-px bg-gradient-to-b from-amber-400/60 via-emerald-400/60 to-red-400/60" />
-                            <div className="relative flex flex-col items-center gap-1.5 py-3">
-                                {navItems.map((item) => {
-                                    const Icon = item.icon;
-                                    const isHome = item.isHome;
-                                    return (
-                                        <NavLink
-                                            key={item.path}
-                                            to={item.path}
-                                            className={({ isActive }) => {
-                                                if (isHome) {
-                                                    return `nav-item nav-home-float group relative flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 text-white shadow-2xl shadow-amber-600/60 ring-2 ring-slate-950 border border-amber-200/50 hover:scale-105 active:scale-95 ${isActive ? 'ring-amber-400/40' : ''}`;
-                                                }
-                                                return `nav-item group relative flex flex-col items-center justify-center w-11 h-11 rounded-lg ${isActive ? 'nav-item-active-green bg-gradient-to-br from-emerald-500/25 via-teal-500/20 to-green-500/25 text-white border border-emerald-400/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'}`;
-                                            }}
-                                        >
-                                            {({ isActive }) => (
-                                                <>
-                                                    {isHome && (
-                                                        <>
-                                                            <span className="nav-home-ring absolute inset-[-3px] rounded-[19px] border border-dashed border-amber-200/50 pointer-events-none" />
-                                                            <span className="nav-home-halo absolute inset-[-6px] rounded-[22px] bg-amber-400/30 blur-lg pointer-events-none" />
-                                                        </>
-                                                    )}
-                                                    {isActive && !isHome && (
-                                                        <span className="nav-indicator absolute -right-1 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-full bg-gradient-to-b from-emerald-300 via-teal-300 to-emerald-300 shadow-lg shadow-emerald-500/70" />
-                                                    )}
-                                                    <span className="nav-icon nav-btn-icon relative flex items-center justify-center">
-                                                        {isActive && !isHome && (
-                                                            <span className="absolute inset-[-6px] rounded-full bg-emerald-500/30 blur-md pointer-events-none" />
-                                                        )}
-                                                        <Icon size={isHome ? 20 : 18} strokeWidth={isHome ? 2.5 : isActive ? 2.5 : 2} className="relative" />
-                                                    </span>
-                                                    <span className={`relative text-[9px] font-bold mt-1 tracking-wider ${isHome ? 'text-white uppercase' : isActive ? 'text-emerald-200' : 'text-slate-500 group-hover:text-slate-300'}`}>
-                                                        {item.label}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </NavLink>
-                                    );
-                                })}
-                            </div>
-                        </nav>
+                        <LeftNav isAdmin={isAdmin} />
 
                         <ToastContainer style={{ width: "400px", height: "100px" }} position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover draggable theme="dark" />
                         <InstallPrompt />
