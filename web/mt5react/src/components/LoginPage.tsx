@@ -4,7 +4,7 @@ import {
     Sparkles, Shield, Zap, TrendingUp, MessageCircle,
     ArrowRight, Crown, CheckCircle2, Star,
     ExternalLink, Building2, Send, X, DollarSign,
-    ChevronDown, ChevronUp, Scale, FileText, Brain,
+    ChevronDown, ChevronUp, Scale, FileText,
 } from 'lucide-react';
 import { DynamicPaymentModal } from '../payments/DynamicPaymentModal';
 
