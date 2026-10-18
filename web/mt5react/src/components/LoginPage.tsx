@@ -4,7 +4,7 @@ import {
     Sparkles, Shield, Zap, TrendingUp, MessageCircle,
     ArrowRight, Crown, CheckCircle2, Star,
     ExternalLink, Building2, Send, X, DollarSign,
-    ChevronDown, ChevronUp, Scale, FileText,
+    ChevronDown, ChevronUp, Scale, FileText, Brain,
 } from 'lucide-react';
 import { DynamicPaymentModal } from '../payments/DynamicPaymentModal';
 
@@ -98,7 +98,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setLocalError(null);
         setSignupMessage(null);
 
-        // Require T&C acceptance for BOTH login and signup
         if (!termsAccepted) {
             setLocalError('You must accept the Terms & Conditions to continue');
             return;
@@ -127,13 +126,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 return;
             }
 
-            // Login success
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             if (data.user.access_key) localStorage.setItem('accessKey', data.user.access_key);
             if (data.user.mt5) localStorage.setItem('mt5Account', JSON.stringify(data.user.mt5));
 
-            // Record T&C acceptance on the backend (idempotent — safe to call even if already accepted)
             try {
                 await fetch(`${API_URL}/terms/accept`, {
                     method: 'POST',
@@ -144,7 +141,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                     body: JSON.stringify({ accepted: true }),
                 });
             } catch {
-                // Don't block login if this fails — App.tsx will re-check and show the modal
+                // Non-blocking
             }
 
             onLogin({ token: data.token, user: data.user });
@@ -159,133 +156,194 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
         setMode(mode === 'login' ? 'signup' : 'login');
         setLocalError(null);
         setSignupMessage(null);
-        // Keep termsAccepted state — user shouldn't need to re-check when switching modes
     };
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden"
-            style={{ backgroundImage: `url('${BG_URL}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
+        <div className="min-h-screen w-full relative overflow-hidden bg-slate-950">
             <style>{`
                 @keyframes taglineShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(220%); } }
                 @keyframes taglinePriceGlow { 0%,100% { text-shadow: 0 0 12px rgba(251,191,36,0.55), 0 0 24px rgba(251,191,36,0.30);} 50% { text-shadow: 0 0 18px rgba(251,191,36,0.85), 0 0 36px rgba(251,191,36,0.55);} }
                 @keyframes taglineArrowSlide { 0%,100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
                 @keyframes taglinePulseRing { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.9); opacity: 0; } }
-                @keyframes taglineTwinkle { 0%,100% { opacity: 0.25; transform: scale(0.9);} 50% { opacity: 1; transform: scale(1.2);} }
                 .tagline-price-glow { animation: taglinePriceGlow 3s ease-in-out infinite; }
                 .tagline-arrow { animation: taglineArrowSlide 1.6s ease-in-out infinite; }
-                .tagline-twinkle { animation: taglineTwinkle 2.4s ease-in-out infinite; }
             `}</style>
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-slate-950/95" />
-            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+            {/* Background image */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    backgroundImage: `url('${BG_URL}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    filter: 'blur(2px)',
+                    transform: 'scale(1.05)',
+                }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-950/90 to-slate-950/95" />
+
+            {/* Glow orbs */}
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[130px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[130px] pointer-events-none" />
 
             <div className="relative z-10 min-h-screen flex items-center justify-center p-4 py-8">
-                <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
+                <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center">
 
-                    {/* LEFT PANEL */}
-                    <div className="hidden lg:flex flex-col space-y-5">
+                    {/* ═══════════════════════════════════════════════════ */}
+                    {/* LEFT PANEL — Brand Showcase                         */}
+                    {/* ═══════════════════════════════════════════════════ */}
+                    <div className="hidden lg:flex flex-col space-y-6">
+
+                        {/* Logo + Wordmark */}
                         <div className="flex items-center gap-4">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-red-500/40 to-rose-500/40 blur-xl rounded-2xl" />
-                                <div className="relative p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl shadow-2xl shadow-red-600/30 ring-1 ring-red-400/30">
-                                    <img src={LOGO_URL} alt="PipTrader AI" className="h-12 w-12 object-contain" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/40 to-cyan-500/40 blur-xl rounded-2xl" />
+                                <div className="relative p-3 rounded-2xl bg-slate-900/80 backdrop-blur border border-slate-700/60 ring-1 ring-emerald-500/30 shadow-2xl shadow-emerald-500/20">
+                                    <img src={LOGO_URL} alt="PipTrader AI" className="h-14 w-14 object-contain" />
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-red-100 to-rose-200 bg-clip-text text-transparent">PipTrader AI</h1>
-                                <p className="text-slate-400 text-[10px] mt-1 tracking-[0.25em] uppercase font-bold">Automated Trading Platform</p>
+                                <h1 className="text-3xl font-extrabold text-white tracking-tight">PipTrader AI</h1>
+                                <p className="text-slate-500 text-[10px] mt-1 tracking-[0.25em] uppercase font-bold">Automated Trading Platform</p>
                             </div>
                         </div>
+
+                        {/* Headline */}
                         <div>
-                            <h2 className="text-3xl font-bold text-white leading-tight mb-3">
-                                Trade <span className="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">24/7</span> with<br />AI-powered algorithms
+                            <h2 className="text-4xl font-extrabold text-white leading-tight mb-3">
+                                Trade <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">24/7</span> with<br />AI-powered algorithms
                             </h2>
-                            <p className="text-slate-400 text-sm leading-relaxed">Cloud-based MT5 trading bots that run on our dedicated servers — no computer needed.</p>
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                                Cloud-based MT5 trading bots that run on our dedicated servers — no computer needed.
+                            </p>
                         </div>
+
+                        {/* Feature cards */}
                         {[
-                            { icon: <Shield size={16} className="text-emerald-400" />, bg: 'from-emerald-500/20 to-teal-600/20', border: 'border-emerald-500/30', title: 'Risk Guard Protection', desc: 'Auto stop-loss and take-profit closes all positions when targets are hit' },
-                            { icon: <Zap size={16} className="text-red-400" />, bg: 'from-red-500/20 to-rose-600/20', border: 'border-red-500/30', title: 'Instant Execution', desc: 'Trades placed in milliseconds on your dedicated VPS' },
-                            { icon: <TrendingUp size={16} className="text-rose-400" />, bg: 'from-rose-500/20 to-pink-600/20', border: 'border-rose-500/30', title: 'Live Performance Tracking', desc: 'Real-time balance, equity, orders, and trade history' },
-                            { icon: <Crown size={16} className="text-amber-400" />, bg: 'from-amber-500/20 to-orange-600/20', border: 'border-amber-500/30', title: 'Lifetime Access', badge: `One-time · ${BOT_PRICE}`, desc: `Pay once ${BOT_PRICE}, trade forever.` },
+                            { icon: <Shield size={16} className="text-emerald-300" />, bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', title: 'Risk Guard Protection', desc: 'Auto stop-loss and take-profit closes all positions when targets are hit' },
+                            { icon: <Zap size={16} className="text-cyan-300" />, bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', title: 'Instant Execution', desc: 'Trades placed in milliseconds on your dedicated VPS' },
+                            { icon: <TrendingUp size={16} className="text-violet-300" />, bg: 'bg-violet-500/15', border: 'border-violet-500/30', title: 'Live Performance Tracking', desc: 'Real-time balance, equity, orders, and trade history' },
+                            { icon: <Crown size={16} className="text-amber-300" />, bg: 'bg-amber-500/15', border: 'border-amber-500/30', title: 'Lifetime Access', badge: `One-time · ${BOT_PRICE}`, desc: `Pay once ${BOT_PRICE}, trade forever.` },
                         ].map((f, i) => (
-                            <div key={i} className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-700/50">
-                                <div className={`p-2 bg-gradient-to-br ${f.bg} rounded-lg border ${f.border} flex-shrink-0`}>{f.icon}</div>
+                            <div key={i} className="flex items-start gap-3 bg-slate-900/60 backdrop-blur rounded-xl p-3.5 border border-slate-800">
+                                <div className={`p-2 ${f.bg} rounded-lg border ${f.border} flex-shrink-0`}>{f.icon}</div>
                                 <div>
                                     <div className="text-sm font-bold text-white mb-0.5 flex items-center gap-1.5 flex-wrap">
                                         {f.title}
-                                        {f.badge && <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-bold">{f.badge}</span>}
+                                        {f.badge && <span className="text-[9px] bg-amber-500/15 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase font-extrabold tracking-wider">{f.badge}</span>}
                                     </div>
-                                    <div className="text-[11px] text-slate-400">{f.desc}</div>
+                                    <div className="text-[11px] text-slate-500">{f.desc}</div>
                                 </div>
                             </div>
                         ))}
-                        <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 rounded-2xl p-4 border border-red-400/40 shadow-lg shadow-red-600/25 transition-all">
+
+                        {/* CTA cards */}
+                        <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 hover:from-cyan-600/30 hover:to-blue-600/30 rounded-2xl p-4 border border-cyan-500/40 transition-all group">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-xl"><Building2 size={20} className="text-white" /></div>
+                                <div className="p-2 bg-cyan-500/20 rounded-xl border border-cyan-500/30"><Building2 size={20} className="text-cyan-300" /></div>
                                 <div>
-                                    <div className="text-white font-bold text-sm flex items-center gap-1.5">Open Broker Account <span className="text-[9px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded border border-amber-300/40 uppercase font-bold">Recommended</span></div>
-                                    <div className="text-red-100 text-[11px]">Sign up with our partner broker · MT5 supported</div>
+                                    <div className="text-white font-bold text-sm flex items-center gap-1.5">
+                                        Open Broker Account
+                                        <span className="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded border border-amber-500/40 uppercase font-extrabold tracking-wider">Recommended</span>
+                                    </div>
+                                    <div className="text-slate-400 text-[11px]">Sign up with our partner broker · MT5 supported</div>
                                 </div>
                             </div>
-                            <ExternalLink size={18} className="text-white flex-shrink-0" />
+                            <ExternalLink size={18} className="text-cyan-300 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                         </a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 rounded-2xl p-4 border border-emerald-500/40 shadow-lg shadow-emerald-600/25 transition-all">
+
+                        <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 rounded-2xl p-4 border border-emerald-500/40 transition-all group">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-xl"><MessageCircle size={20} className="text-white" /></div>
+                                <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30"><MessageCircle size={20} className="text-emerald-300" /></div>
                                 <div>
-                                    <div className="text-white font-bold text-sm flex items-center gap-2">Get Lifetime Access <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full border border-white/30 font-extrabold">{BOT_PRICE}</span></div>
-                                    <div className="text-emerald-100 text-[11px]">Chat on WhatsApp · +254 116 081 230</div>
+                                    <div className="text-white font-bold text-sm flex items-center gap-2">
+                                        Get Lifetime Access
+                                        <span className="text-[10px] bg-emerald-500/20 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-500/40 font-extrabold tabular-nums">{BOT_PRICE}</span>
+                                    </div>
+                                    <div className="text-slate-400 text-[11px]">Chat on WhatsApp · +254 116 081 230</div>
                                 </div>
                             </div>
-                            <ArrowRight size={18} className="text-white flex-shrink-0" />
+                            <ArrowRight size={18} className="text-emerald-300 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                         </a>
                     </div>
 
-                    {/* RIGHT PANEL */}
+                    {/* ═══════════════════════════════════════════════════ */}
+                    {/* RIGHT PANEL — Auth Card                             */}
+                    {/* ═══════════════════════════════════════════════════ */}
                     <div className="w-full max-w-md mx-auto lg:mx-0">
-                        <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl p-6 sm:p-8 overflow-hidden">
-                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+                        <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/60 shadow-2xl shadow-black/50 p-6 sm:p-8 overflow-hidden">
+                            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+
+                            {/* Mobile logo */}
                             <div className="lg:hidden text-center mb-6">
                                 <div className="flex justify-center mb-3">
-                                    <div className="p-3 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl shadow-xl shadow-red-600/30 ring-1 ring-red-400/30">
+                                    <div className="p-3 rounded-2xl bg-slate-900/80 backdrop-blur border border-slate-700/60 ring-1 ring-emerald-500/30 shadow-xl shadow-emerald-500/20">
                                         <img src={LOGO_URL} alt="PipTrader AI Logo" className="h-12 w-12 object-contain" />
                                     </div>
                                 </div>
-                                <h1 className="text-2xl font-extrabold bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">PipTrader AI</h1>
+                                <h1 className="text-2xl font-extrabold text-white tracking-tight">PipTrader AI</h1>
                                 <p className="text-slate-500 text-xs mt-1">Automated MT5 Trading Platform</p>
                             </div>
-                            <div className="flex justify-center mb-4">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/40">
+
+                            {/* Access badge */}
+                            <div className="flex justify-center mb-5">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 rounded-full border border-amber-500/40">
                                     <DollarSign size={12} className="text-amber-400" />
-                                    <span className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">Lifetime Access · {BOT_PRICE}</span>
+                                    <span className="text-[11px] text-amber-300 font-extrabold uppercase tracking-widest tabular-nums">Lifetime Access · {BOT_PRICE}</span>
                                     <Crown size={12} className="text-amber-400" />
                                 </div>
                             </div>
+
+                            {/* Tagline rotation */}
                             <div className="relative h-[110px] mb-5 flex items-center justify-center">
+                                {/* Welcome tagline */}
                                 <div className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${taglineHidden && taglineMode === 'welcome' ? 'opacity-0 -translate-y-6 scale-95' : taglineMode === 'welcome' ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95 pointer-events-none'}`} style={{ transitionDuration: '800ms' }}>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/60 rounded-full border border-slate-700/50 mb-3">
-                                        {mode === 'login' ? (<><Sparkles size={12} className="text-red-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Welcome Back</span></>) : (<><Star size={12} className="text-amber-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Create Account</span></>)}
+                                        {mode === 'login' ? (
+                                            <><Sparkles size={12} className="text-emerald-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Welcome Back</span></>
+                                        ) : (
+                                            <><Star size={12} className="text-amber-400" /><span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Create Account</span></>
+                                        )}
                                     </div>
                                     <h2 className="text-xl font-bold text-white">{mode === 'login' ? 'Sign in to your dashboard' : 'Create your account'}</h2>
                                     <p className="text-slate-400 text-xs mt-1">{mode === 'login' ? 'Enter your credentials to continue' : 'Sign up to get started with trading'}</p>
                                 </div>
+
+                                {/* Advert tagline */}
                                 <div className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all ease-in-out ${taglineHidden && taglineMode === 'advert' ? 'opacity-0 -translate-y-6 scale-95' : taglineMode === 'advert' ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95 pointer-events-none'}`} style={{ transitionDuration: '800ms' }}>
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-400/50 relative overflow-hidden" style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.20) 0%, rgba(249,115,22,0.25) 100%)' }}>
                                         <span className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent" style={{ animation: 'taglineShimmer 2.5s ease-in-out infinite' }} />
-                                        <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" style={{ animation: 'taglinePulseRing 1.6s ease-out infinite' }} /><span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" /></span>
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" style={{ animation: 'taglinePulseRing 1.6s ease-out infinite' }} />
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300" />
+                                        </span>
                                         <span className="relative text-[10px] font-extrabold uppercase tracking-widest text-amber-100">Limited Offer</span>
                                     </div>
-                                    <h2 className="text-xl font-black text-white mt-3 leading-tight">Unlock <span className="tagline-price-glow bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">Lifetime Access</span></h2>
+                                    <h2 className="text-xl font-black text-white mt-3 leading-tight">
+                                        Unlock <span className="tagline-price-glow bg-gradient-to-r from-amber-200 via-yellow-300 to-orange-300 bg-clip-text text-transparent">Lifetime Access</span>
+                                    </h2>
                                     <p className="text-slate-300 text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap justify-center">
-                                        <span className="text-emerald-400 font-bold">4 Algos</span><span className="text-slate-600">·</span><span className="text-red-400 font-bold">Risk Guard</span><span className="text-slate-600">·</span><span className="text-rose-400 font-bold">Quantum AI</span><span className="text-slate-600">·</span><span className="text-amber-300 font-bold">{BOT_PRICE}</span>
+                                        <span className="text-emerald-400 font-bold">4 Algos</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-cyan-400 font-bold">Risk Guard</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-violet-400 font-bold">Quantum AI</span>
+                                        <span className="text-slate-600">·</span>
+                                        <span className="text-amber-300 font-bold tabular-nums">{BOT_PRICE}</span>
                                     </p>
-                                    <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition">Get started today <ArrowRight size={11} className="tagline-arrow" /></a>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition">
+                                        Get started today <ArrowRight size={11} className="tagline-arrow" />
+                                    </a>
                                 </div>
                             </div>
 
+                            {/* Signup success message */}
                             {signupMessage && (
                                 <div className="mb-5 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl flex items-start gap-3">
-                                    <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30"><CheckCircle2 size={14} className="text-emerald-400" /></div>
+                                    <div className="p-1.5 bg-emerald-500/20 rounded-lg flex-shrink-0 border border-emerald-500/30">
+                                        <CheckCircle2 size={14} className="text-emerald-400" />
+                                    </div>
                                     <div>
                                         <div className="text-emerald-300 font-bold text-xs mb-0.5">Account Created Successfully</div>
                                         <div className="text-emerald-400/80 text-[11px] leading-relaxed">{signupMessage}</div>
@@ -297,7 +355,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                             {showPlanPicker && (
                                 <div className="mb-6 p-4 rounded-2xl bg-slate-900/60 border border-amber-500/30 shadow-2xl shadow-amber-500/10">
                                     <div className="text-center mb-4">
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wider mb-2">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider mb-2">
                                             <CheckCircle2 size={11} /> Account Created
                                         </div>
                                         <h3 className="text-white text-base font-bold">Choose Your Plan</h3>
@@ -307,21 +365,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                         <button
                                             type="button"
                                             onClick={() => { setPaymentProduct('lifetime'); setShowPayment(true); }}
-                                            className="p-3 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 to-orange-600/5 hover:border-amber-400 transition-all text-left"
+                                            className="p-3 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 to-orange-600/5 hover:border-amber-400 hover:scale-[1.02] transition-all text-left"
                                         >
-                                            <div className="text-amber-400 text-[9px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1"><Crown size={10} /> Best Value</div>
+                                            <div className="text-amber-400 text-[9px] font-extrabold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                <Crown size={10} /> Best Value
+                                            </div>
                                             <div className="text-white font-bold text-sm">Lifetime</div>
-                                            <div className="text-2xl font-extrabold text-white leading-tight">$195</div>
+                                            <div className="text-2xl font-extrabold text-white leading-tight tabular-nums">$195</div>
                                             <div className="text-slate-400 text-[10px]">one-time</div>
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => { setPaymentProduct('yearly'); setShowPayment(true); }}
-                                            className="p-3 rounded-xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 to-teal-600/5 hover:border-emerald-400 transition-all text-left"
+                                            className="p-3 rounded-xl border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 to-teal-600/5 hover:border-emerald-400 hover:scale-[1.02] transition-all text-left"
                                         >
-                                            <div className="text-emerald-400 text-[9px] font-bold uppercase tracking-wider mb-1">Plan</div>
+                                            <div className="text-emerald-400 text-[9px] font-extrabold uppercase tracking-wider mb-1">Plan</div>
                                             <div className="text-white font-bold text-sm">Yearly</div>
-                                            <div className="text-2xl font-extrabold text-white leading-tight">$160</div>
+                                            <div className="text-2xl font-extrabold text-white leading-tight tabular-nums">$115</div>
                                             <div className="text-slate-400 text-[10px]">/ year</div>
                                         </button>
                                     </div>
@@ -335,121 +395,188 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                                 </div>
                             )}
 
-                            {!showPlanPicker && (<form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
-                                    <div className="relative">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition" required />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
-                                    <div className="relative">
-                                        <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                                        <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-slate-800/60 border border-slate-600/60 rounded-xl pl-11 pr-12 py-3.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition" required />
-                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition">
-                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* ═══ T&C CHECKBOX — BELOW PASSWORD, BOTH MODES ═══ */}
-                                <label className="flex items-start gap-3 cursor-pointer group bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 transition">
-                                    <div className="flex-shrink-0 mt-0.5">
-                                        <input
-                                            type="checkbox"
-                                            checked={termsAccepted}
-                                            onChange={(e) => { setTermsAccepted(e.target.checked); setLocalError(null); }}
-                                            className="sr-only"
-                                        />
-                                        <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
-                                            termsAccepted
-                                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 shadow-lg shadow-emerald-500/40'
-                                                : 'bg-slate-950 border-slate-600 group-hover:border-emerald-400'
-                                        }`}>
-                                            {termsAccepted && <CheckCircle2 size={13} className="text-white" />}
+                            {/* Login/Signup Form */}
+                            {!showPlanPicker && (
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em] mb-1.5">Email Address</label>
+                                        <div className="relative">
+                                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="you@example.com"
+                                                className="w-full bg-slate-950/70 border border-slate-700/60 rounded-xl pl-11 pr-4 py-3.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition tabular-nums"
+                                                required
+                                            />
                                         </div>
                                     </div>
-                                    <div className="text-[11px] text-slate-300 leading-relaxed select-none">
-                                        I am at least <strong className="text-white">18 years old</strong>, I have read and accept the{' '}
-                                        <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-amber-400 hover:text-amber-300 underline font-bold">Terms & Conditions</a>{' '}
-                                        and the <strong className="text-white">risk disclosure</strong>.
+                                    <div>
+                                        <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em] mb-1.5">Password</label>
+                                        <div className="relative">
+                                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-slate-950/70 border border-slate-700/60 rounded-xl pl-11 pr-12 py-3.5 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"
+                                            >
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
-                                </label>
 
-                                {(localError || error) && (
-                                    <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3">
-                                        <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                                        <span>{localError || error}</span>
+                                    {/* T&C Checkbox */}
+                                    <label className="flex items-start gap-3 cursor-pointer group bg-slate-950/50 hover:bg-slate-900/70 border border-slate-700/60 rounded-xl p-3 transition">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={termsAccepted}
+                                                onChange={(e) => { setTermsAccepted(e.target.checked); setLocalError(null); }}
+                                                className="sr-only"
+                                            />
+                                            <div className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                                                termsAccepted
+                                                    ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 shadow-lg shadow-emerald-500/40'
+                                                    : 'bg-slate-950 border-slate-600 group-hover:border-emerald-400'
+                                            }`}>
+                                                {termsAccepted && <CheckCircle2 size={13} className="text-white" />}
+                                            </div>
+                                        </div>
+                                        <div className="text-[11px] text-slate-300 leading-relaxed select-none">
+                                            I am at least <strong className="text-white">18 years old</strong>, I have read and accept the{' '}
+                                            <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-amber-400 hover:text-amber-300 underline font-bold">Terms & Conditions</a>{' '}
+                                            and the <strong className="text-white">risk disclosure</strong>.
+                                        </div>
+                                    </label>
+
+                                    {/* Error */}
+                                    {(localError || error) && (
+                                        <div className="flex items-start gap-2 text-rose-400 text-xs bg-rose-900/20 border border-rose-500/30 rounded-xl p-3">
+                                            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                                            <span>{localError || error}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Submit */}
+                                    <button
+                                        type="submit"
+                                        disabled={loading || isLoading || !termsAccepted}
+                                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wider text-xs"
+                                    >
+                                        {loading || isLoading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {mode === 'login' ? 'Sign In' : 'Create Account'}
+                                                <ArrowRight size={16} />
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {/* Toggle login/signup */}
+                                    <div className="text-center text-xs text-slate-400 pt-2">
+                                        {mode === 'login' ? (
+                                            <>Don't have an account?{' '}
+                                                <button type="button" onClick={toggleMode} className="text-emerald-400 hover:text-emerald-300 underline transition font-bold">Sign Up</button>
+                                            </>
+                                        ) : (
+                                            <>Already have an account?{' '}
+                                                <button type="button" onClick={toggleMode} className="text-emerald-400 hover:text-emerald-300 underline transition font-bold">Sign In</button>
+                                            </>
+                                        )}
                                     </div>
-                                )}
+                                </form>
+                            )}
 
-                                <button type="submit" disabled={loading || isLoading || !termsAccepted} className="w-full bg-gradient-to-r from-red-600 to-rose-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-red-600/30 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                                    {loading || isLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{mode === 'login' ? 'Signing in...' : 'Creating account...'}</>) : (<>{mode === 'login' ? 'Sign In' : 'Create Account'}<ArrowRight size={16} /></>)}
-                                </button>
-
-                                <div className="text-center text-xs text-slate-400 pt-2">
-                                    {mode === 'login' ? (<>Don't have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign Up</button></>) : (<>Already have an account?{' '}<button type="button" onClick={toggleMode} className="text-red-400 hover:text-red-300 underline transition font-bold">Sign In</button></>)}
-                                </div>
-                            </form>)}
-
+                            {/* Divider */}
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-slate-700/50" />
-                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Get Started</span>
+                                <span className="text-[10px] text-slate-500 uppercase tracking-[0.18em] font-extrabold">Get Started</span>
                                 <div className="flex-1 h-px bg-slate-700/50" />
                             </div>
 
+                            {/* CTA links (mobile only — desktop sees them on left) */}
                             <div className="space-y-2.5">
-                                <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="lg:hidden group flex items-center justify-between gap-3 bg-gradient-to-r from-red-600/20 to-rose-700/20 rounded-xl p-3 border border-red-500/40 transition-all">
+                                <a href={BROKER_LINK} target="_blank" rel="noopener noreferrer" className="lg:hidden group flex items-center justify-between gap-3 bg-gradient-to-r from-cyan-600/15 to-blue-600/15 rounded-xl p-3 border border-cyan-500/30 transition-all hover:border-cyan-400/50">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 bg-red-500/20 rounded-lg border border-red-500/30"><Building2 size={14} className="text-red-400" /></div>
+                                        <div className="p-1.5 bg-cyan-500/15 rounded-lg border border-cyan-500/30"><Building2 size={14} className="text-cyan-300" /></div>
                                         <div>
-                                            <div className="text-red-300 font-bold text-[11px]">Open Broker Account</div>
+                                            <div className="text-cyan-200 font-bold text-[11px]">Open Broker Account</div>
                                             <div className="text-slate-500 text-[10px]">Partner broker · MT5 supported</div>
                                         </div>
                                     </div>
-                                    <ExternalLink size={14} className="text-red-400" />
+                                    <ExternalLink size={14} className="text-cyan-300" />
                                 </a>
-                                <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/20 to-green-700/20 rounded-xl p-3 border border-emerald-500/40 transition-all">
+                                <a href="#" onClick={(e) => { e.preventDefault(); openPayment(); }} className="group flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-600/15 to-teal-600/15 rounded-xl p-3 border border-emerald-500/30 transition-all hover:border-emerald-400/50">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30"><MessageCircle size={14} className="text-emerald-400" /></div>
+                                        <div className="p-1.5 bg-emerald-500/15 rounded-lg border border-emerald-500/30"><MessageCircle size={14} className="text-emerald-300" /></div>
                                         <div>
-                                            <div className="text-emerald-300 font-bold text-[11px]">Get Lifetime Access</div>
+                                            <div className="text-emerald-200 font-bold text-[11px]">Get Lifetime Access</div>
                                             <div className="text-slate-500 text-[10px]">+254 116 081 230</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-extrabold">{BOT_PRICE}</span>
-                                        <ArrowRight size={14} className="text-emerald-400" />
+                                        <span className="text-[10px] bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40 font-extrabold tabular-nums">{BOT_PRICE}</span>
+                                        <ArrowRight size={14} className="text-emerald-300" />
                                     </div>
                                 </a>
                             </div>
 
+                            {/* Risk Disclaimer */}
                             <div className="mt-5 border border-slate-700/40 rounded-xl overflow-hidden bg-slate-950/40">
-                                <button type="button" onClick={() => setShowDisclaimer(!showDisclaimer)} className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 hover:bg-slate-800/40 transition text-left">
-                                    <div className="flex items-center gap-2"><Scale size={13} className="text-amber-400" /><span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Risk Disclaimer</span></div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDisclaimer(!showDisclaimer)}
+                                    className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 hover:bg-slate-800/40 transition text-left"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Scale size={13} className="text-amber-400" />
+                                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.18em]">Risk Disclaimer</span>
+                                    </div>
                                     {showDisclaimer ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                                 </button>
                                 {showDisclaimer && (
                                     <div className="px-3.5 pb-3 pt-1 border-t border-slate-700/40">
-                                        <p className="text-[10px] text-slate-400 leading-relaxed">Trading Forex and CFDs carries a high level of risk. Leverage can work against you. You may lose some or all of your capital. Past performance is not indicative of future results.</p>
-                                        <p className="text-[10px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-700/30"><span className="text-slate-400 font-bold">PipTrader AI</span> provides automation software only. You are solely responsible for your trading decisions.</p>
+                                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                                            Trading Forex and CFDs carries a high level of risk. Leverage can work against you. You may lose some or all of your capital. Past performance is not indicative of future results.
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-700/30">
+                                            <span className="text-slate-400 font-bold">PipTrader AI</span> provides automation software only. You are solely responsible for your trading decisions.
+                                        </p>
                                     </div>
                                 )}
                             </div>
 
+                            {/* Footer */}
                             <div className="mt-5 pt-4 border-t border-slate-700/30">
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                    <div className="p-1 bg-emerald-500/15 rounded-md border border-emerald-500/30"><Shield size={10} className="text-emerald-400" /></div>
-                                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Secured Connection · v2.0</span>
+                                    <div className="p-1 bg-emerald-500/15 rounded-md border border-emerald-500/30">
+                                        <Shield size={10} className="text-emerald-400" />
+                                    </div>
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Secured Connection · v2.0</span>
                                 </div>
                                 <div className="text-center space-y-1">
                                     <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
                                         <FileText size={9} className="text-slate-600" />
-                                        <span className="font-semibold text-slate-400 uppercase tracking-wider">© {new Date().getFullYear()} CALEKYZ DIGITALISED SERVICE ENTERPRISES</span>
+                                        <span className="font-semibold text-slate-400 uppercase tracking-wider">
+                                            © {new Date().getFullYear()} CALEKYZ DIGITALISED SERVICE ENTERPRISES
+                                        </span>
                                     </div>
-                                    <div className="text-[9px] text-slate-600 leading-relaxed max-w-[280px] mx-auto">Registered under the Registrar of Companies, Republic of Kenya</div>
+                                    <div className="text-[9px] text-slate-600 leading-relaxed max-w-[280px] mx-auto">
+                                        Registered under the Registrar of Companies, Republic of Kenya
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -457,24 +584,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 </div>
             </div>
 
+            {/* Telegram popup */}
             {showTelegramPopup && (
                 <div className="fixed bottom-5 right-5 z-[200]">
                     <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-rose-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
-                        <div className="relative flex items-center gap-3 bg-gradient-to-br from-sky-500 to-rose-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-red-600/40 border border-sky-300/40 max-w-[280px]">
-                            <div className="p-2 bg-white/20 rounded-xl border border-white/30 flex-shrink-0"><Send size={18} className="text-white" /></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-emerald-600 blur-xl opacity-40 rounded-2xl pointer-events-none" />
+                        <div className="relative flex items-center gap-3 bg-gradient-to-br from-cyan-500 to-emerald-600 rounded-2xl p-3 pr-10 shadow-2xl shadow-emerald-600/40 border border-cyan-300/40 max-w-[280px]">
+                            <div className="p-2 bg-white/20 rounded-xl border border-white/30 flex-shrink-0">
+                                <Send size={18} className="text-white" />
+                            </div>
                             <div className="min-w-0">
                                 <div className="text-white font-bold text-xs leading-tight">Join our Telegram</div>
-                                <div className="text-sky-100 text-[10px] font-mono mt-0.5">t.me/calekyz</div>
+                                <div className="text-cyan-100 text-[10px] font-mono mt-0.5">t.me/calekyz</div>
                             </div>
-                            <a href={TELEGRAM_LINK} target="_blank" rel="noopener noreferrer" className="ml-auto flex-shrink-0 bg-white/25 hover:bg-white/35 text-white p-2 rounded-xl border border-white/30 transition-all"><ArrowRight size={14} /></a>
-                            <button onClick={dismissTelegramPopup} className="absolute top-1 right-1 p-1 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition"><X size={12} strokeWidth={3} /></button>
+                            <a href={TELEGRAM_LINK} target="_blank" rel="noopener noreferrer" className="ml-auto flex-shrink-0 bg-white/25 hover:bg-white/35 text-white p-2 rounded-xl border border-white/30 transition-all">
+                                <ArrowRight size={14} />
+                            </a>
+                            <button onClick={dismissTelegramPopup} className="absolute top-1 right-1 p-1 text-white/70 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition">
+                                <X size={12} strokeWidth={3} />
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ═══ Payment Modal ═══ */}
+            {/* Payment modal */}
             {showPayment && (
                 <DynamicPaymentModal
                     isOpen={showPayment}
@@ -488,13 +622,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, isLoading, error 
                 />
             )}
 
-            {/* ═══ Support link (for users who paid but need help) ═══ */}
-            <div className="text-center mt-6 pb-4">
+            {/* Support link */}
+            <div className="relative z-10 text-center pb-6">
                 <a
                     href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-emerald-400 transition"
+                    className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-emerald-400 transition"
                 >
                     <MessageCircle size={12} />
                     Already paid? Need help? Chat with support on WhatsApp
