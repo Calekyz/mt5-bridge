@@ -14,6 +14,8 @@ import mt5DetailsRoutes from './routes/mt5Details';
 import unsubscribeRoutes from './routes/unsubscribe';
 import termsRoutes from './routes/terms';
 import paymentRoutes from './payments/routes';
+import bridgeRoutes from './bridge/routes';
+import { autoMigrateBridge } from './bridge/autoMigrate';
 import { autoMigratePayments } from './payments/autoMigrate';   // ← NEW
 import { restoreStrategyStates } from './restoreStates';
 import swaggerUi from 'swagger-ui-express';
@@ -52,6 +54,14 @@ if (process.env.PAYMENTS_ENABLED === 'true') {
     console.log('💤 Payments disabled (set PAYMENTS_ENABLED=true to enable)');
 }
 
+// ─── Bridge (feature-flagged) ───
+if (process.env.BRIDGE_ENABLED === 'true') {
+    app.use('/bridge', bridgeRoutes);
+    console.log('🌉 Bridge enabled at /bridge');
+} else {
+    console.log('🌉 Bridge disabled (set BRIDGE_ENABLED=true to enable)');
+}
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 404
@@ -73,6 +83,7 @@ const PORT = process.env.PORT || 8891;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     await autoMigratePayments();
+    await autoMigrateBridge();
     await restoreStrategyStates();
     console.log('✅ Strategy states restored');
 
