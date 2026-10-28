@@ -7,6 +7,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { query } from '../db';
 
+import { postSendOrder, closeSendOrder } from '../services/SocketBridgeApi';
 const router = Router();
 
 const SHARED_TOKEN = process.env.BRIDGE_TOKEN || '';
@@ -299,6 +300,60 @@ router.get('/users', async (_req: Request, res: Response) => {
     res.json({ ok: true, users: result.rows });
   } catch (err: any) {
     res.status(500).json({ ok: false, reason: 'server_error', message: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// DIRECT EXECUTE — send order to user's SocketBridge EA on VPS
+// Requires: X-Bridge-Token (already enforced by router middleware above)
+// ═══════════════════════════════════════════════════════════════════
+router.post('/execute', async (req: Request, res: Response) => {
+  try {
+    const { email, symbol, side, volume, sl, tp, comment, ticket, action } = req.body || {};
+    if (!email || !symbol) {
+      return res.status(400).json({ ok: false, error: 'email_and_symbol_required' });
+    }
+
+    const userRes = await query(
+      'SELECT id FROM users WHERE LOWER(email) = $1',
+      [String(email).toLowerCase()]
+    );
+    if (userRes.rows.length === 0) {
+      return res.json({ ok: false, error: 'user_not_found' });
+    }
+
+    const vpsRes = await query(
+      'SELECT vps_address FROM user_mt5_accounts WHERE user_id = $1 LIMIT 1',
+      [userRes.rows[0].id]
+    );
+    const vps = vpsRes.rows[0]?.vps_address;
+    if (!vps) {
+      return res.json({ ok: false, error: 'no_vps_assigned', email });
+    }
+
+    if (action === 'close') {
+      if (!ticket) return res.status(400).json({ ok: false, error: 'ticket_required_for_close' });
+      const result = await closeSendOrder({ ticket, symbol }, vps);
+      console.log('[bridge/execute] CLOSE sent for', email, 'ticket', ticket);
+      return res.json({ ok: true, mode: 'close', result });
+    }
+
+    const orderBody = {
+      symbol,
+      volume: Number(volume) || 0.01,
+      order_type: String(side || 'buy').toLowerCase(),
+      deviation: 5,
+      sl: sl ?? undefined,
+      tp: tp ?? undefined,
+      comment: comment || 'PipTrader trade'
+    };
+
+    const result = await postSendOrder(orderBody, vps);
+    console.log('[bridge/execute] OPEN sent for', email, symbol, side, volume);
+    return res.json({ ok: true, mode: 'direct', result });
+  } catch (err: any) {
+    console.error('[bridge/execute] failed:', err?.message);
+    return res.status(500).json({ ok: false, error: err?.message || 'execute_failed' });
   }
 });
 
